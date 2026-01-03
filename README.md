@@ -94,6 +94,17 @@ Example response:
 To download audio bytes directly, omit the `Accept: application/json` header. The response
 will be `audio/mpeg` with a `Content-Disposition` attachment header.
 
+### Debug & streaming
+- `outputMode` controls response format:
+  - `text` returns JSON only.
+  - `audio` returns raw audio bytes (non-JSON).
+  - `text-audio` returns JSON plus audio metadata.
+- Stream JSON by setting `Accept: text/event-stream`. The server emits `status`, `done`,
+  and `error` SSE events.
+- Set `debugTtsPrompt: true` to include `ttsPrompt` in JSON responses. The UI also enables
+  this in dev mode via `?dev=1`.
+- Use `ttsNewlinePauseSeconds` to insert pause markers between sentences in TTS output.
+
 ## Build and run (optional)
 ```bash
 npm run build
@@ -103,3 +114,4 @@ npm start
 ## Notes
 - The API defaults to OpenAI TTS voice `marin` and selects a fallback voice per language.
 - `voiceStyle` must be one of: `alloy`, `ash`, `ballad`, `cedar`, `coral`, `echo`, `fable`, `marin`, `nova`, `onyx`, `sage`, `shimmer`, `verse`.
+- The UI calls `GET /version` to display the app version string.
