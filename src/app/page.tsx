@@ -8,18 +8,45 @@ type GenerationResult = {
 };
 
 type FormState = {
-  sense: "calm" | "energizing" | "focus" | "uplifting";
-  durationSeconds: number;
+  practiceMode:
+    | "tactile"
+    | "tense_relax"
+    | "moving"
+    | "sitting"
+    | "label_with_anchor"
+    | "label_while_scanning";
+  bodyState: "still_seated" | "still_seated_closed_eyes" | "moving";
+  eyeState: "closed" | "open_focused" | "open_diffused";
+  primarySense:
+    | "touch"
+    | "hearing"
+    | "sight"
+    | "breath"
+    | "body_weight"
+    | "smell"
+    | "taste";
+  durationMinutes: 2 | 5 | 12;
+  labelingMode: "none" | "breath_anchor" | "scan_and_label";
+  silenceProfile: "none" | "short_pauses" | "extended_silence";
+  normalizationFrequency: "once" | "periodic" | "repeated";
+  closingStyle: "minimal" | "pq_framed" | "pq_framed_with_progression";
+  senseRotation?: "none" | "guided_rotation" | "free_choice";
   language: string;
-  topic: string;
   outputMode: "text" | "audio" | "text-audio";
 };
 
 const DEFAULT_STATE: FormState = {
-  sense: "calm",
-  durationSeconds: 120,
+  practiceMode: "tactile",
+  bodyState: "still_seated_closed_eyes",
+  eyeState: "closed",
+  primarySense: "touch",
+  durationMinutes: 2,
+  labelingMode: "none",
+  silenceProfile: "short_pauses",
+  normalizationFrequency: "once",
+  closingStyle: "minimal",
+  senseRotation: "none",
   language: "en",
-  topic: "",
   outputMode: "audio",
 };
 
@@ -30,11 +57,67 @@ const LANGUAGE_OPTIONS = [
   { value: "de", label: "German" },
 ];
 
-const SENSE_OPTIONS: FormState["sense"][] = [
-  "calm",
-  "energizing",
-  "focus",
-  "uplifting",
+const PRACTICE_MODE_OPTIONS: FormState["practiceMode"][] = [
+  "tactile",
+  "tense_relax",
+  "moving",
+  "sitting",
+  "label_with_anchor",
+  "label_while_scanning",
+];
+
+const BODY_STATE_OPTIONS: FormState["bodyState"][] = [
+  "still_seated",
+  "still_seated_closed_eyes",
+  "moving",
+];
+
+const EYE_STATE_OPTIONS: FormState["eyeState"][] = [
+  "closed",
+  "open_focused",
+  "open_diffused",
+];
+
+const PRIMARY_SENSE_OPTIONS: FormState["primarySense"][] = [
+  "touch",
+  "hearing",
+  "sight",
+  "breath",
+  "body_weight",
+  "smell",
+  "taste",
+];
+
+const DURATION_OPTIONS: FormState["durationMinutes"][] = [2, 5, 12];
+
+const LABELING_MODE_OPTIONS: FormState["labelingMode"][] = [
+  "none",
+  "breath_anchor",
+  "scan_and_label",
+];
+
+const SILENCE_PROFILE_OPTIONS: FormState["silenceProfile"][] = [
+  "none",
+  "short_pauses",
+  "extended_silence",
+];
+
+const NORMALIZATION_FREQUENCY_OPTIONS: FormState["normalizationFrequency"][] = [
+  "once",
+  "periodic",
+  "repeated",
+];
+
+const CLOSING_STYLE_OPTIONS: FormState["closingStyle"][] = [
+  "minimal",
+  "pq_framed",
+  "pq_framed_with_progression",
+];
+
+const SENSE_ROTATION_OPTIONS: NonNullable<FormState["senseRotation"]>[] = [
+  "none",
+  "guided_rotation",
+  "free_choice",
 ];
 
 export default function HomePage() {
@@ -46,8 +129,8 @@ export default function HomePage() {
   const isLoading = status === "loading";
 
   const durationLabel = useMemo(
-    () => `${formState.durationSeconds} seconds`,
-    [formState.durationSeconds],
+    () => `${formState.durationMinutes} minutes`,
+    [formState.durationMinutes],
   );
 
   useEffect(() => {
@@ -64,10 +147,6 @@ export default function HomePage() {
 
   const validate = (state: FormState) => {
     const nextErrors: string[] = [];
-
-    if (state.durationSeconds < 30 || state.durationSeconds > 900) {
-      nextErrors.push("Duration must be between 30 and 900 seconds.");
-    }
 
     if (!state.language) {
       nextErrors.push("Please select a language.");
@@ -91,7 +170,16 @@ export default function HomePage() {
     setStatus("loading");
 
     const payload = {
-      sense: formState.sense,
+      practiceMode: formState.practiceMode,
+      bodyState: formState.bodyState,
+      eyeState: formState.eyeState,
+      primarySense: formState.primarySense,
+      durationMinutes: formState.durationMinutes,
+      labelingMode: formState.labelingMode,
+      silenceProfile: formState.silenceProfile,
+      normalizationFrequency: formState.normalizationFrequency,
+      closingStyle: formState.closingStyle,
+      senseRotation: formState.senseRotation,
       languages: [formState.language],
       durationSeconds: formState.durationSeconds,
       topic: formState.topic || undefined,
@@ -121,7 +209,7 @@ export default function HomePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "audio/mpeg",
+          Accept: "audio/wav",
         },
         body: JSON.stringify(payload),
       });
@@ -136,7 +224,7 @@ export default function HomePage() {
       }
 
       const audioBuffer = await response.arrayBuffer();
-      const contentType = response.headers.get("content-type") ?? "audio/mpeg";
+      const contentType = response.headers.get("content-type") ?? "audio/wav";
       return new Blob([audioBuffer], { type: contentType });
     };
 
@@ -192,53 +280,205 @@ export default function HomePage() {
     <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 720, margin: "0 auto" }}>
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>PQ Reps Generator</h1>
       <p style={{ marginBottom: "2rem", color: "#555" }}>
-        Create a guided prompt based on a sense focus and get instant audio playback.
+        Generate on-brand PQ Reps scripts with explicit practice inputs and instant audio.
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
         <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Sense</span>
+          <span style={{ fontWeight: 600 }}>Practice Mode</span>
           <select
-            name="sense"
-            value={formState.sense}
+            name="practiceMode"
+            value={formState.practiceMode}
             onChange={(event) =>
-              updateFormState({ sense: event.target.value as FormState["sense"] })
+              updateFormState({
+                practiceMode: event.target.value as FormState["practiceMode"],
+              })
             }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           >
-            {SENSE_OPTIONS.map((option) => (
+            {PRACTICE_MODE_OPTIONS.map((option) => (
               <option key={option} value={option}>
-                {option.charAt(0).toUpperCase() + option.slice(1)}
+                {option.replace(/_/g, " ")}
               </option>
             ))}
           </select>
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Topic (optional)</span>
-          <input
-            type="text"
-            name="topic"
-            value={formState.topic}
-            onChange={(event) => updateFormState({ topic: event.target.value })}
-            placeholder="e.g. building focus"
+          <span style={{ fontWeight: 600 }}>Body State</span>
+          <select
+            name="bodyState"
+            value={formState.bodyState}
+            onChange={(event) =>
+              updateFormState({ bodyState: event.target.value as FormState["bodyState"] })
+            }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          />
+          >
+            {BODY_STATE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Eye State</span>
+          <select
+            name="eyeState"
+            value={formState.eyeState}
+            onChange={(event) =>
+              updateFormState({ eyeState: event.target.value as FormState["eyeState"] })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            {EYE_STATE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Primary Sense</span>
+          <select
+            name="primarySense"
+            value={formState.primarySense}
+            onChange={(event) =>
+              updateFormState({
+                primarySense: event.target.value as FormState["primarySense"],
+              })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            {PRIMARY_SENSE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Duration</span>
-          <input
-            type="range"
-            min={30}
-            max={900}
-            step={30}
-            value={formState.durationSeconds}
+          <select
+            name="durationMinutes"
+            value={formState.durationMinutes}
             onChange={(event) =>
-              updateFormState({ durationSeconds: Number(event.target.value) })
+              updateFormState({
+                durationMinutes: Number(event.target.value) as FormState["durationMinutes"],
+              })
             }
-          />
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            {DURATION_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option} minutes
+              </option>
+            ))}
+          </select>
           <span style={{ color: "#555" }}>{durationLabel}</span>
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Labeling Mode</span>
+          <select
+            name="labelingMode"
+            value={formState.labelingMode}
+            onChange={(event) =>
+              updateFormState({
+                labelingMode: event.target.value as FormState["labelingMode"],
+              })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            {LABELING_MODE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Silence Profile</span>
+          <select
+            name="silenceProfile"
+            value={formState.silenceProfile}
+            onChange={(event) =>
+              updateFormState({
+                silenceProfile: event.target.value as FormState["silenceProfile"],
+              })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            {SILENCE_PROFILE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Normalization Frequency</span>
+          <select
+            name="normalizationFrequency"
+            value={formState.normalizationFrequency}
+            onChange={(event) =>
+              updateFormState({
+                normalizationFrequency: event.target.value as FormState["normalizationFrequency"],
+              })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            {NORMALIZATION_FREQUENCY_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Closing Style</span>
+          <select
+            name="closingStyle"
+            value={formState.closingStyle}
+            onChange={(event) =>
+              updateFormState({
+                closingStyle: event.target.value as FormState["closingStyle"],
+              })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            {CLOSING_STYLE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Sense Rotation</span>
+          <select
+            name="senseRotation"
+            value={formState.senseRotation ?? "none"}
+            onChange={(event) =>
+              updateFormState({
+                senseRotation: event.target.value as FormState["senseRotation"],
+              })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            {SENSE_ROTATION_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
@@ -319,8 +559,8 @@ export default function HomePage() {
                 <source src={result.audioUrl} />
                 Your browser does not support the audio element.
               </audio>
-              <a href={result.audioUrl} download="pq-reps.mp3" style={{ fontWeight: 600 }}>
-                Download the MP3
+              <a href={result.audioUrl} download="pq-reps.wav" style={{ fontWeight: 600 }}>
+                Download the WAV
               </a>
             </>
           )}

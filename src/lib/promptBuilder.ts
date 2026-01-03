@@ -1,13 +1,57 @@
 import { Duration, Eyes, Language, PromptConfig, Sense } from "./types";
 
-export type Sense = "calm" | "energizing" | "focus" | "uplifting";
+export type PracticeMode =
+  | "tactile"
+  | "tense_relax"
+  | "moving"
+  | "sitting"
+  | "label_with_anchor"
+  | "label_while_scanning";
+
+export type BodyState =
+  | "still_seated"
+  | "still_seated_closed_eyes"
+  | "moving";
+
+export type EyeState = "closed" | "open_focused" | "open_diffused";
+
+export type PrimarySense =
+  | "touch"
+  | "hearing"
+  | "sight"
+  | "breath"
+  | "body_weight"
+  | "smell"
+  | "taste";
+
+export type SenseRotation = "none" | "guided_rotation" | "free_choice";
+
+export type LabelingMode = "none" | "breath_anchor" | "scan_and_label";
+
+export type DurationMinutes = 2 | 5 | 12;
+
+export type SilenceProfile = "none" | "short_pauses" | "extended_silence";
+
+export type NormalizationFrequency = "once" | "periodic" | "repeated";
+
+export type ClosingStyle =
+  | "minimal"
+  | "pq_framed"
+  | "pq_framed_with_progression";
 
 export type GenerateConfig = {
-  sense: Sense;
   languages: string[];
-  durationSeconds: number;
+  practiceMode: PracticeMode;
+  bodyState: BodyState;
+  eyeState: EyeState;
+  primarySense: PrimarySense;
+  durationMinutes: DurationMinutes;
+  labelingMode: LabelingMode;
+  silenceProfile: SilenceProfile;
+  normalizationFrequency: NormalizationFrequency;
+  closingStyle: ClosingStyle;
+  senseRotation?: SenseRotation;
   audience?: string;
-  topic?: string;
   voiceStyle?: string;
 };
 
@@ -18,39 +62,48 @@ export const SUPPORTED_LANGUAGES = [
   "de",
 ];
 
-export const DURATION_BOUNDS = {
-  minSeconds: 30,
-  maxSeconds: 900,
-};
+export const ALLOWED_DURATIONS: DurationMinutes[] = [2, 5, 12];
 
 export function buildPrompt(config: GenerateConfig): string {
   const {
-    sense,
     languages,
-    durationSeconds,
+    practiceMode,
+    bodyState,
+    eyeState,
+    primarySense,
+    durationMinutes,
+    labelingMode,
+    silenceProfile,
+    normalizationFrequency,
+    closingStyle,
+    senseRotation,
     audience,
-    topic,
     voiceStyle,
   } = config;
 
+  const durationSeconds = durationMinutes * 60;
   const durationRule =
     durationSeconds >= 300
       ? "You may mention exact rep counts if it helps pacing."
       : "Do not mention exact rep counts because the duration is under 5 minutes.";
 
   return [
-    `Selected sense: ${sense}.`,
-    `Target duration: ${durationSeconds} seconds.`,
+    `Practice mode: ${practiceMode}.`,
+    `Body state: ${bodyState}.`,
+    `Eye state: ${eyeState}.`,
+    `Primary sense: ${primarySense}.`,
+    `Duration: ${durationMinutes} minutes.`,
+    `Labeling mode: ${labelingMode}.`,
+    `Silence profile: ${silenceProfile}.`,
+    `Normalization frequency: ${normalizationFrequency}.`,
+    `Closing style: ${closingStyle}.`,
+    senseRotation ? `Sense rotation: ${senseRotation}.` : "Sense rotation: none.",
     `Language: ${languages.join(", ")}.`,
     audience ? `Audience: ${audience}.` : "Audience: general.",
-    topic
-      ? `Topic: ${topic}. Keep it subtle and aligned with PQ Reps guidance.`
-      : "No topic provided.",
     voiceStyle
       ? `Voice style preference: ${voiceStyle}. Use only if it does not conflict with tone rules.`
       : "No additional voice style preference provided.",
-    durationRule,
-    "If you include any movement guidance, include the required safety disclaimer.",
+    "Use these inputs exactly. Do not invent additional modes, senses, or counts.",
   ].join("\n");
 }
 
