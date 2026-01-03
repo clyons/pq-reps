@@ -20,6 +20,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [ ] Add tests for prompt outline and API validation.
 - [ ] Add user-facing AI-generated voice disclosure in the UI.
 - [ ] Improve the tone and pacing of PQ Reps scripts.
+- [ ] Reduce latency by using The Speech API to support realtime audio streaming via chunked transfer encoding.
 - [x] Add console disclosure when running against the OpenAI TTS API.
 
 ## Local setup (macOS)
