@@ -202,6 +202,7 @@ export default async function handler(
 
   const config = validation.value;
   const prompt = buildPrompt(config);
+  const pauseMarkerRegex = /\s*\[pause:(\d+(?:\.\d+)?)\]\s*/gi;
 
   try {
     const { script } = await generateScript({ prompt });
@@ -212,8 +213,9 @@ export default async function handler(
       voice: config.voiceStyle,
     });
 
+    const displayScript = script.replace(pauseMarkerRegex, "\n\n").trim();
     const response: SuccessResponse = {
-      script,
+      script: displayScript,
       metadata: {
         sense: config.sense,
         languages: config.languages,
@@ -232,7 +234,7 @@ export default async function handler(
 
     res.statusCode = 200;
     res.setHeader("Content-Type", ttsResult.contentType);
-    res.setHeader("Content-Disposition", "attachment; filename=\"pq-reps.mp3\"");
+    res.setHeader("Content-Disposition", "attachment; filename=\"pq-reps.wav\"");
     res.end(ttsResult.audio);
   } catch (error) {
     sendJson(res, 500, {

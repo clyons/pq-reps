@@ -165,6 +165,7 @@ export async function POST(request: Request) {
 
   const config = validation.value;
   const prompt = buildPrompt(config);
+  const pauseMarkerRegex = /\s*\[pause:(\d+(?:\.\d+)?)\]\s*/gi;
 
   try {
     const { script } = await generateScript({ prompt });
@@ -177,8 +178,9 @@ export async function POST(request: Request) {
 
     const acceptHeader = request.headers.get("accept") ?? "";
     if (acceptHeader.includes("application/json")) {
+      const displayScript = script.replace(pauseMarkerRegex, "\n\n").trim();
       const response: SuccessResponse = {
-        script,
+        script: displayScript,
         metadata: {
           sense: config.sense,
           languages: config.languages,
@@ -195,7 +197,7 @@ export async function POST(request: Request) {
       status: 200,
       headers: {
         "Content-Type": ttsResult.contentType,
-        "Content-Disposition": "attachment; filename=\"pq-reps.mp3\"",
+        "Content-Disposition": "attachment; filename=\"pq-reps.wav\"",
       },
     });
   } catch (error) {
