@@ -84,18 +84,100 @@
 
       <form id="generator-form">
         <label>
-          Sense
-          <select name="sense" required>
-            <option value="calm">Calm</option>
-            <option value="energizing">Energizing</option>
-            <option value="focus">Focus</option>
-            <option value="uplifting">Uplifting</option>
+          Practice Mode
+          <select name="practiceMode" required>
+            <option value="tactile">Tactile</option>
+            <option value="tense_relax">Tense + Relax</option>
+            <option value="moving">Moving</option>
+            <option value="sitting">Sitting</option>
+            <option value="label_with_anchor">Label with Anchor</option>
+            <option value="label_while_scanning">Label While Scanning</option>
           </select>
         </label>
 
         <label>
-          Topic (optional)
-          <input type="text" name="topic" placeholder="e.g. building focus" />
+          Body State
+          <select name="bodyState" required>
+            <option value="still_seated">Still seated</option>
+            <option value="still_seated_closed_eyes">Still seated, eyes closed</option>
+            <option value="moving">Moving</option>
+          </select>
+        </label>
+
+        <label>
+          Eye State
+          <select name="eyeState" required>
+            <option value="closed">Closed</option>
+            <option value="open_focused">Open, focused</option>
+            <option value="open_diffused">Open, diffused</option>
+          </select>
+        </label>
+
+        <label>
+          Primary Sense
+          <select name="primarySense" required>
+            <option value="touch">Touch</option>
+            <option value="hearing">Hearing</option>
+            <option value="sight">Sight</option>
+            <option value="breath">Breath</option>
+            <option value="body_weight">Body weight</option>
+            <option value="smell">Smell</option>
+            <option value="taste">Taste</option>
+          </select>
+        </label>
+
+        <label>
+          Duration: <span id="duration-label">2 minutes</span>
+          <select name="durationMinutes" required>
+            <option value="2">2 minutes</option>
+            <option value="5">5 minutes</option>
+            <option value="12">12 minutes</option>
+          </select>
+        </label>
+
+        <label>
+          Labeling Mode
+          <select name="labelingMode" required>
+            <option value="none">None</option>
+            <option value="breath_anchor">Breath anchor</option>
+            <option value="scan_and_label">Scan and label</option>
+          </select>
+        </label>
+
+        <label>
+          Silence Profile
+          <select name="silenceProfile" required>
+            <option value="none">None</option>
+            <option value="short_pauses">Short pauses</option>
+            <option value="extended_silence">Extended silence</option>
+          </select>
+        </label>
+
+        <label>
+          Normalization Frequency
+          <select name="normalizationFrequency" required>
+            <option value="once">Once</option>
+            <option value="periodic">Periodic</option>
+            <option value="repeated">Repeated</option>
+          </select>
+        </label>
+
+        <label>
+          Closing Style
+          <select name="closingStyle" required>
+            <option value="minimal">Minimal</option>
+            <option value="pq_framed">PQ framed</option>
+            <option value="pq_framed_with_progression">PQ framed with progression</option>
+          </select>
+        </label>
+
+        <label>
+          Sense Rotation
+          <select name="senseRotation">
+            <option value="none">None</option>
+            <option value="guided_rotation">Guided rotation</option>
+            <option value="free_choice">Free choice</option>
+          </select>
         </label>
 
         <label>
@@ -106,11 +188,6 @@
             <option value="fr">French</option>
             <option value="de">German</option>
           </select>
-        </label>
-
-        <label>
-          Duration: <span id="duration-label">120 seconds</span>
-          <input type="range" name="duration" min="30" max="900" step="30" value="120" />
         </label>
 
         <label>
@@ -140,7 +217,7 @@
 
     <script>
       const form = document.getElementById("generator-form");
-      const durationInput = form.querySelector("input[name='duration']");
+      const durationInput = form.querySelector("select[name='durationMinutes']");
       const durationLabel = document.getElementById("duration-label");
       const status = document.getElementById("status");
       const error = document.getElementById("error");
@@ -152,11 +229,11 @@
       let currentUrl = null;
 
       const updateDurationLabel = () => {
-        durationLabel.textContent = `${durationInput.value} seconds`;
+        durationLabel.textContent = `${durationInput.value} minutes`;
       };
 
       updateDurationLabel();
-      durationInput.addEventListener("input", updateDurationLabel);
+      durationInput.addEventListener("change", updateDurationLabel);
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -173,10 +250,17 @@
 
         const formData = new FormData(form);
         const payload = {
-          sense: formData.get("sense"),
+          practiceMode: formData.get("practiceMode"),
+          bodyState: formData.get("bodyState"),
+          eyeState: formData.get("eyeState"),
+          primarySense: formData.get("primarySense"),
+          durationMinutes: Number(formData.get("durationMinutes")),
+          labelingMode: formData.get("labelingMode"),
+          silenceProfile: formData.get("silenceProfile"),
+          normalizationFrequency: formData.get("normalizationFrequency"),
+          closingStyle: formData.get("closingStyle"),
+          senseRotation: formData.get("senseRotation") || undefined,
           languages: [formData.get("language")],
-          durationSeconds: Number(formData.get("duration")),
-          topic: formData.get("topic") || undefined,
         };
         const outputMode = formData.get("outputMode");
 
