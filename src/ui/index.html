@@ -23,6 +23,11 @@
       h1 {
         margin-top: 0;
       }
+      .version {
+        margin-top: -0.25rem;
+        color: #666;
+        font-size: 0.9rem;
+      }
       form {
         display: grid;
         gap: 1.5rem;
@@ -81,6 +86,7 @@
     <main>
       <h1>PQ Reps Audio Generator</h1>
       <p>Create a guided prompt and stream an MP3 directly from the API.</p>
+      <p class="version" id="app-version">Version: loading…</p>
 
       <form id="generator-form">
         <label>
@@ -226,6 +232,7 @@
       const downloadLink = document.getElementById("download-link");
       const scriptOutput = document.getElementById("script-output");
       const submitButton = document.getElementById("submit-button");
+      const appVersion = document.getElementById("app-version");
       let currentUrl = null;
 
       const updateDurationLabel = () => {
@@ -234,6 +241,21 @@
 
       updateDurationLabel();
       durationInput.addEventListener("change", updateDurationLabel);
+
+      const loadVersion = async () => {
+        try {
+          const response = await fetch("/version");
+          if (!response.ok) {
+            throw new Error("Version unavailable.");
+          }
+          const data = await response.json();
+          appVersion.textContent = `Version: ${data?.version || "unknown"}`;
+        } catch (err) {
+          appVersion.textContent = "Version: unavailable";
+        }
+      };
+
+      loadVersion();
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
