@@ -52,7 +52,7 @@ curl -X POST http://localhost:3000/api/generate \
     "durationSeconds": 120,
     "audience": "PQ practitioners",
     "topic": "building focus",
-    "voiceStyle": "warm and grounded"
+    "voiceStyle": "marin"
   }'
 ```
 
@@ -82,3 +82,4 @@ npm start
 
 ## Notes
 - The API defaults to OpenAI TTS voice `marin` and selects a fallback voice per language.
+- `voiceStyle` must be one of: `alloy`, `ash`, `ballad`, `cedar`, `coral`, `echo`, `fable`, `marin`, `nova`, `onyx`, `sage`, `shimmer`, `verse`.
