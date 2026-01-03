@@ -17,6 +17,8 @@ type ErrorResponse = {
   };
 };
 
+type OutputMode = "text" | "audio" | "text-audio";
+
 type SuccessResponse = {
   script: string;
   metadata: {
@@ -27,6 +29,8 @@ type SuccessResponse = {
     ttsProvider: string;
     voice: string;
   };
+  audioBase64?: string;
+  audioContentType?: string;
 };
 
 const ALLOWED_SENSES: Sense[] = ["calm", "energizing", "focus", "uplifting"];
@@ -43,7 +47,10 @@ function isStringArray(value: unknown): value is string[] {
 
 function validateConfig(payload: unknown): {
   ok: true;
-  value: GenerateConfig;
+  value: {
+    config: GenerateConfig;
+    outputMode?: OutputMode;
+  };
 } | {
   ok: false;
   error: ErrorResponse;
@@ -60,7 +67,7 @@ function validateConfig(payload: unknown): {
     };
   }
 
-  const config = payload as Partial<GenerateConfig>;
+  const config = payload as Partial<GenerateConfig> & { outputMode?: OutputMode };
 
   if (!config.sense || !ALLOWED_SENSES.includes(config.sense)) {
     return {
@@ -135,12 +142,15 @@ function validateConfig(payload: unknown): {
   return {
     ok: true,
     value: {
-      sense: config.sense,
-      languages: config.languages,
-      durationSeconds: config.durationSeconds,
-      audience: config.audience,
-      topic: config.topic,
-      voiceStyle: config.voiceStyle,
+      config: {
+        sense: config.sense,
+        languages: config.languages,
+        durationSeconds: config.durationSeconds,
+        audience: config.audience,
+        topic: config.topic,
+        voiceStyle: config.voiceStyle,
+      },
+      outputMode: config.outputMode,
     },
   };
 }
@@ -200,11 +210,39 @@ export default async function handler(
     return;
   }
 
-  const config = validation.value;
+  const { config, outputMode: requestedMode } = validation.value;
   const prompt = buildPrompt(config);
+  const acceptHeader = req.headers.accept ?? "";
+  const outputMode =
+    requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
+
+  if (requestedMode && !["text", "audio", "text-audio"].includes(requestedMode)) {
+    sendJson(res, 400, {
+      error: {
+        code: "invalid_output_mode",
+        message: "Output mode must be one of: text, audio, text-audio.",
+      },
+    });
+    return;
+  }
 
   try {
     const { script } = await generateScript({ prompt });
+    if (outputMode === "text") {
+      sendJson(res, 200, {
+        script,
+        metadata: {
+          sense: config.sense,
+          languages: config.languages,
+          durationSeconds: config.durationSeconds,
+          prompt,
+          ttsProvider: "none",
+          voice: "n/a",
+        },
+      } satisfies SuccessResponse);
+      return;
+    }
+
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
     const ttsResult = await synthesizeSpeech({
       script,
@@ -212,20 +250,20 @@ export default async function handler(
       voice: config.voiceStyle,
     });
 
-    const response: SuccessResponse = {
-      script,
-      metadata: {
-        sense: config.sense,
-        languages: config.languages,
-        durationSeconds: config.durationSeconds,
-        prompt,
-        ttsProvider: ttsResult.provider,
-        voice: ttsResult.voice,
-      },
-    };
-
-    const acceptHeader = req.headers.accept ?? "";
-    if (acceptHeader.includes("application/json")) {
+    if (outputMode === "text-audio") {
+      const response: SuccessResponse = {
+        script,
+        metadata: {
+          sense: config.sense,
+          languages: config.languages,
+          durationSeconds: config.durationSeconds,
+          prompt,
+          ttsProvider: ttsResult.provider,
+          voice: ttsResult.voice,
+        },
+        audioBase64: ttsResult.audio.toString("base64"),
+        audioContentType: ttsResult.contentType,
+      };
       sendJson(res, 200, response);
       return;
     }
