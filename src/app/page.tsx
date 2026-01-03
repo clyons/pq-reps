@@ -25,7 +25,7 @@ type FormState = {
     | "body_weight"
     | "smell"
     | "taste";
-  durationMinutes: 2 | 5 | 12;
+  durationMinutes: 1 | 2 | 5 | 12;
   labelingMode: "none" | "breath_anchor" | "scan_and_label";
   silenceProfile: "none" | "short_pauses" | "extended_silence";
   normalizationFrequency: "once" | "periodic" | "repeated";
@@ -76,7 +76,10 @@ const PRIMARY_SENSE_OPTIONS: FormState["primarySense"][] = [
   "taste",
 ];
 
-const DURATION_OPTIONS: FormState["durationMinutes"][] = [2, 5, 12];
+const DURATION_OPTIONS: FormState["durationMinutes"][] = [1, 2, 5, 12];
+
+const formatDurationLabel = (minutes: number) =>
+  `${minutes} minute${minutes === 1 ? "" : "s"}`;
 
 const SILENCE_PROFILE_OPTIONS: FormState["silenceProfile"][] = [
   "none",
@@ -99,7 +102,7 @@ export default function HomePage() {
   const isLoading = status === "loading";
 
   const durationLabel = useMemo(
-    () => `${formState.durationMinutes} minutes`,
+    () => formatDurationLabel(formState.durationMinutes),
     [formState.durationMinutes],
   );
 
@@ -134,14 +137,14 @@ export default function HomePage() {
   }, [formState.practiceMode]);
 
   const allowedSilenceProfiles = useMemo(() => {
-    if (formState.durationMinutes === 2) {
+    if (formState.durationMinutes === 1 || formState.durationMinutes === 2) {
       return ["none", "short_pauses"] as FormState["silenceProfile"][];
     }
     return SILENCE_PROFILE_OPTIONS;
   }, [formState.durationMinutes]);
 
   const requiredNormalizationFrequency = useMemo(() => {
-    if (formState.durationMinutes === 2) {
+    if (formState.durationMinutes === 1 || formState.durationMinutes === 2) {
       return "once";
     }
     if (formState.durationMinutes === 5) {
@@ -151,7 +154,7 @@ export default function HomePage() {
   }, [formState.durationMinutes]);
 
   const requiredClosingStyle = useMemo(() => {
-    if (formState.durationMinutes === 2) {
+    if (formState.durationMinutes === 1 || formState.durationMinutes === 2) {
       return "minimal";
     }
     if (formState.durationMinutes === 5) {
@@ -449,7 +452,7 @@ export default function HomePage() {
           >
             {DURATION_OPTIONS.map((option) => (
               <option key={option} value={option}>
-                {option} minutes
+                {formatDurationLabel(option)}
               </option>
             ))}
           </select>

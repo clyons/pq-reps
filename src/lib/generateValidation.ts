@@ -391,7 +391,10 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
     };
   }
 
-  if (config.durationMinutes === 2 && config.silenceProfile === "extended_silence") {
+  if (
+    (config.durationMinutes === 1 || config.durationMinutes === 2) &&
+    config.silenceProfile === "extended_silence"
+  ) {
     return {
       ok: false,
       error: {
@@ -403,7 +406,10 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
     };
   }
 
-  if (config.durationMinutes === 2 && config.normalizationFrequency !== "once") {
+  if (
+    (config.durationMinutes === 1 || config.durationMinutes === 2) &&
+    config.normalizationFrequency !== "once"
+  ) {
     return {
       ok: false,
       error: {
@@ -439,7 +445,10 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
     };
   }
 
-  if (config.durationMinutes === 2 && config.closingStyle !== "minimal") {
+  if (
+    (config.durationMinutes === 1 || config.durationMinutes === 2) &&
+    config.closingStyle !== "minimal"
+  ) {
     return {
       ok: false,
       error: {
