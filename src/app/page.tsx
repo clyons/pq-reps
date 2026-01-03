@@ -229,14 +229,30 @@ export default function HomePage() {
       let script: string | undefined;
       let audioUrl: string | undefined;
 
-      if (formState.outputMode === "text" || formState.outputMode === "text-audio") {
+      if (formState.outputMode === "text") {
         const jsonResult = await requestJson();
         script = jsonResult.script;
-      }
-
-      if (formState.outputMode === "audio" || formState.outputMode === "text-audio") {
+      } else if (formState.outputMode === "audio") {
         const audioBlob = await requestAudio();
         audioUrl = URL.createObjectURL(audioBlob);
+      } else {
+        const jsonResult = (await requestJson()) as {
+          script: string;
+          audioBase64?: string;
+          audioContentType?: string;
+        };
+        script = jsonResult.script;
+        if (jsonResult.audioBase64) {
+          const binary = atob(jsonResult.audioBase64);
+          const bytes = new Uint8Array(binary.length);
+          for (let index = 0; index < binary.length; index += 1) {
+            bytes[index] = binary.charCodeAt(index);
+          }
+          const audioBlob = new Blob([bytes], {
+            type: jsonResult.audioContentType ?? "audio/mpeg",
+          });
+          audioUrl = URL.createObjectURL(audioBlob);
+        }
       }
 
       setResult((prev) => {

@@ -28,6 +28,8 @@ type ErrorResponse = {
   };
 };
 
+type OutputMode = "text" | "audio" | "text-audio";
+
 type SuccessResponse = {
   script: string;
   metadata: {
@@ -46,6 +48,8 @@ type SuccessResponse = {
     ttsProvider: string;
     voice: string;
   };
+  audioBase64?: string;
+  audioContentType?: string;
 };
 
 const ALLOWED_PRACTICE_MODES: PracticeMode[] = [
@@ -111,7 +115,10 @@ function isStringArray(value: unknown): value is string[] {
 
 function validateConfig(payload: unknown): {
   ok: true;
-  value: GenerateConfig;
+  value: {
+    config: GenerateConfig;
+    outputMode?: OutputMode;
+  };
 } | {
   ok: false;
   error: ErrorResponse;
@@ -128,7 +135,7 @@ function validateConfig(payload: unknown): {
     };
   }
 
-  const config = payload as Partial<GenerateConfig>;
+  const config = payload as Partial<GenerateConfig> & { outputMode?: OutputMode };
 
   if (!config.practiceMode || !ALLOWED_PRACTICE_MODES.includes(config.practiceMode)) {
     return {
@@ -541,11 +548,41 @@ export async function POST(request: Request) {
     return NextResponse.json(validation.error, { status: 400 });
   }
 
-  const config = validation.value;
+  const { config, outputMode: requestedMode } = validation.value;
   const prompt = buildPrompt(config);
+  const acceptHeader = request.headers.get("accept") ?? "";
+  const outputMode =
+    requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
+
+  if (requestedMode && !["text", "audio", "text-audio"].includes(requestedMode)) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "invalid_output_mode",
+          message: "Output mode must be one of: text, audio, text-audio.",
+        },
+      },
+      { status: 400 },
+    );
+  }
 
   try {
     const { script } = await generateScript({ prompt });
+    if (outputMode === "text") {
+      const response: SuccessResponse = {
+        script,
+        metadata: {
+          sense: config.sense,
+          languages: config.languages,
+          durationSeconds: config.durationSeconds,
+          prompt,
+          ttsProvider: "none",
+          voice: "n/a",
+        },
+      };
+      return NextResponse.json(response);
+    }
+
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
     const ttsResult = await synthesizeSpeech({
       script,
@@ -553,8 +590,7 @@ export async function POST(request: Request) {
       voice: config.voiceStyle,
     });
 
-    const acceptHeader = request.headers.get("accept") ?? "";
-    if (acceptHeader.includes("application/json")) {
+    if (outputMode === "text-audio") {
       const response: SuccessResponse = {
         script,
         metadata: {
@@ -573,6 +609,8 @@ export async function POST(request: Request) {
           ttsProvider: ttsResult.provider,
           voice: ttsResult.voice,
         },
+        audioBase64: ttsResult.audio.toString("base64"),
+        audioContentType: ttsResult.contentType,
       };
       return NextResponse.json(response);
     }

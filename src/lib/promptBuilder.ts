@@ -81,6 +81,11 @@ export function buildPrompt(config: GenerateConfig): string {
     voiceStyle,
   } = config;
 
+  const durationRule =
+    durationSeconds >= 300
+      ? "You may mention exact rep counts if it helps pacing."
+      : "Do not mention exact rep counts because the duration is under 5 minutes.";
+
   return [
     `Practice mode: ${practiceMode}.`,
     `Body state: ${bodyState}.`,

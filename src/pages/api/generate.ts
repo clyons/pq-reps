@@ -26,6 +26,8 @@ type ErrorResponse = {
   };
 };
 
+type OutputMode = "text" | "audio" | "text-audio";
+
 type SuccessResponse = {
   script: string;
   metadata: {
@@ -44,6 +46,8 @@ type SuccessResponse = {
     ttsProvider: string;
     voice: string;
   };
+  audioBase64?: string;
+  audioContentType?: string;
 };
 
 const ALLOWED_PRACTICE_MODES: PracticeMode[] = [
@@ -115,7 +119,10 @@ function isStringArray(value: unknown): value is string[] {
 
 function validateConfig(payload: unknown): {
   ok: true;
-  value: GenerateConfig;
+  value: {
+    config: GenerateConfig;
+    outputMode?: OutputMode;
+  };
 } | {
   ok: false;
   error: ErrorResponse;
@@ -132,7 +139,7 @@ function validateConfig(payload: unknown): {
     };
   }
 
-  const config = payload as Partial<GenerateConfig>;
+  const config = payload as Partial<GenerateConfig> & { outputMode?: OutputMode };
 
   if (!config.practiceMode || !ALLOWED_PRACTICE_MODES.includes(config.practiceMode)) {
     return {
@@ -578,11 +585,39 @@ export default async function handler(
     return;
   }
 
-  const config = validation.value;
+  const { config, outputMode: requestedMode } = validation.value;
   const prompt = buildPrompt(config);
+  const acceptHeader = req.headers.accept ?? "";
+  const outputMode =
+    requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
+
+  if (requestedMode && !["text", "audio", "text-audio"].includes(requestedMode)) {
+    sendJson(res, 400, {
+      error: {
+        code: "invalid_output_mode",
+        message: "Output mode must be one of: text, audio, text-audio.",
+      },
+    });
+    return;
+  }
 
   try {
     const { script } = await generateScript({ prompt });
+    if (outputMode === "text") {
+      sendJson(res, 200, {
+        script,
+        metadata: {
+          sense: config.sense,
+          languages: config.languages,
+          durationSeconds: config.durationSeconds,
+          prompt,
+          ttsProvider: "none",
+          voice: "n/a",
+        },
+      } satisfies SuccessResponse);
+      return;
+    }
+
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
     const ttsResult = await synthesizeSpeech({
       script,
@@ -612,6 +647,20 @@ export default async function handler(
 
     const acceptHeader = req.headers.accept ?? "";
     if (acceptHeader.includes("application/json")) {
+    if (outputMode === "text-audio") {
+      const response: SuccessResponse = {
+        script,
+        metadata: {
+          sense: config.sense,
+          languages: config.languages,
+          durationSeconds: config.durationSeconds,
+          prompt,
+          ttsProvider: ttsResult.provider,
+          voice: ttsResult.voice,
+        },
+        audioBase64: ttsResult.audio.toString("base64"),
+        audioContentType: ttsResult.contentType,
+      };
       sendJson(res, 200, response);
       return;
     }
