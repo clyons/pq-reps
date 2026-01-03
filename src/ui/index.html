@@ -261,6 +261,7 @@
           closingStyle: formData.get("closingStyle"),
           senseRotation: formData.get("senseRotation") || undefined,
           languages: [formData.get("language")],
+          outputMode: formData.get("outputMode"),
         };
         const outputMode = formData.get("outputMode");
 
@@ -313,13 +314,21 @@
           let script = "";
           let audioBlob = null;
 
-          if (outputMode === "text" || outputMode === "text-audio") {
+          if (outputMode === "audio") {
+            audioBlob = await requestAudio();
+          } else {
             const jsonResponse = await requestJson();
             script = jsonResponse?.script || "";
-          }
-
-          if (outputMode === "audio" || outputMode === "text-audio") {
-            audioBlob = await requestAudio();
+            if (outputMode === "text-audio" && jsonResponse?.audioBase64) {
+              const binary = atob(jsonResponse.audioBase64);
+              const bytes = new Uint8Array(binary.length);
+              for (let index = 0; index < binary.length; index += 1) {
+                bytes[index] = binary.charCodeAt(index);
+              }
+              audioBlob = new Blob([bytes], {
+                type: jsonResponse?.audioContentType || "audio/wav",
+              });
+            }
           }
 
           if (audioBlob) {
