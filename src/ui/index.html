@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PQ Reps Audio Generator</title>
+    <style>
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+        background: #f5f5f5;
+        margin: 0;
+        padding: 2rem;
+        color: #1f1f1f;
+      }
+      main {
+        max-width: 720px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 2rem;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      }
+      h1 {
+        margin-top: 0;
+      }
+      form {
+        display: grid;
+        gap: 1.5rem;
+      }
+      label {
+        display: grid;
+        gap: 0.5rem;
+        font-weight: 600;
+      }
+      input,
+      select {
+        padding: 0.75rem;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 1rem;
+      }
+      button {
+        padding: 0.85rem 1.5rem;
+        background: #111;
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button[disabled] {
+        cursor: not-allowed;
+        background: #888;
+      }
+      .status {
+        margin-top: 1rem;
+        color: #444;
+      }
+      .error {
+        background: #ffecec;
+        color: #b30000;
+        padding: 1rem;
+        border-radius: 8px;
+      }
+      .result {
+        margin-top: 2rem;
+        background: #f7f7f7;
+        padding: 1.5rem;
+        border-radius: 12px;
+      }
+      .download-link {
+        display: inline-flex;
+        margin-top: 0.75rem;
+        font-weight: 600;
+        color: #0f2d81;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>PQ Reps Audio Generator</h1>
+      <p>Create a guided prompt and stream an MP3 directly from the API.</p>
+
+      <form id="generator-form">
+        <label>
+          Sense
+          <select name="sense" required>
+            <option value="calm">Calm</option>
+            <option value="energizing">Energizing</option>
+            <option value="focus">Focus</option>
+            <option value="uplifting">Uplifting</option>
+          </select>
+        </label>
+
+        <label>
+          Topic (optional)
+          <input type="text" name="topic" placeholder="e.g. building focus" />
+        </label>
+
+        <label>
+          Language
+          <select name="language" required>
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+          </select>
+        </label>
+
+        <label>
+          Duration: <span id="duration-label">120 seconds</span>
+          <input type="range" name="duration" min="30" max="900" step="30" value="120" />
+        </label>
+
+        <button type="submit" id="submit-button">Generate audio</button>
+      </form>
+
+      <p class="status" id="status"></p>
+      <div id="error" class="error" hidden></div>
+
+      <section id="result" class="result" hidden>
+        <h2>Your session is ready</h2>
+        <audio id="audio-player" controls style="width: 100%;"></audio>
+        <a id="download-link" class="download-link" download="pq-reps.mp3">Download the MP3</a>
+      </section>
+    </main>
+
+    <script>
+      const form = document.getElementById("generator-form");
+      const durationInput = form.querySelector("input[name='duration']");
+      const durationLabel = document.getElementById("duration-label");
+      const status = document.getElementById("status");
+      const error = document.getElementById("error");
+      const result = document.getElementById("result");
+      const audioPlayer = document.getElementById("audio-player");
+      const downloadLink = document.getElementById("download-link");
+      const submitButton = document.getElementById("submit-button");
+      let currentUrl = null;
+
+      const updateDurationLabel = () => {
+        durationLabel.textContent = `${durationInput.value} seconds`;
+      };
+
+      updateDurationLabel();
+      durationInput.addEventListener("input", updateDurationLabel);
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        error.hidden = true;
+        error.textContent = "";
+        status.textContent = "";
+        result.hidden = true;
+
+        if (currentUrl) {
+          URL.revokeObjectURL(currentUrl);
+          currentUrl = null;
+        }
+
+        const formData = new FormData(form);
+        const payload = {
+          sense: formData.get("sense"),
+          languages: [formData.get("language")],
+          durationSeconds: Number(formData.get("duration")),
+          topic: formData.get("topic") || undefined,
+        };
+
+        submitButton.disabled = true;
+        status.textContent = "Generating audio. This can take a few seconds.";
+
+        try {
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "audio/mpeg",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const errorContentType = response.headers.get("content-type") || "";
+            if (errorContentType.includes("application/json")) {
+              const errorBody = await response.json();
+              throw new Error(errorBody?.error?.message || "The generator failed to respond.");
+            }
+            throw new Error(`The generator failed to respond. (${response.status})`);
+          }
+
+          const audioBuffer = await response.arrayBuffer();
+          const contentType = response.headers.get("content-type") || "audio/mpeg";
+          const blob = new Blob([audioBuffer], { type: contentType });
+          currentUrl = URL.createObjectURL(blob);
+
+          audioPlayer.src = currentUrl;
+          downloadLink.href = currentUrl;
+          result.hidden = false;
+          status.textContent = "Audio ready!";
+        } catch (err) {
+          error.hidden = false;
+          error.textContent = err instanceof Error ? err.message : "Something went wrong.";
+          status.textContent = "";
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
