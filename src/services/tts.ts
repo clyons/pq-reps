@@ -266,18 +266,16 @@ export async function synthesizeSpeech(
     throw new Error("Script is empty after parsing pause markers.");
   }
 
-  const totalChars = tokens.reduce((sum, token) => {
-    if (token.type === "text") {
-      return sum + token.value.length;
-    }
-    return sum;
-  }, 0);
+  const textSegments = tokens.filter(
+    (token): token is { type: "text"; value: string } => token.type === "text",
+  );
+  const totalChars = textSegments.reduce((sum, token) => sum + token.value.length, 0);
 
-  if (tokens.length > MAX_TTS_SEGMENTS || totalChars > MAX_TTS_CHARS) {
+  if (textSegments.length > MAX_TTS_SEGMENTS || totalChars > MAX_TTS_CHARS) {
     throw new TtsScriptTooLargeError({
       maxSegments: MAX_TTS_SEGMENTS,
       maxChars: MAX_TTS_CHARS,
-      segmentCount: tokens.length,
+      segmentCount: textSegments.length,
       charCount: totalChars,
     });
   }
