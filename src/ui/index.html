@@ -85,6 +85,20 @@
         padding: 1.5rem;
         border-radius: 12px;
       }
+      .debug-prompt {
+        margin-top: 1.5rem;
+        background: #111;
+        color: #f5f5f5;
+        padding: 1rem;
+        border-radius: 8px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .hint {
+        font-weight: 400;
+        color: #555;
+        font-size: 0.9rem;
+      }
       .download-link {
         display: inline-flex;
         margin-top: 0.75rem;
@@ -227,6 +241,12 @@
           Stream progress updates
         </label>
 
+        <label>
+          <span>Debug TTS prompt</span>
+          <span class="hint">Include the raw TTS payload for OpenAI playground testing.</span>
+          <input type="checkbox" name="debugTtsPrompt" />
+        </label>
+
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
           <button type="submit" id="submit-button">Generate audio</button>
           <button type="button" id="reset-button" class="button-secondary">
@@ -246,6 +266,10 @@
           Download the WAV
         </a>
         <p id="script-output" style="margin-top: 1rem; white-space: pre-line;" hidden></p>
+        <div id="debug-section" hidden>
+          <h3>TTS prompt (debug)</h3>
+          <pre id="debug-output" class="debug-prompt"></pre>
+        </div>
       </section>
     </main>
 
@@ -262,8 +286,11 @@
       const submitButton = document.getElementById("submit-button");
       const progressList = document.getElementById("progress-list");
       const streamingInput = form.querySelector("input[name='streaming']");
+      const debugInput = form.querySelector("input[name='debugTtsPrompt']");
       const appVersion = document.getElementById("app-version");
       const resetButton = document.getElementById("reset-button");
+      const debugSection = document.getElementById("debug-section");
+      const debugOutput = document.getElementById("debug-output");
       let currentUrl = null;
       const storageKey = "pq-reps-form";
 
@@ -346,6 +373,8 @@
         resetProgress();
         result.hidden = true;
         scriptOutput.textContent = "";
+        debugOutput.textContent = "";
+        debugSection.hidden = true;
 
         if (currentUrl) {
           URL.revokeObjectURL(currentUrl);
@@ -354,6 +383,10 @@
 
         const formData = new FormData(form);
         localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(formData.entries())));
+        const outputMode = formData.get("outputMode");
+        const debugEnabled = debugInput.checked;
+        const effectiveOutputMode =
+          debugEnabled && outputMode !== "text-audio" ? "text-audio" : outputMode;
         const payload = {
           practiceMode: formData.get("practiceMode"),
           bodyState: formData.get("bodyState"),
@@ -366,9 +399,9 @@
           closingStyle: formData.get("closingStyle"),
           senseRotation: formData.get("senseRotation") || undefined,
           languages: [formData.get("language")],
-          outputMode: formData.get("outputMode"),
+          outputMode: effectiveOutputMode,
+          debugTtsPrompt: debugEnabled,
         };
-        const outputMode = formData.get("outputMode");
         const streamingEnabled = streamingInput.checked;
 
         submitButton.disabled = true;
@@ -492,10 +525,12 @@
         try {
           let script = "";
           let audioBlob = null;
+          let ttsPrompt = null;
 
           if (streamingEnabled) {
             const streamedResponse = await requestStreamed();
             script = streamedResponse?.script || "";
+            ttsPrompt = streamedResponse?.ttsPrompt || null;
             if (streamedResponse?.audioBase64) {
               const binary = atob(streamedResponse.audioBase64);
               const bytes = new Uint8Array(binary.length);
@@ -506,12 +541,13 @@
                 type: streamedResponse?.audioContentType || "audio/wav",
               });
             }
-          } else if (outputMode === "audio") {
+          } else if (effectiveOutputMode === "audio") {
             audioBlob = await requestAudio();
           } else {
             const jsonResponse = await requestJson();
             script = jsonResponse?.script || "";
-            if (outputMode === "text-audio" && jsonResponse?.audioBase64) {
+            ttsPrompt = jsonResponse?.ttsPrompt || null;
+            if (effectiveOutputMode === "text-audio" && jsonResponse?.audioBase64) {
               const binary = atob(jsonResponse.audioBase64);
               const bytes = new Uint8Array(binary.length);
               for (let index = 0; index < binary.length; index += 1) {
@@ -541,8 +577,16 @@
             scriptOutput.hidden = true;
           }
 
+          if (ttsPrompt) {
+            debugOutput.textContent = JSON.stringify(ttsPrompt, null, 2);
+            debugSection.hidden = false;
+          } else {
+            debugSection.hidden = true;
+          }
+
           result.hidden = false;
-          status.textContent = outputMode === "text" ? "Text ready!" : "Output ready!";
+          status.textContent =
+            effectiveOutputMode === "text" ? "Text ready!" : "Output ready!";
         } catch (err) {
           error.hidden = false;
           error.textContent = err instanceof Error ? err.message : "Something went wrong.";
