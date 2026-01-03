@@ -12,7 +12,9 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Implement a `POST /api/generate` endpoint for script + audio metadata.
 - [x] Provide local setup instructions for macOS.
 - [ ] Build a configuration UI for sense, eyes, duration, and language.
+- [ ] Add a UI toggle for text-only, audio-only, or text + audio output.
 - [x] Add OpenAI TTS integration with direct audio bytes (no storage).
+- [ ] Update prompts to generate on-brand PQ Reps scripts.
 - [ ] Support multi-language template expansion beyond English/Spanish.
 - [ ] Add tests for prompt outline and API validation.
 - [ ] Add user-facing AI-generated voice disclosure in the UI.
