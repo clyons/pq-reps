@@ -81,6 +81,7 @@ export function buildPrompt(config: GenerateConfig): string {
     voiceStyle,
   } = config;
 
+  const durationSeconds = durationMinutes * 60;
   const durationRule =
     durationSeconds >= 300
       ? "You may mention exact rep counts if it helps pacing."
