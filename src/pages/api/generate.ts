@@ -1,9 +1,18 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import {
+  ALLOWED_DURATIONS,
   buildPrompt,
-  DURATION_BOUNDS,
+  BodyState,
+  ClosingStyle,
+  DurationMinutes,
+  EyeState,
   GenerateConfig,
-  Sense,
+  LabelingMode,
+  NormalizationFrequency,
+  PracticeMode,
+  PrimarySense,
+  SilenceProfile,
+  SenseRotation,
   SUPPORTED_LANGUAGES,
 } from "../../lib/promptBuilder";
 import { generateScript } from "../../services/script";
@@ -20,16 +29,79 @@ type ErrorResponse = {
 type SuccessResponse = {
   script: string;
   metadata: {
-    sense: Sense;
+    practiceMode: PracticeMode;
+    bodyState: BodyState;
+    eyeState: EyeState;
+    primarySense: PrimarySense;
+    durationMinutes: DurationMinutes;
+    labelingMode: LabelingMode;
+    silenceProfile: SilenceProfile;
+    normalizationFrequency: NormalizationFrequency;
+    closingStyle: ClosingStyle;
+    senseRotation?: SenseRotation;
     languages: string[];
-    durationSeconds: number;
     prompt: string;
     ttsProvider: string;
     voice: string;
   };
 };
 
-const ALLOWED_SENSES: Sense[] = ["calm", "energizing", "focus", "uplifting"];
+const ALLOWED_PRACTICE_MODES: PracticeMode[] = [
+  "tactile",
+  "tense_relax",
+  "moving",
+  "sitting",
+  "label_with_anchor",
+  "label_while_scanning",
+];
+
+const ALLOWED_BODY_STATES: BodyState[] = [
+  "still_seated",
+  "still_seated_closed_eyes",
+  "moving",
+];
+
+const ALLOWED_EYE_STATES: EyeState[] = ["closed", "open_focused", "open_diffused"];
+
+const ALLOWED_PRIMARY_SENSES: PrimarySense[] = [
+  "touch",
+  "hearing",
+  "sight",
+  "breath",
+  "body_weight",
+  "smell",
+  "taste",
+];
+
+const ALLOWED_LABELING_MODES: LabelingMode[] = [
+  "none",
+  "breath_anchor",
+  "scan_and_label",
+];
+
+const ALLOWED_SILENCE_PROFILES: SilenceProfile[] = [
+  "none",
+  "short_pauses",
+  "extended_silence",
+];
+
+const ALLOWED_NORMALIZATION_FREQUENCY: NormalizationFrequency[] = [
+  "once",
+  "periodic",
+  "repeated",
+];
+
+const ALLOWED_CLOSING_STYLES: ClosingStyle[] = [
+  "minimal",
+  "pq_framed",
+  "pq_framed_with_progression",
+];
+
+const ALLOWED_SENSE_ROTATIONS: SenseRotation[] = [
+  "none",
+  "guided_rotation",
+  "free_choice",
+];
 
 function sendJson(res: ServerResponse, status: number, payload: unknown) {
   res.statusCode = status;
@@ -62,14 +134,134 @@ function validateConfig(payload: unknown): {
 
   const config = payload as Partial<GenerateConfig>;
 
-  if (!config.sense || !ALLOWED_SENSES.includes(config.sense)) {
+  if (!config.practiceMode || !ALLOWED_PRACTICE_MODES.includes(config.practiceMode)) {
     return {
       ok: false,
       error: {
         error: {
-          code: "invalid_sense",
-          message: "Sense must be one of the supported values.",
-          details: { allowed: ALLOWED_SENSES },
+          code: "invalid_practice_mode",
+          message: "Practice mode must be one of the supported values.",
+          details: { allowed: ALLOWED_PRACTICE_MODES },
+        },
+      },
+    };
+  }
+
+  if (!config.bodyState || !ALLOWED_BODY_STATES.includes(config.bodyState)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_body_state",
+          message: "Body state must be one of the supported values.",
+          details: { allowed: ALLOWED_BODY_STATES },
+        },
+      },
+    };
+  }
+
+  if (!config.eyeState || !ALLOWED_EYE_STATES.includes(config.eyeState)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_eye_state",
+          message: "Eye state must be one of the supported values.",
+          details: { allowed: ALLOWED_EYE_STATES },
+        },
+      },
+    };
+  }
+
+  if (!config.primarySense || !ALLOWED_PRIMARY_SENSES.includes(config.primarySense)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_primary_sense",
+          message: "Primary sense must be one of the supported values.",
+          details: { allowed: ALLOWED_PRIMARY_SENSES },
+        },
+      },
+    };
+  }
+
+  if (!config.durationMinutes || !ALLOWED_DURATIONS.includes(config.durationMinutes)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_duration",
+          message: "Duration must be one of the supported minute values.",
+          details: { allowed: ALLOWED_DURATIONS },
+        },
+      },
+    };
+  }
+
+  if (!config.labelingMode || !ALLOWED_LABELING_MODES.includes(config.labelingMode)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_labeling_mode",
+          message: "Labeling mode must be one of the supported values.",
+          details: { allowed: ALLOWED_LABELING_MODES },
+        },
+      },
+    };
+  }
+
+  if (!config.silenceProfile || !ALLOWED_SILENCE_PROFILES.includes(config.silenceProfile)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_silence_profile",
+          message: "Silence profile must be one of the supported values.",
+          details: { allowed: ALLOWED_SILENCE_PROFILES },
+        },
+      },
+    };
+  }
+
+  if (
+    !config.normalizationFrequency ||
+    !ALLOWED_NORMALIZATION_FREQUENCY.includes(config.normalizationFrequency)
+  ) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_normalization_frequency",
+          message: "Normalization frequency must be one of the supported values.",
+          details: { allowed: ALLOWED_NORMALIZATION_FREQUENCY },
+        },
+      },
+    };
+  }
+
+  if (!config.closingStyle || !ALLOWED_CLOSING_STYLES.includes(config.closingStyle)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_closing_style",
+          message: "Closing style must be one of the supported values.",
+          details: { allowed: ALLOWED_CLOSING_STYLES },
+        },
+      },
+    };
+  }
+
+  if (config.senseRotation && !ALLOWED_SENSE_ROTATIONS.includes(config.senseRotation)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_sense_rotation",
+          message: "Sense rotation must be one of the supported values.",
+          details: { allowed: ALLOWED_SENSE_ROTATIONS },
         },
       },
     };
@@ -104,29 +296,208 @@ function validateConfig(payload: unknown): {
     };
   }
 
-  if (typeof config.durationSeconds !== "number") {
+  if (config.practiceMode === "moving") {
+    if (config.bodyState !== "moving") {
+      return {
+        ok: false,
+        error: {
+          error: {
+            code: "invalid_body_state",
+            message: "Moving practice mode requires a moving body state.",
+          },
+        },
+      };
+    }
+    if (config.eyeState === "closed") {
+      return {
+        ok: false,
+        error: {
+          error: {
+            code: "invalid_eye_state",
+            message: "Moving practice mode requires eyes open.",
+          },
+        },
+      };
+    }
+  }
+
+  if (config.practiceMode === "tactile") {
+    if (config.bodyState !== "still_seated_closed_eyes") {
+      return {
+        ok: false,
+        error: {
+          error: {
+            code: "invalid_body_state",
+            message: "Tactile practice mode requires still seated with eyes closed.",
+          },
+        },
+      };
+    }
+    if (config.eyeState !== "closed") {
+      return {
+        ok: false,
+        error: {
+          error: {
+            code: "invalid_eye_state",
+            message: "Tactile practice mode requires eyes closed.",
+          },
+        },
+      };
+    }
+  }
+
+  if (config.practiceMode === "sitting" && config.eyeState === "closed") {
     return {
       ok: false,
       error: {
         error: {
-          code: "invalid_duration",
-          message: "Duration must be provided as a number of seconds.",
+          code: "invalid_eye_state",
+          message: "Sitting practice mode requires eyes open.",
+        },
+      },
+    };
+  }
+
+  if (config.bodyState === "moving" && config.practiceMode !== "moving") {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_practice_mode",
+          message: "Moving body state requires moving practice mode.",
         },
       },
     };
   }
 
   if (
-    config.durationSeconds < DURATION_BOUNDS.minSeconds ||
-    config.durationSeconds > DURATION_BOUNDS.maxSeconds
+    config.practiceMode === "label_with_anchor" &&
+    config.labelingMode !== "breath_anchor"
   ) {
     return {
       ok: false,
       error: {
         error: {
-          code: "duration_out_of_bounds",
-          message: "Duration must be within allowed bounds.",
-          details: { bounds: DURATION_BOUNDS },
+          code: "invalid_labeling_mode",
+          message: "Label with anchor mode requires breath anchor labeling.",
+        },
+      },
+    };
+  }
+
+  if (
+    config.practiceMode === "label_while_scanning" &&
+    config.labelingMode !== "scan_and_label"
+  ) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_labeling_mode",
+          message: "Label while scanning mode requires scan and label.",
+        },
+      },
+    };
+  }
+
+  if (
+    config.practiceMode !== "label_with_anchor" &&
+    config.practiceMode !== "label_while_scanning" &&
+    config.labelingMode !== "none"
+  ) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_labeling_mode",
+          message: "Labeling mode must be none for non-label practice modes.",
+        },
+      },
+    };
+  }
+
+  if (config.durationMinutes === 2 && config.silenceProfile === "extended_silence") {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_silence_profile",
+          message: "Extended silence is only allowed for 5 or 12 minute sessions.",
+        },
+      },
+    };
+  }
+
+  if (config.durationMinutes === 2 && config.normalizationFrequency !== "once") {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_normalization_frequency",
+          message: "Short sessions require normalization frequency of once.",
+        },
+      },
+    };
+  }
+
+  if (config.durationMinutes === 5 && config.normalizationFrequency !== "periodic") {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_normalization_frequency",
+          message: "5-minute sessions require periodic normalization.",
+        },
+      },
+    };
+  }
+
+  if (config.durationMinutes === 12 && config.normalizationFrequency !== "repeated") {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_normalization_frequency",
+          message: "12-minute sessions require repeated normalization.",
+        },
+      },
+    };
+  }
+
+  if (config.durationMinutes === 2 && config.closingStyle !== "minimal") {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_closing_style",
+          message: "2-minute sessions require minimal closing style.",
+        },
+      },
+    };
+  }
+
+  if (config.durationMinutes === 5 && config.closingStyle !== "pq_framed") {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_closing_style",
+          message: "5-minute sessions require PQ-framed closing style.",
+        },
+      },
+    };
+  }
+
+  if (
+    config.durationMinutes === 12 &&
+    config.closingStyle !== "pq_framed_with_progression"
+  ) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_closing_style",
+          message: "12-minute sessions require PQ framing with progression.",
         },
       },
     };
@@ -135,11 +506,18 @@ function validateConfig(payload: unknown): {
   return {
     ok: true,
     value: {
-      sense: config.sense,
       languages: config.languages,
-      durationSeconds: config.durationSeconds,
+      practiceMode: config.practiceMode,
+      bodyState: config.bodyState,
+      eyeState: config.eyeState,
+      primarySense: config.primarySense,
+      durationMinutes: config.durationMinutes,
+      labelingMode: config.labelingMode,
+      silenceProfile: config.silenceProfile,
+      normalizationFrequency: config.normalizationFrequency,
+      closingStyle: config.closingStyle,
+      senseRotation: config.senseRotation,
       audience: config.audience,
-      topic: config.topic,
       voiceStyle: config.voiceStyle,
     },
   };
@@ -215,9 +593,17 @@ export default async function handler(
     const response: SuccessResponse = {
       script,
       metadata: {
-        sense: config.sense,
+        practiceMode: config.practiceMode,
+        bodyState: config.bodyState,
+        eyeState: config.eyeState,
+        primarySense: config.primarySense,
+        durationMinutes: config.durationMinutes,
+        labelingMode: config.labelingMode,
+        silenceProfile: config.silenceProfile,
+        normalizationFrequency: config.normalizationFrequency,
+        closingStyle: config.closingStyle,
+        senseRotation: config.senseRotation,
         languages: config.languages,
-        durationSeconds: config.durationSeconds,
         prompt,
         ttsProvider: ttsResult.provider,
         voice: ttsResult.voice,
