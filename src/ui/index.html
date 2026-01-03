@@ -150,6 +150,7 @@
         <label>
           Duration: <span id="duration-label">2 minutes</span>
           <select name="durationMinutes" required>
+            <option value="1">1 minute</option>
             <option value="2">2 minutes</option>
             <option value="5">5 minutes</option>
             <option value="12">12 minutes</option>
@@ -266,7 +267,8 @@
       const storageKey = "pq-reps-form";
 
       const updateDurationLabel = () => {
-        durationLabel.textContent = `${durationInput.value} minutes`;
+        const minutes = Number(durationInput.value);
+        durationLabel.textContent = `${minutes} minute${minutes === 1 ? "" : "s"}`;
       };
 
       const resetProgress = () => {

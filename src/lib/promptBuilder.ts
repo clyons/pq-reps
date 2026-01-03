@@ -28,7 +28,7 @@ export type SenseRotation = "none" | "guided_rotation" | "free_choice";
 
 export type LabelingMode = "none" | "breath_anchor" | "scan_and_label";
 
-export type DurationMinutes = 2 | 5 | 12;
+export type DurationMinutes = 1 | 2 | 5 | 12;
 
 export type SilenceProfile = "none" | "short_pauses" | "extended_silence";
 
@@ -62,7 +62,7 @@ export const SUPPORTED_LANGUAGES = [
   "de",
 ];
 
-export const ALLOWED_DURATIONS: DurationMinutes[] = [2, 5, 12];
+export const ALLOWED_DURATIONS: DurationMinutes[] = [1, 2, 5, 12];
 
 export function buildPrompt(config: GenerateConfig): string {
   const {
