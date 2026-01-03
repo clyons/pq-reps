@@ -14,7 +14,7 @@ import {
 } from "../../lib/promptBuilder";
 import { OutputMode, validateGenerateConfig } from "../../lib/generateValidation";
 import { generateScript } from "../../services/script";
-import { synthesizeSpeech } from "../../services/tts";
+import { synthesizeSpeech, TtsScriptTooLargeError } from "../../services/tts";
 
 type SuccessResponse = {
   script: string;
@@ -178,6 +178,21 @@ export default async function handler(
     res.setHeader("Content-Disposition", "attachment; filename=\"pq-reps.wav\"");
     res.end(ttsResult.audio);
   } catch (error) {
+    if (error instanceof TtsScriptTooLargeError) {
+      sendJson(res, 400, {
+        error: {
+          code: error.code,
+          message: "Script exceeds the maximum length supported for TTS.",
+          details: {
+            maxSegments: error.maxSegments,
+            maxChars: error.maxChars,
+            segmentCount: error.segmentCount,
+            charCount: error.charCount,
+          },
+        },
+      });
+      return;
+    }
     sendJson(res, 500, {
       error: {
         code: "tts_failure",
