@@ -66,18 +66,6 @@ const PRACTICE_MODE_OPTIONS: FormState["practiceMode"][] = [
   "label_while_scanning",
 ];
 
-const BODY_STATE_OPTIONS: FormState["bodyState"][] = [
-  "still_seated",
-  "still_seated_closed_eyes",
-  "moving",
-];
-
-const EYE_STATE_OPTIONS: FormState["eyeState"][] = [
-  "closed",
-  "open_focused",
-  "open_diffused",
-];
-
 const PRIMARY_SENSE_OPTIONS: FormState["primarySense"][] = [
   "touch",
   "hearing",
@@ -90,28 +78,10 @@ const PRIMARY_SENSE_OPTIONS: FormState["primarySense"][] = [
 
 const DURATION_OPTIONS: FormState["durationMinutes"][] = [2, 5, 12];
 
-const LABELING_MODE_OPTIONS: FormState["labelingMode"][] = [
-  "none",
-  "breath_anchor",
-  "scan_and_label",
-];
-
 const SILENCE_PROFILE_OPTIONS: FormState["silenceProfile"][] = [
   "none",
   "short_pauses",
   "extended_silence",
-];
-
-const NORMALIZATION_FREQUENCY_OPTIONS: FormState["normalizationFrequency"][] = [
-  "once",
-  "periodic",
-  "repeated",
-];
-
-const CLOSING_STYLE_OPTIONS: FormState["closingStyle"][] = [
-  "minimal",
-  "pq_framed",
-  "pq_framed_with_progression",
 ];
 
 const SENSE_ROTATION_OPTIONS: NonNullable<FormState["senseRotation"]>[] = [
@@ -133,6 +103,63 @@ export default function HomePage() {
     [formState.durationMinutes],
   );
 
+  const allowedBodyStates = useMemo(() => {
+    if (formState.practiceMode === "moving") {
+      return ["moving"] as FormState["bodyState"][];
+    }
+    if (formState.practiceMode === "tactile") {
+      return ["still_seated_closed_eyes"] as FormState["bodyState"][];
+    }
+    return ["still_seated", "still_seated_closed_eyes"] as FormState["bodyState"][];
+  }, [formState.practiceMode]);
+
+  const allowedEyeStates = useMemo(() => {
+    if (formState.practiceMode === "moving" || formState.practiceMode === "sitting") {
+      return ["open_focused", "open_diffused"] as FormState["eyeState"][];
+    }
+    if (formState.practiceMode === "tactile") {
+      return ["closed"] as FormState["eyeState"][];
+    }
+    return ["closed", "open_focused", "open_diffused"] as FormState["eyeState"][];
+  }, [formState.practiceMode]);
+
+  const allowedLabelingModes = useMemo(() => {
+    if (formState.practiceMode === "label_with_anchor") {
+      return ["breath_anchor"] as FormState["labelingMode"][];
+    }
+    if (formState.practiceMode === "label_while_scanning") {
+      return ["scan_and_label"] as FormState["labelingMode"][];
+    }
+    return ["none"] as FormState["labelingMode"][];
+  }, [formState.practiceMode]);
+
+  const allowedSilenceProfiles = useMemo(() => {
+    if (formState.durationMinutes === 2) {
+      return ["none", "short_pauses"] as FormState["silenceProfile"][];
+    }
+    return SILENCE_PROFILE_OPTIONS;
+  }, [formState.durationMinutes]);
+
+  const requiredNormalizationFrequency = useMemo(() => {
+    if (formState.durationMinutes === 2) {
+      return "once";
+    }
+    if (formState.durationMinutes === 5) {
+      return "periodic";
+    }
+    return "repeated";
+  }, [formState.durationMinutes]);
+
+  const requiredClosingStyle = useMemo(() => {
+    if (formState.durationMinutes === 2) {
+      return "minimal";
+    }
+    if (formState.durationMinutes === 5) {
+      return "pq_framed";
+    }
+    return "pq_framed_with_progression";
+  }, [formState.durationMinutes]);
+
   useEffect(() => {
     return () => {
       if (result?.audioUrl) {
@@ -140,6 +167,52 @@ export default function HomePage() {
       }
     };
   }, [result]);
+
+  useEffect(() => {
+    setFormState((prev) => {
+      let next = prev;
+      let changed = false;
+
+      if (!allowedBodyStates.includes(prev.bodyState)) {
+        next = { ...next, bodyState: allowedBodyStates[0] };
+        changed = true;
+      }
+
+      if (!allowedEyeStates.includes(prev.eyeState)) {
+        next = { ...next, eyeState: allowedEyeStates[0] };
+        changed = true;
+      }
+
+      if (!allowedLabelingModes.includes(prev.labelingMode)) {
+        next = { ...next, labelingMode: allowedLabelingModes[0] };
+        changed = true;
+      }
+
+      if (!allowedSilenceProfiles.includes(prev.silenceProfile)) {
+        next = { ...next, silenceProfile: allowedSilenceProfiles[0] };
+        changed = true;
+      }
+
+      if (prev.normalizationFrequency !== requiredNormalizationFrequency) {
+        next = { ...next, normalizationFrequency: requiredNormalizationFrequency };
+        changed = true;
+      }
+
+      if (prev.closingStyle !== requiredClosingStyle) {
+        next = { ...next, closingStyle: requiredClosingStyle };
+        changed = true;
+      }
+
+      return changed ? next : prev;
+    });
+  }, [
+    allowedBodyStates,
+    allowedEyeStates,
+    allowedLabelingModes,
+    allowedSilenceProfiles,
+    requiredNormalizationFrequency,
+    requiredClosingStyle,
+  ]);
 
   const updateFormState = (updates: Partial<FormState>) => {
     setFormState((prev) => ({ ...prev, ...updates }));
@@ -314,7 +387,7 @@ export default function HomePage() {
             }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           >
-            {BODY_STATE_OPTIONS.map((option) => (
+            {allowedBodyStates.map((option) => (
               <option key={option} value={option}>
                 {option.replace(/_/g, " ")}
               </option>
@@ -332,7 +405,7 @@ export default function HomePage() {
             }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           >
-            {EYE_STATE_OPTIONS.map((option) => (
+            {allowedEyeStates.map((option) => (
               <option key={option} value={option}>
                 {option.replace(/_/g, " ")}
               </option>
@@ -393,7 +466,7 @@ export default function HomePage() {
             }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           >
-            {LABELING_MODE_OPTIONS.map((option) => (
+            {allowedLabelingModes.map((option) => (
               <option key={option} value={option}>
                 {option.replace(/_/g, " ")}
               </option>
@@ -413,7 +486,7 @@ export default function HomePage() {
             }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           >
-            {SILENCE_PROFILE_OPTIONS.map((option) => (
+            {allowedSilenceProfiles.map((option) => (
               <option key={option} value={option}>
                 {option.replace(/_/g, " ")}
               </option>
@@ -433,7 +506,7 @@ export default function HomePage() {
             }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           >
-            {NORMALIZATION_FREQUENCY_OPTIONS.map((option) => (
+            {[requiredNormalizationFrequency].map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
@@ -453,7 +526,7 @@ export default function HomePage() {
             }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           >
-            {CLOSING_STYLE_OPTIONS.map((option) => (
+            {[requiredClosingStyle].map((option) => (
               <option key={option} value={option}>
                 {option.replace(/_/g, " ")}
               </option>
