@@ -97,6 +97,7 @@
   <body>
     <main>
       <h1>PQ Reps Audio Generator</h1>
+      <p id="app-version" class="version">Version: loading...</p>
       <p>
         Create guided PQ Reps that sharpen the PQ brain with tactile, breath, or visual focus.
         Pick how you are practicing (for example, tactile PQ reps) and set how long the rep
@@ -316,6 +317,9 @@
       durationInput.addEventListener("change", updateDurationLabel);
 
       const loadVersion = async () => {
+        if (!appVersion) {
+          return;
+        }
         try {
           const response = await fetch("/version");
           if (!response.ok) {
