@@ -665,8 +665,8 @@
           }
 
           result.hidden = false;
-          status.textContent =
-            effectiveOutputMode === "text" ? "Text ready!" : "Output ready!";
+          status.textContent = "";
+          statusPanel.hidden = true;
           spinner.hidden = true;
         } catch (err) {
           error.hidden = false;
