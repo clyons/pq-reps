@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
+    "dotenv": "^16.4.5",
     "tsx": "^4.7.2",
     "typescript": "^5.4.5"
   }

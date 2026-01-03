@@ -1,6 +1,10 @@
+import dotenv from "dotenv";
 import http from "http";
 import { URL } from "url";
 import handler from "./pages/api/generate";
+
+dotenv.config({ path: ".env.local" });
+dotenv.config();
 
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
 

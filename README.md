@@ -29,7 +29,7 @@ npm install
 ```
 
 ### Configure environment
-Create a `.env.local` file with your OpenAI API key:
+Create a `.env.local` file with your OpenAI API key (auto-loaded on startup):
 ```bash
 OPENAI_API_KEY=your_api_key_here
 ```
