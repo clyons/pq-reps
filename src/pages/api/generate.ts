@@ -34,6 +34,12 @@ type SuccessResponse = {
     ttsProvider: string;
     voice: string;
   };
+  ttsPrompt?: {
+    model: string;
+    voice: string;
+    input: string;
+    response_format: string;
+  };
   audioBase64?: string;
   audioContentType?: string;
 };
@@ -161,7 +167,7 @@ export default async function handler(
     return;
   }
 
-  const { config, outputMode: requestedMode } = validation.value;
+  const { config, outputMode: requestedMode, debugTtsPrompt } = validation.value;
   const prompt = buildPrompt(config);
   const acceptHeader = req.headers.accept ?? "";
   const wantsStream = acceptHeader.includes("text/event-stream");
@@ -224,6 +230,14 @@ export default async function handler(
       language: config.languages[0],
       voice: config.voiceStyle,
     });
+    const ttsPrompt = debugTtsPrompt
+      ? {
+          model: "gpt-4o-mini-tts",
+          voice: ttsResult.voice,
+          input: script,
+          response_format: "wav",
+        }
+      : undefined;
 
     const response: SuccessResponse = {
       script,
@@ -243,6 +257,7 @@ export default async function handler(
         ttsProvider: ttsResult.provider,
         voice: ttsResult.voice,
       },
+      ttsPrompt,
     };
 
     if (wantsStream) {
@@ -266,6 +281,7 @@ export default async function handler(
           ttsProvider: ttsResult.provider,
           voice: ttsResult.voice,
         },
+        ttsPrompt,
         audioBase64: ttsResult.audio.toString("base64"),
         audioContentType: ttsResult.contentType,
       } satisfies SuccessResponse));
