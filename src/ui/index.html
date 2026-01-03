@@ -61,9 +61,35 @@
         cursor: not-allowed;
         background: #888;
       }
+      .status-panel {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 12px;
+        background: #f0f4ff;
+        border: 1px solid #d5ddf7;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .status-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 3px solid #c3c9f7;
+        border-top-color: #3545a3;
+        animation: spin 0.9s linear infinite;
+      }
+      .spinner[hidden] {
+        display: none;
+      }
       .status {
-        margin-top: 1rem;
-        color: #444;
+        margin: 0;
+        color: #2a2f4a;
+        font-weight: 600;
       }
       .progress-list {
         margin: 0.5rem 0 0;
@@ -110,6 +136,10 @@
         font-weight: 400;
         color: #555;
         font-size: 0.9rem;
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
       }
     </style>
   </head>
@@ -251,8 +281,9 @@
         </label>
 
         <label>
-          <input type="checkbox" name="streaming" />
-          Stream progress updates
+          <span>Debug TTS prompt</span>
+          <span class="hint">Include the raw TTS payload for OpenAI playground testing.</span>
+          <input type="checkbox" name="debugTtsPrompt" />
         </label>
 
         <label>
@@ -269,8 +300,12 @@
         </div>
       </form>
 
-      <p class="status" id="status"></p>
-      <ol id="progress-list" class="progress-list" hidden></ol>
+      <section id="status-panel" class="status-panel" hidden>
+        <div class="status-row">
+          <span id="spinner" class="spinner" aria-hidden="true"></span>
+          <p class="status" id="status" aria-live="polite"></p>
+        </div>
+      </section>
       <div id="error" class="error" hidden></div>
 
       <section id="result" class="result" hidden>
@@ -292,14 +327,14 @@
       const durationInput = form.querySelector("select[name='durationMinutes']");
       const durationLabel = document.getElementById("duration-label");
       const status = document.getElementById("status");
+      const statusPanel = document.getElementById("status-panel");
+      const spinner = document.getElementById("spinner");
       const error = document.getElementById("error");
       const result = document.getElementById("result");
       const audioPlayer = document.getElementById("audio-player");
       const downloadLink = document.getElementById("download-link");
       const scriptOutput = document.getElementById("script-output");
       const submitButton = document.getElementById("submit-button");
-      const progressList = document.getElementById("progress-list");
-      const streamingInput = form.querySelector("input[name='streaming']");
       const debugInput = form.querySelector("input[name='debugTtsPrompt']");
       const appVersion = document.getElementById("app-version");
       const resetButton = document.getElementById("reset-button");
@@ -313,18 +348,6 @@
       const updateDurationLabel = () => {
         const minutes = Number(durationInput.value);
         durationLabel.textContent = `${minutes} minute${minutes === 1 ? "" : "s"}`;
-      };
-
-      const resetProgress = () => {
-        progressList.innerHTML = "";
-        progressList.hidden = true;
-      };
-
-      const addProgressStep = (message) => {
-        const item = document.createElement("li");
-        item.textContent = message;
-        progressList.appendChild(item);
-        progressList.hidden = false;
       };
 
       const getFormValues = () => {
@@ -386,7 +409,8 @@
         error.hidden = true;
         error.textContent = "";
         status.textContent = "";
-        resetProgress();
+        statusPanel.hidden = true;
+        spinner.hidden = true;
         result.hidden = true;
         scriptOutput.textContent = "";
         debugOutput.textContent = "";
@@ -425,9 +449,11 @@
           outputMode: effectiveOutputMode,
           debugTtsPrompt: debugEnabled,
         };
-        const streamingEnabled = streamingInput.checked;
+        const streamingEnabled = true;
 
         submitButton.disabled = true;
+        statusPanel.hidden = false;
+        spinner.hidden = false;
         status.textContent = "Generating audio. This can take a few seconds.";
 
         const requestJson = async () => {
@@ -504,7 +530,6 @@
               }
 
               if (eventType === "status") {
-                addProgressStep(data);
                 status.textContent = data;
               } else if (eventType === "done") {
                 finalPayload = JSON.parse(data);
@@ -610,10 +635,12 @@
           result.hidden = false;
           status.textContent =
             effectiveOutputMode === "text" ? "Text ready!" : "Output ready!";
+          spinner.hidden = true;
         } catch (err) {
           error.hidden = false;
           error.textContent = err instanceof Error ? err.message : "Something went wrong.";
           status.textContent = "";
+          spinner.hidden = true;
         } finally {
           submitButton.disabled = false;
         }
