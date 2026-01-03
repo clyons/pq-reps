@@ -49,12 +49,13 @@ curl -X POST http://localhost:3000/api/generate \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
-    "sense": "calm",
-    "languages": ["en"],
-    "durationSeconds": 120,
-    "audience": "PQ practitioners",
-    "topic": "building focus",
-    "voiceStyle": "marin"
+    "sense": "clarity",
+    "eyePosition": "forward",
+    "languages": ["en", "es"],
+    "durationSeconds": 180,
+    "audience": "busy professionals",
+    "topic": "resetting between meetings",
+    "voiceStyle": "sage"
   }'
 ```
 
