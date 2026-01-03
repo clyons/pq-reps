@@ -206,7 +206,7 @@ export default function HomePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "audio/mpeg",
+          Accept: "audio/wav",
         },
         body: JSON.stringify(payload),
       });
@@ -221,7 +221,7 @@ export default function HomePage() {
       }
 
       const audioBuffer = await response.arrayBuffer();
-      const contentType = response.headers.get("content-type") ?? "audio/mpeg";
+      const contentType = response.headers.get("content-type") ?? "audio/wav";
       return new Blob([audioBuffer], { type: contentType });
     };
 
@@ -556,8 +556,8 @@ export default function HomePage() {
                 <source src={result.audioUrl} />
                 Your browser does not support the audio element.
               </audio>
-              <a href={result.audioUrl} download="pq-reps.mp3" style={{ fontWeight: 600 }}>
-                Download the MP3
+              <a href={result.audioUrl} download="pq-reps.wav" style={{ fontWeight: 600 }}>
+                Download the WAV
               </a>
             </>
           )}

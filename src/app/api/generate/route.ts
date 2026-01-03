@@ -550,21 +550,7 @@ export async function POST(request: Request) {
 
   const { config, outputMode: requestedMode } = validation.value;
   const prompt = buildPrompt(config);
-  const acceptHeader = request.headers.get("accept") ?? "";
-  const outputMode =
-    requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
-
-  if (requestedMode && !["text", "audio", "text-audio"].includes(requestedMode)) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "invalid_output_mode",
-          message: "Output mode must be one of: text, audio, text-audio.",
-        },
-      },
-      { status: 400 },
-    );
-  }
+  const pauseMarkerRegex = /\s*\[pause:(\d+(?:\.\d+)?)\]\s*/gi;
 
   try {
     const { script } = await generateScript({ prompt });
@@ -590,9 +576,12 @@ export async function POST(request: Request) {
       voice: config.voiceStyle,
     });
 
+    const acceptHeader = request.headers.get("accept") ?? "";
+    if (acceptHeader.includes("application/json")) {
+      const displayScript = script.replace(pauseMarkerRegex, "\n\n").trim();
     if (outputMode === "text-audio") {
       const response: SuccessResponse = {
-        script,
+        script: displayScript,
         metadata: {
           practiceMode: config.practiceMode,
           bodyState: config.bodyState,
@@ -619,7 +608,7 @@ export async function POST(request: Request) {
       status: 200,
       headers: {
         "Content-Type": ttsResult.contentType,
-        "Content-Disposition": "attachment; filename=\"pq-reps.mp3\"",
+        "Content-Disposition": "attachment; filename=\"pq-reps.wav\"",
       },
     });
   } catch (error) {

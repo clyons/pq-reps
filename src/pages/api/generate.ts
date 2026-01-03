@@ -587,19 +587,7 @@ export default async function handler(
 
   const { config, outputMode: requestedMode } = validation.value;
   const prompt = buildPrompt(config);
-  const acceptHeader = req.headers.accept ?? "";
-  const outputMode =
-    requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
-
-  if (requestedMode && !["text", "audio", "text-audio"].includes(requestedMode)) {
-    sendJson(res, 400, {
-      error: {
-        code: "invalid_output_mode",
-        message: "Output mode must be one of: text, audio, text-audio.",
-      },
-    });
-    return;
-  }
+  const pauseMarkerRegex = /\s*\[pause:(\d+(?:\.\d+)?)\]\s*/gi;
 
   try {
     const { script } = await generateScript({ prompt });
@@ -625,8 +613,9 @@ export default async function handler(
       voice: config.voiceStyle,
     });
 
+    const displayScript = script.replace(pauseMarkerRegex, "\n\n").trim();
     const response: SuccessResponse = {
-      script,
+      script: displayScript,
       metadata: {
         practiceMode: config.practiceMode,
         bodyState: config.bodyState,
@@ -667,7 +656,7 @@ export default async function handler(
 
     res.statusCode = 200;
     res.setHeader("Content-Type", ttsResult.contentType);
-    res.setHeader("Content-Disposition", "attachment; filename=\"pq-reps.mp3\"");
+    res.setHeader("Content-Disposition", "attachment; filename=\"pq-reps.wav\"");
     res.end(ttsResult.audio);
   } catch (error) {
     sendJson(res, 500, {

@@ -208,8 +208,8 @@
       <section id="result" class="result" hidden>
         <h2>Your session is ready</h2>
         <audio id="audio-player" controls style="width: 100%;" hidden></audio>
-        <a id="download-link" class="download-link" download="pq-reps.mp3" hidden>
-          Download the MP3
+        <a id="download-link" class="download-link" download="pq-reps.wav" hidden>
+          Download the WAV
         </a>
         <p id="script-output" style="margin-top: 1rem; white-space: pre-line;" hidden></p>
       </section>
@@ -290,7 +290,7 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Accept: "audio/mpeg",
+              Accept: "audio/wav",
             },
             body: JSON.stringify(payload),
           });
@@ -305,7 +305,7 @@
           }
 
           const audioBuffer = await response.arrayBuffer();
-          const contentType = response.headers.get("content-type") || "audio/mpeg";
+          const contentType = response.headers.get("content-type") || "audio/wav";
           return new Blob([audioBuffer], { type: contentType });
         };
 
