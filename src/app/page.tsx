@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type GenerationResult = {
   audioUrl?: string;
   script?: string;
+  ttsPrompt?: string;
 };
 
 type FormState = {
@@ -33,6 +34,7 @@ type FormState = {
   senseRotation?: "none" | "guided_rotation" | "free_choice";
   language: string;
   outputMode: "text" | "audio" | "text-audio";
+  debugTtsPrompt: boolean;
 };
 
 const DEFAULT_STATE: FormState = {
@@ -48,6 +50,7 @@ const DEFAULT_STATE: FormState = {
   senseRotation: "none",
   language: "en",
   outputMode: "audio",
+  debugTtsPrompt: false,
 };
 
 const LANGUAGE_OPTIONS = [
@@ -240,6 +243,10 @@ export default function HomePage() {
 
     setStatus("loading");
 
+    const effectiveOutputMode =
+      formState.debugTtsPrompt && formState.outputMode !== "text-audio"
+        ? "text-audio"
+        : formState.outputMode;
     const payload = {
       practiceMode: formState.practiceMode,
       bodyState: formState.bodyState,
@@ -254,7 +261,8 @@ export default function HomePage() {
       languages: [formState.language],
       durationSeconds: formState.durationSeconds,
       topic: formState.topic || undefined,
-      outputMode: formState.outputMode,
+      outputMode: effectiveOutputMode,
+      debugTtsPrompt: formState.debugTtsPrompt,
     };
 
     const requestJson = async () => {
@@ -272,7 +280,7 @@ export default function HomePage() {
         throw new Error(errorBody.error?.message ?? "The generator failed to respond.");
       }
 
-      return (await response.json()) as { script: string };
+      return (await response.json()) as { script: string; ttsPrompt?: Record<string, unknown> };
     };
 
     const requestAudio = async () => {
@@ -302,11 +310,15 @@ export default function HomePage() {
     try {
       let script: string | undefined;
       let audioUrl: string | undefined;
+      let ttsPrompt: string | undefined;
 
-      if (formState.outputMode === "text") {
+      if (effectiveOutputMode === "text") {
         const jsonResult = await requestJson();
         script = jsonResult.script;
-      } else if (formState.outputMode === "audio") {
+        if (jsonResult.ttsPrompt) {
+          ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
+        }
+      } else if (effectiveOutputMode === "audio") {
         const audioBlob = await requestAudio();
         audioUrl = URL.createObjectURL(audioBlob);
       } else {
@@ -314,8 +326,12 @@ export default function HomePage() {
           script: string;
           audioBase64?: string;
           audioContentType?: string;
+          ttsPrompt?: Record<string, unknown>;
         };
         script = jsonResult.script;
+        if (jsonResult.ttsPrompt) {
+          ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
+        }
         if (jsonResult.audioBase64) {
           const binary = atob(jsonResult.audioBase64);
           const bytes = new Uint8Array(binary.length);
@@ -333,7 +349,7 @@ export default function HomePage() {
         if (prev?.audioUrl) {
           URL.revokeObjectURL(prev.audioUrl);
         }
-        return { audioUrl, script };
+        return { audioUrl, script, ttsPrompt };
       });
 
       setStatus("success");
@@ -585,6 +601,24 @@ export default function HomePage() {
           </select>
         </label>
 
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Debug TTS prompt</span>
+          <span style={{ fontSize: "0.9rem", color: "#555" }}>
+            Shows the exact TTS payload used for OpenAI audio generation.
+          </span>
+          <input
+            type="checkbox"
+            checked={formState.debugTtsPrompt}
+            onChange={(event) => updateFormState({ debugTtsPrompt: event.target.checked })}
+            style={{ width: 18, height: 18 }}
+          />
+          {formState.debugTtsPrompt && formState.outputMode !== "text-audio" && (
+            <span style={{ fontSize: "0.85rem", color: "#555" }}>
+              Debug mode forces text + audio output so the prompt can be returned.
+            </span>
+          )}
+        </label>
+
         {errors.length > 0 && (
           <div
             role="alert"
@@ -638,6 +672,24 @@ export default function HomePage() {
           )}
           {result.script && (
             <p style={{ marginTop: "1rem", whiteSpace: "pre-line" }}>{result.script}</p>
+          )}
+          {result.ttsPrompt && (
+            <div style={{ marginTop: "1.5rem" }}>
+              <h3 style={{ marginBottom: "0.5rem" }}>TTS prompt (debug)</h3>
+              <pre
+                style={{
+                  background: "#111",
+                  color: "#f5f5f5",
+                  padding: "1rem",
+                  borderRadius: 8,
+                  overflowX: "auto",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                }}
+              >
+                {result.ttsPrompt}
+              </pre>
+            </div>
           )}
         </section>
       )}

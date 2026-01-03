@@ -38,6 +38,12 @@ type SuccessResponse = {
     ttsProvider: string;
     voice: string;
   };
+  ttsPrompt?: {
+    model: string;
+    voice: string;
+    input: string;
+    response_format: string;
+  };
   audioBase64?: string;
   audioContentType?: string;
 };
@@ -67,7 +73,7 @@ export async function POST(request: Request) {
     return NextResponse.json(validation.error, { status: 400 });
   }
 
-  const { config, outputMode: requestedMode } = validation.value;
+  const { config, outputMode: requestedMode, debugTtsPrompt } = validation.value;
   const prompt = buildPrompt(config);
   const acceptHeader = request.headers.get("accept") ?? "";
   const outputMode =
@@ -117,6 +123,14 @@ export async function POST(request: Request) {
       language: config.languages[0],
       voice: config.voiceStyle,
     });
+    const ttsPrompt = debugTtsPrompt
+      ? {
+          model: "gpt-4o-mini-tts",
+          voice: ttsResult.voice,
+          input: script,
+          response_format: "wav",
+        }
+      : undefined;
 
     if (outputMode === "text-audio") {
       const response: SuccessResponse = {
@@ -137,6 +151,7 @@ export async function POST(request: Request) {
           ttsProvider: ttsResult.provider,
           voice: ttsResult.voice,
         },
+        ttsPrompt,
         audioBase64: ttsResult.audio.toString("base64"),
         audioContentType: ttsResult.contentType,
       };
