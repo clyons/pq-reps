@@ -34,6 +34,7 @@ type SuccessResponse = {
     closingStyle: ClosingStyle;
     senseRotation?: SenseRotation;
     languages: string[];
+    ttsNewlinePauseSeconds?: number;
     prompt: string;
     ttsProvider: string;
     voice: string;
@@ -112,6 +113,7 @@ export async function POST(request: Request) {
           closingStyle: config.closingStyle,
           senseRotation: config.senseRotation,
           languages: config.languages,
+          ttsNewlinePauseSeconds: config.ttsNewlinePauseSeconds,
           prompt,
           ttsProvider: "none",
           voice: "n/a",
@@ -125,12 +127,13 @@ export async function POST(request: Request) {
       script,
       language: config.languages[0],
       voice: config.voiceStyle,
+      newlinePauseSeconds: config.ttsNewlinePauseSeconds,
     });
     const ttsPrompt = debugTtsPrompt
       ? {
           model: "gpt-4o-mini-tts",
           voice: ttsResult.voice,
-          input: script,
+          input: ttsResult.inputScript,
           response_format: "wav",
           voiceStylePreference: config.voiceStyle,
           scriptSystemPrompt: SCRIPT_SYSTEM_PROMPT,
@@ -153,6 +156,7 @@ export async function POST(request: Request) {
           closingStyle: config.closingStyle,
           senseRotation: config.senseRotation,
           languages: config.languages,
+          ttsNewlinePauseSeconds: config.ttsNewlinePauseSeconds,
           prompt,
           ttsProvider: ttsResult.provider,
           voice: ttsResult.voice,
