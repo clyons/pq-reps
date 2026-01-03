@@ -12,11 +12,39 @@ export type TtsResponse = {
 };
 
 const DEFAULT_VOICE = "marin";
+const SUPPORTED_VOICES = new Set([
+  "alloy",
+  "ash",
+  "ballad",
+  "cedar",
+  "coral",
+  "echo",
+  "fable",
+  "marin",
+  "nova",
+  "onyx",
+  "sage",
+  "shimmer",
+  "verse",
+]);
+
 const LANGUAGE_VOICE_MAP: Record<string, string> = {
   en: "marin",
   es: "cedar",
   fr: "cedar",
   de: "marin",
+};
+
+const resolveVoice = (voice: string | undefined, language?: string): string => {
+  if (voice && SUPPORTED_VOICES.has(voice)) {
+    return voice;
+  }
+  if (voice) {
+    console.warn(
+      `Unsupported voice "${voice}" requested. Falling back to default voice.`,
+    );
+  }
+  return LANGUAGE_VOICE_MAP[language ?? ""] ?? DEFAULT_VOICE;
 };
 
 export async function synthesizeSpeech(
@@ -27,7 +55,7 @@ export async function synthesizeSpeech(
     throw new Error("Missing OPENAI_API_KEY environment variable.");
   }
 
-  const voice = request.voice ?? LANGUAGE_VOICE_MAP[request.language ?? ""] ?? DEFAULT_VOICE;
+  const voice = resolveVoice(request.voice, request.language);
 
   const response = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
