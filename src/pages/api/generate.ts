@@ -248,7 +248,27 @@ export default async function handler(
     if (wantsStream) {
       response.audioBase64 = ttsResult.audio.toString("base64");
       response.audioContentType = ttsResult.contentType;
-      sendEvent(res, "done", JSON.stringify(response));
+      sendEvent(res, "done", JSON.stringify({
+        script,
+        metadata: {
+          practiceMode: config.practiceMode,
+          bodyState: config.bodyState,
+          eyeState: config.eyeState,
+          primarySense: config.primarySense,
+          durationMinutes: config.durationMinutes,
+          labelingMode: config.labelingMode,
+          silenceProfile: config.silenceProfile,
+          normalizationFrequency: config.normalizationFrequency,
+          closingStyle: config.closingStyle,
+          senseRotation: config.senseRotation,
+          languages: config.languages,
+          prompt,
+          ttsProvider: ttsResult.provider,
+          voice: ttsResult.voice,
+        },
+        audioBase64: ttsResult.audio.toString("base64"),
+        audioContentType: ttsResult.contentType,
+      } satisfies SuccessResponse));
       res.end();
       return;
     }

@@ -12,12 +12,35 @@ const port = Number.parseInt(process.env.PORT ?? "3000", 10);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uiPath = path.join(__dirname, "ui", "index.html");
+const packageJsonPath = path.join(process.cwd(), "package.json");
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
 
   if (url.pathname === "/api/generate") {
     await handler(req, res);
+    return;
+  }
+
+  if (url.pathname === "/version") {
+    try {
+      const packageJson = await readFile(packageJsonPath, "utf-8");
+      const { version = "unknown" } = JSON.parse(packageJson) as { version?: string };
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify({ version }));
+    } catch (error) {
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "application/json");
+      res.end(
+        JSON.stringify({
+          error: {
+            code: "version_unavailable",
+            message: error instanceof Error ? error.message : "Unable to load version.",
+          },
+        }),
+      );
+    }
     return;
   }
 

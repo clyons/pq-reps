@@ -23,6 +23,11 @@
       h1 {
         margin-top: 0;
       }
+      .version {
+        margin-top: -0.25rem;
+        color: #666;
+        font-size: 0.9rem;
+      }
       form {
         display: grid;
         gap: 1.5rem;
@@ -47,6 +52,10 @@
         border-radius: 999px;
         font-weight: 600;
         cursor: pointer;
+      }
+      .button-secondary {
+        background: #e5e5e5;
+        color: #111;
       }
       button[disabled] {
         cursor: not-allowed;
@@ -216,7 +225,12 @@
           Stream progress updates
         </label>
 
-        <button type="submit" id="submit-button">Generate audio</button>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button type="submit" id="submit-button">Generate audio</button>
+          <button type="button" id="reset-button" class="button-secondary">
+            Reset to defaults
+          </button>
+        </div>
       </form>
 
       <p class="status" id="status"></p>
@@ -246,7 +260,10 @@
       const submitButton = document.getElementById("submit-button");
       const progressList = document.getElementById("progress-list");
       const streamingInput = form.querySelector("input[name='streaming']");
+      const appVersion = document.getElementById("app-version");
+      const resetButton = document.getElementById("reset-button");
       let currentUrl = null;
+      const storageKey = "pq-reps-form";
 
       const updateDurationLabel = () => {
         durationLabel.textContent = `${durationInput.value} minutes`;
@@ -264,8 +281,56 @@
         progressList.hidden = false;
       };
 
+      const getFormValues = () => {
+        const formData = new FormData(form);
+        return Object.fromEntries(formData.entries());
+      };
+
+      const setFormValues = (values) => {
+        Object.entries(values).forEach(([name, value]) => {
+          const field = form.elements.namedItem(name);
+          if (field && "value" in field && value != null) {
+            field.value = value;
+          }
+        });
+        updateDurationLabel();
+      };
+
+      const defaultValues = getFormValues();
+
+      const storedValuesRaw = localStorage.getItem(storageKey);
+      if (storedValuesRaw) {
+        try {
+          const storedValues = JSON.parse(storedValuesRaw);
+          if (storedValues && typeof storedValues === "object") {
+            setFormValues(storedValues);
+          }
+        } catch (err) {
+          localStorage.removeItem(storageKey);
+        }
+      }
+
       updateDurationLabel();
       durationInput.addEventListener("change", updateDurationLabel);
+
+      const loadVersion = async () => {
+        try {
+          const response = await fetch("/version");
+          if (!response.ok) {
+            throw new Error("Version unavailable.");
+          }
+          const data = await response.json();
+          appVersion.textContent = `Version: ${data?.version || "unknown"}`;
+        } catch (err) {
+          appVersion.textContent = "Version: unavailable";
+        }
+      };
+
+      loadVersion();
+      resetButton.addEventListener("click", () => {
+        setFormValues(defaultValues);
+        localStorage.removeItem(storageKey);
+      });
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -282,6 +347,7 @@
         }
 
         const formData = new FormData(form);
+        localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(formData.entries())));
         const payload = {
           practiceMode: formData.get("practiceMode"),
           bodyState: formData.get("bodyState"),
