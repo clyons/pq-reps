@@ -34,6 +34,7 @@ type FormState = {
   senseRotation?: "none" | "guided_rotation" | "free_choice";
   language: string;
   voiceGender: "female" | "male";
+  ttsNewlinePauseSeconds: number;
   outputMode: "text" | "audio" | "text-audio";
   debugTtsPrompt: boolean;
 };
@@ -51,6 +52,7 @@ const DEFAULT_STATE: FormState = {
   senseRotation: "none",
   language: "en",
   voiceGender: "female",
+  ttsNewlinePauseSeconds: 1,
   outputMode: "audio",
   debugTtsPrompt: false,
 };
@@ -279,6 +281,7 @@ export default function HomePage() {
       senseRotation: formState.senseRotation,
       languages: [formState.language],
       voiceStyle: resolveVoiceForGender(formState.voiceGender, formState.language),
+      ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
       durationSeconds: formState.durationSeconds,
       topic: formState.topic || undefined,
       outputMode: effectiveOutputMode,
@@ -634,6 +637,22 @@ export default function HomePage() {
             <option value="audio">Audio only</option>
             <option value="text-audio">Text + audio</option>
           </select>
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>TTS newline pause (seconds)</span>
+          <input
+            type="number"
+            min={0}
+            step={0.5}
+            value={formState.ttsNewlinePauseSeconds}
+            onChange={(event) =>
+              updateFormState({
+                ttsNewlinePauseSeconds: Number.parseFloat(event.target.value) || 0,
+              })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          />
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>

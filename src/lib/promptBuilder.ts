@@ -53,6 +53,7 @@ export type GenerateConfig = {
   senseRotation?: SenseRotation;
   audience?: string;
   voiceStyle?: string;
+  ttsNewlinePauseSeconds?: number;
 };
 
 export const SUPPORTED_LANGUAGES = [

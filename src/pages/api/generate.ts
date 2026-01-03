@@ -14,7 +14,7 @@ import {
 } from "../../lib/promptBuilder";
 import { OutputMode, validateGenerateConfig } from "../../lib/generateValidation";
 import { generateScript, SCRIPT_SYSTEM_PROMPT } from "../../services/script";
-import { synthesizeSpeech, TtsScriptTooLargeError } from "../../services/tts";
+import { synthesizeSpeech, TtsScriptTooLargeError, TTS_SYSTEM_PROMPT } from "../../services/tts";
 
 type SuccessResponse = {
   script: string;
@@ -30,6 +30,7 @@ type SuccessResponse = {
     closingStyle: ClosingStyle;
     senseRotation?: SenseRotation;
     languages: string[];
+    ttsNewlinePauseSeconds?: number;
     prompt: string;
     ttsProvider: string;
     voice: string;
@@ -42,6 +43,7 @@ type SuccessResponse = {
     voiceStylePreference?: string;
     scriptSystemPrompt: string;
     scriptUserPrompt: string;
+    ttsSystemPrompt: string;
   };
   audioBase64?: string;
   audioContentType?: string;
@@ -208,6 +210,7 @@ export default async function handler(
           closingStyle: config.closingStyle,
           senseRotation: config.senseRotation,
           languages: config.languages,
+          ttsNewlinePauseSeconds: config.ttsNewlinePauseSeconds,
           prompt,
           ttsProvider: "none",
           voice: "n/a",
@@ -232,16 +235,18 @@ export default async function handler(
       script,
       language: config.languages[0],
       voice: config.voiceStyle,
+      newlinePauseSeconds: config.ttsNewlinePauseSeconds,
     });
     const ttsPrompt = debugTtsPrompt
       ? {
           model: "gpt-4o-mini-tts",
           voice: ttsResult.voice,
-          input: script,
+          input: ttsResult.inputScript,
           response_format: "wav",
           voiceStylePreference: config.voiceStyle,
           scriptSystemPrompt: SCRIPT_SYSTEM_PROMPT,
           scriptUserPrompt: prompt,
+          ttsSystemPrompt: TTS_SYSTEM_PROMPT,
         }
       : undefined;
 
@@ -259,6 +264,7 @@ export default async function handler(
         closingStyle: config.closingStyle,
         senseRotation: config.senseRotation,
         languages: config.languages,
+        ttsNewlinePauseSeconds: config.ttsNewlinePauseSeconds,
         prompt,
         ttsProvider: ttsResult.provider,
         voice: ttsResult.voice,
@@ -283,6 +289,7 @@ export default async function handler(
           closingStyle: config.closingStyle,
           senseRotation: config.senseRotation,
           languages: config.languages,
+          ttsNewlinePauseSeconds: config.ttsNewlinePauseSeconds,
           prompt,
           ttsProvider: ttsResult.provider,
           voice: ttsResult.voice,

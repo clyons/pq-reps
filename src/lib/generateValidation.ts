@@ -34,6 +34,8 @@ type ValidationResult = {
   error: ErrorResponse;
 };
 
+const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1;
+
 const ALLOWED_PRACTICE_MODES: PracticeMode[] = [
   "tactile",
   "tense_relax",
@@ -112,6 +114,14 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
     outputMode?: OutputMode;
     debugTtsPrompt?: boolean;
   };
+
+  const newlinePauseSecondsValue = config.ttsNewlinePauseSeconds;
+  const parsedNewlinePauseSeconds =
+    typeof newlinePauseSecondsValue === "number"
+      ? newlinePauseSecondsValue
+      : typeof newlinePauseSecondsValue === "string" && newlinePauseSecondsValue.trim() !== ""
+        ? Number.parseFloat(newlinePauseSecondsValue)
+        : undefined;
 
   if (!config.practiceMode || !ALLOWED_PRACTICE_MODES.includes(config.practiceMode)) {
     return {
@@ -241,6 +251,21 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
           code: "invalid_sense_rotation",
           message: "Sense rotation must be one of the supported values.",
           details: { allowed: ALLOWED_SENSE_ROTATIONS },
+        },
+      },
+    };
+  }
+
+  if (
+    parsedNewlinePauseSeconds !== undefined &&
+    (!Number.isFinite(parsedNewlinePauseSeconds) || parsedNewlinePauseSeconds < 0)
+  ) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_tts_newline_pause",
+          message: "TTS newline pause seconds must be a non-negative number.",
         },
       },
     };
@@ -508,6 +533,8 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
         languages: config.languages,
         audience: config.audience,
         voiceStyle: config.voiceStyle,
+        ttsNewlinePauseSeconds:
+          parsedNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
       },
       outputMode: config.outputMode,
       debugTtsPrompt: config.debugTtsPrompt ?? false,
