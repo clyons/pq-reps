@@ -353,7 +353,9 @@ export default function HomePage() {
     <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 720, margin: "0 auto" }}>
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>PQ Reps Generator</h1>
       <p style={{ marginBottom: "2rem", color: "#555" }}>
-        Generate on-brand PQ Reps scripts with explicit practice inputs and instant audio.
+        Build guided PQ Reps sessions that sharpen the PQ brain with tactile, breath, or visual
+        focus. Choose how you are practicing (like tactile PQ reps), then set the duration to
+        match how long you want the rep to last.
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
