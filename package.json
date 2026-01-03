@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc --outDir dist",
-    "start": "node --enable-source-maps dist/server.js"
+    "start": "node --enable-source-maps dist/server.js",
+    "test": "node --test --import tsx tests/generate-api.test.ts"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
