@@ -53,6 +53,10 @@
         font-weight: 600;
         cursor: pointer;
       }
+      .button-secondary {
+        background: #e5e5e5;
+        color: #111;
+      }
       button[disabled] {
         cursor: not-allowed;
         background: #888;
@@ -85,8 +89,11 @@
   <body>
     <main>
       <h1>PQ Reps Audio Generator</h1>
-      <p>Create a guided prompt and stream an MP3 directly from the API.</p>
-      <p class="version" id="app-version">Version: loading…</p>
+      <p>
+        Create guided PQ Reps that sharpen the PQ brain with tactile, breath, or visual focus.
+        Pick how you are practicing (for example, tactile PQ reps) and set how long the rep
+        should run.
+      </p>
 
       <form id="generator-form">
         <label>
@@ -205,7 +212,12 @@
           </select>
         </label>
 
-        <button type="submit" id="submit-button">Generate audio</button>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button type="submit" id="submit-button">Generate audio</button>
+          <button type="button" id="reset-button" class="button-secondary">
+            Reset to defaults
+          </button>
+        </div>
       </form>
 
       <p class="status" id="status"></p>
@@ -233,11 +245,42 @@
       const scriptOutput = document.getElementById("script-output");
       const submitButton = document.getElementById("submit-button");
       const appVersion = document.getElementById("app-version");
+      const resetButton = document.getElementById("reset-button");
       let currentUrl = null;
+      const storageKey = "pq-reps-form";
 
       const updateDurationLabel = () => {
         durationLabel.textContent = `${durationInput.value} minutes`;
       };
+
+      const getFormValues = () => {
+        const formData = new FormData(form);
+        return Object.fromEntries(formData.entries());
+      };
+
+      const setFormValues = (values) => {
+        Object.entries(values).forEach(([name, value]) => {
+          const field = form.elements.namedItem(name);
+          if (field && "value" in field && value != null) {
+            field.value = value;
+          }
+        });
+        updateDurationLabel();
+      };
+
+      const defaultValues = getFormValues();
+
+      const storedValuesRaw = localStorage.getItem(storageKey);
+      if (storedValuesRaw) {
+        try {
+          const storedValues = JSON.parse(storedValuesRaw);
+          if (storedValues && typeof storedValues === "object") {
+            setFormValues(storedValues);
+          }
+        } catch (err) {
+          localStorage.removeItem(storageKey);
+        }
+      }
 
       updateDurationLabel();
       durationInput.addEventListener("change", updateDurationLabel);
@@ -256,6 +299,10 @@
       };
 
       loadVersion();
+      resetButton.addEventListener("click", () => {
+        setFormValues(defaultValues);
+        localStorage.removeItem(storageKey);
+      });
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -271,6 +318,7 @@
         }
 
         const formData = new FormData(form);
+        localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(formData.entries())));
         const payload = {
           practiceMode: formData.get("practiceMode"),
           bodyState: formData.get("bodyState"),
@@ -283,6 +331,7 @@
           closingStyle: formData.get("closingStyle"),
           senseRotation: formData.get("senseRotation") || undefined,
           languages: [formData.get("language")],
+          outputMode: formData.get("outputMode"),
         };
         const outputMode = formData.get("outputMode");
 
@@ -335,13 +384,21 @@
           let script = "";
           let audioBlob = null;
 
-          if (outputMode === "text" || outputMode === "text-audio") {
+          if (outputMode === "audio") {
+            audioBlob = await requestAudio();
+          } else {
             const jsonResponse = await requestJson();
             script = jsonResponse?.script || "";
-          }
-
-          if (outputMode === "audio" || outputMode === "text-audio") {
-            audioBlob = await requestAudio();
+            if (outputMode === "text-audio" && jsonResponse?.audioBase64) {
+              const binary = atob(jsonResponse.audioBase64);
+              const bytes = new Uint8Array(binary.length);
+              for (let index = 0; index < binary.length; index += 1) {
+                bytes[index] = binary.charCodeAt(index);
+              }
+              audioBlob = new Blob([bytes], {
+                type: jsonResponse?.audioContentType || "audio/wav",
+              });
+            }
           }
 
           if (audioBlob) {

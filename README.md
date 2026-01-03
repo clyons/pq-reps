@@ -15,6 +15,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Add a UI toggle for text-only, audio-only, or text + audio output.
 - [x] Add OpenAI TTS integration with direct audio bytes (no storage).
 - [x] Update prompts to generate on-brand PQ Reps scripts.
+- [x] Ensure text + audio uses a single generation pass to keep script/audio in sync.
 - [ ] Support multi-language template expansion beyond English/Spanish.
 - [ ] Add tests for prompt outline and API validation.
 - [ ] Add user-facing AI-generated voice disclosure in the UI.
