@@ -303,11 +303,16 @@ export default function HomePage() {
         }
       }
 
+      const cleanedScript =
+        effectiveOutputMode === "text" || effectiveOutputMode === "text-audio"
+          ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
+          : "";
+
       setResult((prev) => {
         if (prev?.audioUrl) {
           URL.revokeObjectURL(prev.audioUrl);
         }
-        return { audioUrl, script, ttsPrompt };
+        return { audioUrl, script: cleanedScript, ttsPrompt };
       });
 
       setStatus("success");

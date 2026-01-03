@@ -737,8 +737,14 @@
             downloadLink.hidden = true;
           }
 
-          if (script) {
-            scriptOutput.textContent = script;
+          const shouldShowScript =
+            effectiveOutputMode === "text" || effectiveOutputMode === "text-audio";
+          const cleanedScript = shouldShowScript
+            ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
+            : "";
+
+          if (cleanedScript) {
+            scriptOutput.textContent = cleanedScript;
             scriptOutput.hidden = false;
           } else {
             scriptOutput.hidden = true;
