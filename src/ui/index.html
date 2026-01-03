@@ -151,108 +151,36 @@
     <main>
       <h1>PQ Reps Audio Generator</h1>
       <p id="app-version" class="version">Version: loading...</p>
-      <p>
-        Create guided PQ Reps that sharpen the PQ brain with tactile, breath, or visual focus.
-        Pick how you are practicing (for example, tactile PQ reps) and set how long the rep
-        should run.
-      </p>
+      <p>Choose the type of PQ Reps you'd like to practice.</p>
 
       <form id="generator-form">
         <label>
-          Practice Mode
-          <select name="practiceMode" required>
-            <option value="tactile">Tactile</option>
-            <option value="tense_relax">Tense + Relax</option>
+          Practice type
+          <select name="practiceType" required>
+            <option value="still_eyes_closed">Still (Eyes closed)</option>
+            <option value="still_eyes_open">Still (Eyes open)</option>
             <option value="moving">Moving</option>
-            <option value="sitting">Sitting</option>
-            <option value="label_with_anchor">Label with Anchor</option>
-            <option value="label_while_scanning">Label While Scanning</option>
+            <option value="labeling">Labeling</option>
           </select>
         </label>
 
         <label>
-          Body State
-          <select name="bodyState" required>
-            <option value="still_seated">Still seated</option>
-            <option value="still_seated_closed_eyes">Still seated, eyes closed</option>
-            <option value="moving">Moving</option>
-          </select>
-        </label>
-
-        <label>
-          Eye State
-          <select name="eyeState" required>
-            <option value="closed">Closed</option>
-            <option value="open_focused">Open, focused</option>
-            <option value="open_diffused">Open, diffused</option>
-          </select>
-        </label>
-
-        <label>
-          Primary Sense
-          <select name="primarySense" required>
+          Focus
+          <select name="focus" required>
             <option value="touch">Touch</option>
             <option value="hearing">Hearing</option>
             <option value="sight">Sight</option>
             <option value="breath">Breath</option>
-            <option value="body_weight">Body weight</option>
-            <option value="smell">Smell</option>
-            <option value="taste">Taste</option>
           </select>
         </label>
 
         <label>
-          Duration: <span id="duration-label">2 minutes</span>
+          Duration
           <select name="durationMinutes" required>
             <option value="1">1 minute</option>
             <option value="2">2 minutes</option>
             <option value="5">5 minutes</option>
             <option value="12">12 minutes</option>
-          </select>
-        </label>
-
-        <label>
-          Labeling Mode
-          <select name="labelingMode" required>
-            <option value="none">None</option>
-            <option value="breath_anchor">Breath anchor</option>
-            <option value="scan_and_label">Scan and label</option>
-          </select>
-        </label>
-
-        <label>
-          Silence Profile
-          <select name="silenceProfile" required>
-            <option value="none">None</option>
-            <option value="short_pauses">Short pauses</option>
-            <option value="extended_silence">Extended silence</option>
-          </select>
-        </label>
-
-        <label>
-          Normalization Frequency
-          <select name="normalizationFrequency" required>
-            <option value="once">Once</option>
-            <option value="periodic">Periodic</option>
-            <option value="repeated">Repeated</option>
-          </select>
-        </label>
-
-        <label>
-          Closing Style
-          <select name="closingStyle" required>
-            <option value="minimal">Minimal</option>
-            <option value="pq_framed">PQ framed</option>
-            <option value="pq_framed_with_progression">PQ framed with progression</option>
-          </select>
-        </label>
-
-        <label>
-          Sense Rotation
-          <select name="senseRotation">
-            <option value="none">None</option>
-            <option value="guided_rotation">Guided rotation</option>
-            <option value="free_choice">Free choice</option>
           </select>
         </label>
 
@@ -267,33 +195,26 @@
         </label>
 
         <label>
-          Voice gender
+          Voice
           <select name="voiceGender" required>
-            <option value="female">Female (Alloy / Nova)</option>
-            <option value="male">Male (Ash / Onyx)</option>
+            <option value="male">Male</option>
+            <option value="female" selected>Female</option>
           </select>
-          <span class="option-hint">Spanish/French use Nova or Onyx; English/German use Alloy or Ash.</span>
+          <span class="option-hint">Choose the voice you prefer for guidance.</span>
         </label>
 
-        <label>
-          Output
-          <select name="outputMode">
-            <option value="text">Text only</option>
-            <option value="audio" selected>Audio only</option>
-            <option value="text-audio">Text + audio</option>
-          </select>
-        </label>
+        <div id="dev-controls" hidden>
+          <label>
+            TTS newline pause (seconds)
+            <input type="number" name="ttsNewlinePauseSeconds" min="0" step="0.5" value="1" />
+          </label>
 
-        <label>
-          TTS newline pause (seconds)
-          <input type="number" name="ttsNewlinePauseSeconds" min="0" step="0.5" value="1" />
-        </label>
-
-        <label>
-          <span>Debug TTS prompt</span>
-          <span class="hint">Include the raw TTS payload for OpenAI playground testing.</span>
-          <input type="checkbox" name="debugTtsPrompt" />
-        </label>
+          <label>
+            <span>Debug TTS prompt</span>
+            <span class="hint">Include the raw TTS payload for OpenAI playground testing.</span>
+            <input type="checkbox" name="debugTtsPrompt" />
+          </label>
+        </div>
 
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
           <button type="submit" id="submit-button">Generate</button>
@@ -327,8 +248,9 @@
 
     <script>
       const form = document.getElementById("generator-form");
+      const practiceTypeInput = form.querySelector("select[name='practiceType']");
+      const focusInput = form.querySelector("select[name='focus']");
       const durationInput = form.querySelector("select[name='durationMinutes']");
-      const durationLabel = document.getElementById("duration-label");
       const status = document.getElementById("status");
       const statusPanel = document.getElementById("status-panel");
       const spinner = document.getElementById("spinner");
@@ -343,14 +265,34 @@
       const resetButton = document.getElementById("reset-button");
       const debugSection = document.getElementById("debug-section");
       const debugOutput = document.getElementById("debug-output");
+      const devControls = document.getElementById("dev-controls");
       let currentUrl = null;
       const storageKey = "pq-reps-form";
-      const femaleVoiceByLanguage = { es: "nova", fr: "nova" };
-      const maleVoiceByLanguage = { es: "onyx", fr: "onyx" };
+      const isDevMode = new URLSearchParams(window.location.search).get("dev") === "1";
 
-      const updateDurationLabel = () => {
-        const minutes = Number(durationInput.value);
-        durationLabel.textContent = `${minutes} minute${minutes === 1 ? "" : "s"}`;
+      if (devControls) {
+        devControls.hidden = !isDevMode;
+      }
+
+      const updateFocusOptions = (practiceType) => {
+        const sightOption = focusInput.querySelector("option[value='sight']");
+        if (!sightOption) {
+          return;
+        }
+        const sightAllowed = practiceType === "still_eyes_open" || practiceType === "moving";
+        if (!sightAllowed) {
+          sightOption.hidden = true;
+          if (focusInput.value === "sight") {
+            focusInput.value = "touch";
+          }
+        } else {
+          sightOption.hidden = false;
+        }
+      };
+
+      const updateDerivedFields = () => {
+        const practiceType = practiceTypeInput.value;
+        updateFocusOptions(practiceType);
       };
 
       const getFormValues = () => {
@@ -365,7 +307,6 @@
             field.value = value;
           }
         });
-        updateDurationLabel();
       };
 
       const defaultValues = getFormValues();
@@ -382,8 +323,9 @@
         }
       }
 
-      updateDurationLabel();
-      durationInput.addEventListener("change", updateDurationLabel);
+      updateDerivedFields();
+      durationInput.addEventListener("change", updateDerivedFields);
+      practiceTypeInput.addEventListener("change", updateDerivedFields);
 
       const loadVersion = async () => {
         if (!appVersion) {
@@ -426,32 +368,25 @@
 
         const formData = new FormData(form);
         localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(formData.entries())));
-        const outputMode = formData.get("outputMode");
-        const debugEnabled = debugInput.checked;
+        const debugEnabled = isDevMode && debugInput?.checked;
         const effectiveOutputMode =
-          debugEnabled && outputMode !== "text-audio" ? "text-audio" : outputMode;
+          debugEnabled && "text-audio";
         const language = formData.get("language");
         const voiceGender = formData.get("voiceGender");
-        const voiceStyle =
-          voiceGender === "male"
-            ? maleVoiceByLanguage[language] || "ash"
-            : femaleVoiceByLanguage[language] || "alloy";
+        const practiceType = formData.get("practiceType");
+        const durationMinutes = Number(formData.get("durationMinutes"));
+        const focus = formData.get("focus");
         const payload = {
-          practiceMode: formData.get("practiceMode"),
-          bodyState: formData.get("bodyState"),
-          eyeState: formData.get("eyeState"),
-          primarySense: formData.get("primarySense"),
-          durationMinutes: Number(formData.get("durationMinutes")),
-          labelingMode: formData.get("labelingMode"),
-          silenceProfile: formData.get("silenceProfile"),
-          normalizationFrequency: formData.get("normalizationFrequency"),
-          closingStyle: formData.get("closingStyle"),
-          senseRotation: formData.get("senseRotation") || undefined,
-          languages: [language],
-          voiceStyle,
-          ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0,
-          outputMode: effectiveOutputMode,
-          debugTtsPrompt: debugEnabled,
+          practiceType,
+          focus,
+          durationMinutes,
+          language,
+          voiceGender,
+          ...(isDevMode
+            ? { ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0 }
+            : {}),
+          outputMode: effectiveOutputMode || "audio",
+          ...(debugEnabled ? { debugTtsPrompt: true } : {}),
         };
         const streamingEnabled = true;
 

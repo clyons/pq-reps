@@ -9,51 +9,22 @@ type GenerationResult = {
 };
 
 type FormState = {
-  practiceMode:
-    | "tactile"
-    | "tense_relax"
-    | "moving"
-    | "sitting"
-    | "label_with_anchor"
-    | "label_while_scanning";
-  bodyState: "still_seated" | "still_seated_closed_eyes" | "moving";
-  eyeState: "closed" | "open_focused" | "open_diffused";
-  primarySense:
-    | "touch"
-    | "hearing"
-    | "sight"
-    | "breath"
-    | "body_weight"
-    | "smell"
-    | "taste";
+  practiceType: "still_eyes_closed" | "still_eyes_open" | "moving" | "labeling";
+  focus: "touch" | "hearing" | "sight" | "breath";
   durationMinutes: 1 | 2 | 5 | 12;
-  labelingMode: "none" | "breath_anchor" | "scan_and_label";
-  silenceProfile: "none" | "short_pauses" | "extended_silence";
-  normalizationFrequency: "once" | "periodic" | "repeated";
-  closingStyle: "minimal" | "pq_framed" | "pq_framed_with_progression";
-  senseRotation?: "none" | "guided_rotation" | "free_choice";
   language: string;
   voiceGender: "female" | "male";
   ttsNewlinePauseSeconds: number;
-  outputMode: "text" | "audio" | "text-audio";
   debugTtsPrompt: boolean;
 };
 
 const DEFAULT_STATE: FormState = {
-  practiceMode: "tactile",
-  bodyState: "still_seated_closed_eyes",
-  eyeState: "closed",
-  primarySense: "touch",
+  practiceType: "still_eyes_closed",
+  focus: "touch",
   durationMinutes: 2,
-  labelingMode: "none",
-  silenceProfile: "short_pauses",
-  normalizationFrequency: "once",
-  closingStyle: "minimal",
-  senseRotation: "none",
   language: "en",
   voiceGender: "female",
   ttsNewlinePauseSeconds: 1,
-  outputMode: "audio",
   debugTtsPrompt: false,
 };
 
@@ -64,58 +35,10 @@ const LANGUAGE_OPTIONS = [
   { value: "de", label: "German" },
 ];
 
-const PRACTICE_MODE_OPTIONS: FormState["practiceMode"][] = [
-  "tactile",
-  "tense_relax",
-  "moving",
-  "sitting",
-  "label_with_anchor",
-  "label_while_scanning",
-];
-
-const PRIMARY_SENSE_OPTIONS: FormState["primarySense"][] = [
-  "touch",
-  "hearing",
-  "sight",
-  "breath",
-  "body_weight",
-  "smell",
-  "taste",
-];
-
 const DURATION_OPTIONS: FormState["durationMinutes"][] = [1, 2, 5, 12];
 
 const formatDurationLabel = (minutes: number) =>
   `${minutes} minute${minutes === 1 ? "" : "s"}`;
-
-const SILENCE_PROFILE_OPTIONS: FormState["silenceProfile"][] = [
-  "none",
-  "short_pauses",
-  "extended_silence",
-];
-
-const SENSE_ROTATION_OPTIONS: NonNullable<FormState["senseRotation"]>[] = [
-  "none",
-  "guided_rotation",
-  "free_choice",
-];
-
-const FEMALE_VOICES_BY_LANGUAGE: Record<string, string> = {
-  es: "nova",
-  fr: "nova",
-};
-
-const MALE_VOICES_BY_LANGUAGE: Record<string, string> = {
-  es: "onyx",
-  fr: "onyx",
-};
-
-const resolveVoiceForGender = (gender: FormState["voiceGender"], language: string) => {
-  if (gender === "male") {
-    return MALE_VOICES_BY_LANGUAGE[language] ?? "ash";
-  }
-  return FEMALE_VOICES_BY_LANGUAGE[language] ?? "alloy";
-};
 
 export default function HomePage() {
   const [formState, setFormState] = useState<FormState>(DEFAULT_STATE);
@@ -123,64 +46,19 @@ export default function HomePage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
+  const isDevMode = process.env.NODE_ENV !== "production";
   const isLoading = status === "loading";
 
-  const allowedBodyStates = useMemo(() => {
-    if (formState.practiceMode === "moving") {
-      return ["moving"] as FormState["bodyState"][];
+  const sightAllowed = useMemo(
+    () => formState.practiceType === "still_eyes_open" || formState.practiceType === "moving",
+    [formState.practiceType],
+  );
+  const focusOptions = useMemo(() => {
+    if (!sightAllowed) {
+      return ["touch", "hearing", "breath"] as FormState["focus"][];
     }
-    if (formState.practiceMode === "tactile") {
-      return ["still_seated_closed_eyes"] as FormState["bodyState"][];
-    }
-    return ["still_seated", "still_seated_closed_eyes"] as FormState["bodyState"][];
-  }, [formState.practiceMode]);
-
-  const allowedEyeStates = useMemo(() => {
-    if (formState.practiceMode === "moving" || formState.practiceMode === "sitting") {
-      return ["open_focused", "open_diffused"] as FormState["eyeState"][];
-    }
-    if (formState.practiceMode === "tactile") {
-      return ["closed"] as FormState["eyeState"][];
-    }
-    return ["closed", "open_focused", "open_diffused"] as FormState["eyeState"][];
-  }, [formState.practiceMode]);
-
-  const allowedLabelingModes = useMemo(() => {
-    if (formState.practiceMode === "label_with_anchor") {
-      return ["breath_anchor"] as FormState["labelingMode"][];
-    }
-    if (formState.practiceMode === "label_while_scanning") {
-      return ["scan_and_label"] as FormState["labelingMode"][];
-    }
-    return ["none"] as FormState["labelingMode"][];
-  }, [formState.practiceMode]);
-
-  const allowedSilenceProfiles = useMemo(() => {
-    if (formState.durationMinutes === 1 || formState.durationMinutes === 2) {
-      return ["none", "short_pauses"] as FormState["silenceProfile"][];
-    }
-    return SILENCE_PROFILE_OPTIONS;
-  }, [formState.durationMinutes]);
-
-  const requiredNormalizationFrequency = useMemo(() => {
-    if (formState.durationMinutes === 1 || formState.durationMinutes === 2) {
-      return "once";
-    }
-    if (formState.durationMinutes === 5) {
-      return "periodic";
-    }
-    return "repeated";
-  }, [formState.durationMinutes]);
-
-  const requiredClosingStyle = useMemo(() => {
-    if (formState.durationMinutes === 1 || formState.durationMinutes === 2) {
-      return "minimal";
-    }
-    if (formState.durationMinutes === 5) {
-      return "pq_framed";
-    }
-    return "pq_framed_with_progression";
-  }, [formState.durationMinutes]);
+    return ["touch", "hearing", "sight", "breath"] as FormState["focus"][];
+  }, [sightAllowed]);
 
   useEffect(() => {
     return () => {
@@ -191,50 +69,10 @@ export default function HomePage() {
   }, [result]);
 
   useEffect(() => {
-    setFormState((prev) => {
-      let next = prev;
-      let changed = false;
-
-      if (!allowedBodyStates.includes(prev.bodyState)) {
-        next = { ...next, bodyState: allowedBodyStates[0] };
-        changed = true;
-      }
-
-      if (!allowedEyeStates.includes(prev.eyeState)) {
-        next = { ...next, eyeState: allowedEyeStates[0] };
-        changed = true;
-      }
-
-      if (!allowedLabelingModes.includes(prev.labelingMode)) {
-        next = { ...next, labelingMode: allowedLabelingModes[0] };
-        changed = true;
-      }
-
-      if (!allowedSilenceProfiles.includes(prev.silenceProfile)) {
-        next = { ...next, silenceProfile: allowedSilenceProfiles[0] };
-        changed = true;
-      }
-
-      if (prev.normalizationFrequency !== requiredNormalizationFrequency) {
-        next = { ...next, normalizationFrequency: requiredNormalizationFrequency };
-        changed = true;
-      }
-
-      if (prev.closingStyle !== requiredClosingStyle) {
-        next = { ...next, closingStyle: requiredClosingStyle };
-        changed = true;
-      }
-
-      return changed ? next : prev;
-    });
-  }, [
-    allowedBodyStates,
-    allowedEyeStates,
-    allowedLabelingModes,
-    allowedSilenceProfiles,
-    requiredNormalizationFrequency,
-    requiredClosingStyle,
-  ]);
+    if (!focusOptions.includes(formState.focus)) {
+      setFormState((prev) => ({ ...prev, focus: "touch" }));
+    }
+  }, [focusOptions, formState.focus]);
 
   const updateFormState = (updates: Partial<FormState>) => {
     setFormState((prev) => ({ ...prev, ...updates }));
@@ -264,28 +102,16 @@ export default function HomePage() {
 
     setStatus("loading");
 
-    const effectiveOutputMode =
-      formState.debugTtsPrompt && formState.outputMode !== "text-audio"
-        ? "text-audio"
-        : formState.outputMode;
+    const effectiveOutputMode = formState.debugTtsPrompt ? "text-audio" : "audio";
     const payload = {
-      practiceMode: formState.practiceMode,
-      bodyState: formState.bodyState,
-      eyeState: formState.eyeState,
-      primarySense: formState.primarySense,
+      practiceType: formState.practiceType,
+      focus: focusOptions.includes(formState.focus) ? formState.focus : "touch",
       durationMinutes: formState.durationMinutes,
-      labelingMode: formState.labelingMode,
-      silenceProfile: formState.silenceProfile,
-      normalizationFrequency: formState.normalizationFrequency,
-      closingStyle: formState.closingStyle,
-      senseRotation: formState.senseRotation,
-      languages: [formState.language],
-      voiceStyle: resolveVoiceForGender(formState.voiceGender, formState.language),
-      ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
-      durationSeconds: formState.durationSeconds,
-      topic: formState.topic || undefined,
+      language: formState.language,
+      voiceGender: formState.voiceGender,
       outputMode: effectiveOutputMode,
-      debugTtsPrompt: formState.debugTtsPrompt,
+      ...(isDevMode ? { ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds } : {}),
+      ...(formState.debugTtsPrompt ? { debugTtsPrompt: true } : {}),
     };
 
     const requestJson = async () => {
@@ -390,83 +216,50 @@ export default function HomePage() {
     <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 720, margin: "0 auto" }}>
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>PQ Reps Generator</h1>
       <p style={{ marginBottom: "2rem", color: "#555" }}>
-        Build guided PQ Reps sessions that sharpen the PQ brain with tactile, breath, or visual
-        focus. Choose how you are practicing (like tactile PQ reps), then set the duration to
-        match how long you want the rep to last.
+        Choose the type of PQ Reps you'd like to practice.
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
         <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Practice Mode</span>
+          <span style={{ fontWeight: 600 }}>Practice type</span>
           <select
-            name="practiceMode"
-            value={formState.practiceMode}
+            name="practiceType"
+            value={formState.practiceType}
             onChange={(event) =>
               updateFormState({
-                practiceMode: event.target.value as FormState["practiceMode"],
+                practiceType: event.target.value as FormState["practiceType"],
               })
             }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           >
-            {PRACTICE_MODE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option.replace(/_/g, " ")}
-              </option>
-            ))}
+            <option value="still_eyes_closed">Still (Eyes closed)</option>
+            <option value="still_eyes_open">Still (Eyes open)</option>
+            <option value="moving">Moving</option>
+            <option value="labeling">Labeling</option>
           </select>
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Body State</span>
+          <span style={{ fontWeight: 600 }}>Focus</span>
           <select
-            name="bodyState"
-            value={formState.bodyState}
-            onChange={(event) =>
-              updateFormState({ bodyState: event.target.value as FormState["bodyState"] })
-            }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {allowedBodyStates.map((option) => (
-              <option key={option} value={option}>
-                {option.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Eye State</span>
-          <select
-            name="eyeState"
-            value={formState.eyeState}
-            onChange={(event) =>
-              updateFormState({ eyeState: event.target.value as FormState["eyeState"] })
-            }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {allowedEyeStates.map((option) => (
-              <option key={option} value={option}>
-                {option.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Primary Sense</span>
-          <select
-            name="primarySense"
-            value={formState.primarySense}
+            name="focus"
+            value={formState.focus}
             onChange={(event) =>
               updateFormState({
-                primarySense: event.target.value as FormState["primarySense"],
+                focus: event.target.value as FormState["focus"],
               })
             }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           >
-            {PRIMARY_SENSE_OPTIONS.map((option) => (
+            {focusOptions.map((option) => (
               <option key={option} value={option}>
-                {option.replace(/_/g, " ")}
+                {option === "touch"
+                  ? "Touch"
+                  : option === "hearing"
+                    ? "Hearing"
+                    : option === "sight"
+                      ? "Sight"
+                      : "Breath"}
               </option>
             ))}
           </select>
@@ -493,106 +286,6 @@ export default function HomePage() {
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Labeling Mode</span>
-          <select
-            name="labelingMode"
-            value={formState.labelingMode}
-            onChange={(event) =>
-              updateFormState({
-                labelingMode: event.target.value as FormState["labelingMode"],
-              })
-            }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {allowedLabelingModes.map((option) => (
-              <option key={option} value={option}>
-                {option.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Silence Profile</span>
-          <select
-            name="silenceProfile"
-            value={formState.silenceProfile}
-            onChange={(event) =>
-              updateFormState({
-                silenceProfile: event.target.value as FormState["silenceProfile"],
-              })
-            }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {allowedSilenceProfiles.map((option) => (
-              <option key={option} value={option}>
-                {option.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Normalization Frequency</span>
-          <select
-            name="normalizationFrequency"
-            value={formState.normalizationFrequency}
-            onChange={(event) =>
-              updateFormState({
-                normalizationFrequency: event.target.value as FormState["normalizationFrequency"],
-              })
-            }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {[requiredNormalizationFrequency].map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Closing Style</span>
-          <select
-            name="closingStyle"
-            value={formState.closingStyle}
-            onChange={(event) =>
-              updateFormState({
-                closingStyle: event.target.value as FormState["closingStyle"],
-              })
-            }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {[requiredClosingStyle].map((option) => (
-              <option key={option} value={option}>
-                {option.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Sense Rotation</span>
-          <select
-            name="senseRotation"
-            value={formState.senseRotation ?? "none"}
-            onChange={(event) =>
-              updateFormState({
-                senseRotation: event.target.value as FormState["senseRotation"],
-              })
-            }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {SENSE_ROTATION_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Language</span>
           <select
             name="language"
@@ -609,7 +302,10 @@ export default function HomePage() {
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Voice gender</span>
+          <span style={{ fontWeight: 600 }}>Voice</span>
+          <span style={{ fontSize: "0.9rem", color: "#555" }}>
+            Choose the voice you prefer for guidance.
+          </span>
           <select
             name="voiceGender"
             value={formState.voiceGender}
@@ -618,60 +314,43 @@ export default function HomePage() {
             }
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           >
-            <option value="female">Female (Alloy / Nova)</option>
-            <option value="male">Male (Ash / Onyx)</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
           </select>
         </label>
 
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Output</span>
-          <select
-            name="outputMode"
-            value={formState.outputMode}
-            onChange={(event) =>
-              updateFormState({ outputMode: event.target.value as FormState["outputMode"] })
-            }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            <option value="text">Text only</option>
-            <option value="audio">Audio only</option>
-            <option value="text-audio">Text + audio</option>
-          </select>
-        </label>
+        {isDevMode && (
+          <>
+            <label style={{ display: "grid", gap: "0.5rem" }}>
+              <span style={{ fontWeight: 600 }}>TTS newline pause (seconds)</span>
+              <input
+                type="number"
+                min={0}
+                step={0.5}
+                value={formState.ttsNewlinePauseSeconds}
+                onChange={(event) =>
+                  updateFormState({
+                    ttsNewlinePauseSeconds: Number.parseFloat(event.target.value) || 0,
+                  })
+                }
+                style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+              />
+            </label>
 
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>TTS newline pause (seconds)</span>
-          <input
-            type="number"
-            min={0}
-            step={0.5}
-            value={formState.ttsNewlinePauseSeconds}
-            onChange={(event) =>
-              updateFormState({
-                ttsNewlinePauseSeconds: Number.parseFloat(event.target.value) || 0,
-              })
-            }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          />
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Debug TTS prompt</span>
-          <span style={{ fontSize: "0.9rem", color: "#555" }}>
-            Shows the exact TTS payload used for OpenAI audio generation.
-          </span>
-          <input
-            type="checkbox"
-            checked={formState.debugTtsPrompt}
-            onChange={(event) => updateFormState({ debugTtsPrompt: event.target.checked })}
-            style={{ width: 18, height: 18 }}
-          />
-          {formState.debugTtsPrompt && formState.outputMode !== "text-audio" && (
-            <span style={{ fontSize: "0.85rem", color: "#555" }}>
-              Debug mode forces text + audio output so the prompt can be returned.
-            </span>
-          )}
-        </label>
+            <label style={{ display: "grid", gap: "0.5rem" }}>
+              <span style={{ fontWeight: 600 }}>Debug TTS prompt</span>
+              <span style={{ fontSize: "0.9rem", color: "#555" }}>
+                Shows the exact TTS payload used for OpenAI audio generation.
+              </span>
+              <input
+                type="checkbox"
+                checked={formState.debugTtsPrompt}
+                onChange={(event) => updateFormState({ debugTtsPrompt: event.target.checked })}
+                style={{ width: 18, height: 18 }}
+              />
+            </label>
+          </>
+        )}
 
         {errors.length > 0 && (
           <div

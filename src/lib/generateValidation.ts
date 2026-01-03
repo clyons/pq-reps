@@ -1,16 +1,13 @@
 import {
   ALLOWED_DURATIONS,
-  BodyState,
-  ClosingStyle,
-  GenerateConfig,
-  LabelingMode,
-  NormalizationFrequency,
-  PracticeMode,
-  PrimarySense,
-  SilenceProfile,
-  SenseRotation,
   SUPPORTED_LANGUAGES,
 } from "./promptBuilder";
+import {
+  Focus,
+  PracticeType,
+  VoiceGender,
+  deriveGenerateConfig,
+} from "./deriveConfig";
 
 export type ErrorResponse = {
   error: {
@@ -25,7 +22,7 @@ export type OutputMode = "text" | "audio" | "text-audio";
 type ValidationResult = {
   ok: true;
   value: {
-    config: GenerateConfig;
+    config: ReturnType<typeof deriveGenerateConfig>;
     outputMode?: OutputMode;
     debugTtsPrompt?: boolean;
   };
@@ -36,66 +33,16 @@ type ValidationResult = {
 
 const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1;
 
-const ALLOWED_PRACTICE_MODES: PracticeMode[] = [
-  "tactile",
-  "tense_relax",
+const ALLOWED_PRACTICE_TYPES: PracticeType[] = [
+  "still_eyes_closed",
+  "still_eyes_open",
   "moving",
-  "sitting",
-  "label_with_anchor",
-  "label_while_scanning",
+  "labeling",
 ];
 
-const ALLOWED_BODY_STATES: BodyState[] = [
-  "still_seated",
-  "still_seated_closed_eyes",
-  "moving",
-];
+const ALLOWED_FOCUS: Focus[] = ["touch", "hearing", "sight", "breath"];
 
-const ALLOWED_EYE_STATES = ["closed", "open_focused", "open_diffused"] as const;
-
-const ALLOWED_PRIMARY_SENSES: PrimarySense[] = [
-  "touch",
-  "hearing",
-  "sight",
-  "breath",
-  "body_weight",
-  "smell",
-  "taste",
-];
-
-const ALLOWED_LABELING_MODES: LabelingMode[] = [
-  "none",
-  "breath_anchor",
-  "scan_and_label",
-];
-
-const ALLOWED_SILENCE_PROFILES: SilenceProfile[] = [
-  "none",
-  "short_pauses",
-  "extended_silence",
-];
-
-const ALLOWED_NORMALIZATION_FREQUENCY: NormalizationFrequency[] = [
-  "once",
-  "periodic",
-  "repeated",
-];
-
-const ALLOWED_CLOSING_STYLES: ClosingStyle[] = [
-  "minimal",
-  "pq_framed",
-  "pq_framed_with_progression",
-];
-
-const ALLOWED_SENSE_ROTATIONS: SenseRotation[] = [
-  "none",
-  "guided_rotation",
-  "free_choice",
-];
-
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
-}
+const ALLOWED_VOICE_GENDER: VoiceGender[] = ["female", "male"];
 
 export function validateGenerateConfig(payload: unknown): ValidationResult {
   if (!payload || typeof payload !== "object") {
@@ -110,7 +57,13 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
     };
   }
 
-  const config = payload as Partial<GenerateConfig> & {
+  const config = payload as {
+    practiceType?: PracticeType;
+    focus?: Focus;
+    durationMinutes?: number;
+    language?: string;
+    voiceGender?: VoiceGender;
+    ttsNewlinePauseSeconds?: number | string;
     outputMode?: OutputMode;
     debugTtsPrompt?: boolean;
   };
@@ -123,53 +76,27 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
         ? Number.parseFloat(newlinePauseSecondsValue)
         : undefined;
 
-  if (!config.practiceMode || !ALLOWED_PRACTICE_MODES.includes(config.practiceMode)) {
+  if (!config.practiceType || !ALLOWED_PRACTICE_TYPES.includes(config.practiceType)) {
     return {
       ok: false,
       error: {
         error: {
-          code: "invalid_practice_mode",
-          message: "Practice mode must be one of the supported values.",
-          details: { allowed: ALLOWED_PRACTICE_MODES },
+          code: "invalid_practice_type",
+          message: "Practice type must be one of the supported values.",
+          details: { allowed: ALLOWED_PRACTICE_TYPES },
         },
       },
     };
   }
 
-  if (!config.bodyState || !ALLOWED_BODY_STATES.includes(config.bodyState)) {
+  if (!config.focus || !ALLOWED_FOCUS.includes(config.focus)) {
     return {
       ok: false,
       error: {
         error: {
-          code: "invalid_body_state",
-          message: "Body state must be one of the supported values.",
-          details: { allowed: ALLOWED_BODY_STATES },
-        },
-      },
-    };
-  }
-
-  if (!config.eyeState || !ALLOWED_EYE_STATES.includes(config.eyeState)) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_eye_state",
-          message: "Eye state must be one of the supported values.",
-          details: { allowed: ALLOWED_EYE_STATES },
-        },
-      },
-    };
-  }
-
-  if (!config.primarySense || !ALLOWED_PRIMARY_SENSES.includes(config.primarySense)) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_primary_sense",
-          message: "Primary sense must be one of the supported values.",
-          details: { allowed: ALLOWED_PRIMARY_SENSES },
+          code: "invalid_focus",
+          message: "Focus must be one of the supported values.",
+          details: { allowed: ALLOWED_FOCUS },
         },
       },
     };
@@ -188,69 +115,39 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
     };
   }
 
-  if (!config.labelingMode || !ALLOWED_LABELING_MODES.includes(config.labelingMode)) {
+  if (!config.language || typeof config.language !== "string") {
     return {
       ok: false,
       error: {
         error: {
-          code: "invalid_labeling_mode",
-          message: "Labeling mode must be one of the supported values.",
-          details: { allowed: ALLOWED_LABELING_MODES },
+          code: "invalid_language",
+          message: "Language must be provided.",
         },
       },
     };
   }
 
-  if (!config.silenceProfile || !ALLOWED_SILENCE_PROFILES.includes(config.silenceProfile)) {
+  if (!SUPPORTED_LANGUAGES.includes(config.language)) {
     return {
       ok: false,
       error: {
         error: {
-          code: "invalid_silence_profile",
-          message: "Silence profile must be one of the supported values.",
-          details: { allowed: ALLOWED_SILENCE_PROFILES },
+          code: "unsupported_language",
+          message: "One or more languages are not supported.",
+          details: { unsupported: [config.language], supported: SUPPORTED_LANGUAGES },
         },
       },
     };
   }
 
-  if (
-    !config.normalizationFrequency ||
-    !ALLOWED_NORMALIZATION_FREQUENCY.includes(config.normalizationFrequency)
-  ) {
+  if (!config.voiceGender || !ALLOWED_VOICE_GENDER.includes(config.voiceGender)) {
     return {
       ok: false,
       error: {
         error: {
-          code: "invalid_normalization_frequency",
-          message: "Normalization frequency must be one of the supported values.",
-          details: { allowed: ALLOWED_NORMALIZATION_FREQUENCY },
-        },
-      },
-    };
-  }
-
-  if (!config.closingStyle || !ALLOWED_CLOSING_STYLES.includes(config.closingStyle)) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_closing_style",
-          message: "Closing style must be one of the supported values.",
-          details: { allowed: ALLOWED_CLOSING_STYLES },
-        },
-      },
-    };
-  }
-
-  if (config.senseRotation && !ALLOWED_SENSE_ROTATIONS.includes(config.senseRotation)) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_sense_rotation",
-          message: "Sense rotation must be one of the supported values.",
-          details: { allowed: ALLOWED_SENSE_ROTATIONS },
+          code: "invalid_voice_gender",
+          message: "Voice gender must be one of the supported values.",
+          details: { allowed: ALLOWED_VOICE_GENDER },
         },
       },
     };
@@ -271,271 +168,19 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
     };
   }
 
-  if (!isStringArray(config.languages) || config.languages.length === 0) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_languages",
-          message: "Languages must be a non-empty array of strings.",
-        },
-      },
-    };
-  }
-
-  const unsupported = config.languages.filter(
-    (lang) => !SUPPORTED_LANGUAGES.includes(lang),
-  );
-
-  if (unsupported.length > 0) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "unsupported_language",
-          message: "One or more languages are not supported.",
-          details: { unsupported, supported: SUPPORTED_LANGUAGES },
-        },
-      },
-    };
-  }
-
-  if (config.practiceMode === "moving") {
-    if (config.bodyState !== "moving") {
-      return {
-        ok: false,
-        error: {
-          error: {
-            code: "invalid_body_state",
-            message: "Moving practice mode requires a moving body state.",
-          },
-        },
-      };
-    }
-    if (config.eyeState === "closed") {
-      return {
-        ok: false,
-        error: {
-          error: {
-            code: "invalid_eye_state",
-            message: "Moving practice mode requires eyes open.",
-          },
-        },
-      };
-    }
-  }
-
-  if (config.practiceMode === "tactile") {
-    if (config.bodyState !== "still_seated_closed_eyes") {
-      return {
-        ok: false,
-        error: {
-          error: {
-            code: "invalid_body_state",
-            message: "Tactile practice mode requires still seated with eyes closed.",
-          },
-        },
-      };
-    }
-    if (config.eyeState !== "closed") {
-      return {
-        ok: false,
-        error: {
-          error: {
-            code: "invalid_eye_state",
-            message: "Tactile practice mode requires eyes closed.",
-          },
-        },
-      };
-    }
-  }
-
-  if (config.practiceMode === "sitting" && config.eyeState === "closed") {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_eye_state",
-          message: "Sitting practice mode requires eyes open.",
-        },
-      },
-    };
-  }
-
-  if (config.bodyState === "moving" && config.practiceMode !== "moving") {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_practice_mode",
-          message: "Moving body state requires moving practice mode.",
-        },
-      },
-    };
-  }
-
-  if (
-    config.practiceMode === "label_with_anchor" &&
-    config.labelingMode !== "breath_anchor"
-  ) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_labeling_mode",
-          message: "Label with anchor mode requires breath anchor labeling.",
-        },
-      },
-    };
-  }
-
-  if (
-    config.practiceMode === "label_while_scanning" &&
-    config.labelingMode !== "scan_and_label"
-  ) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_labeling_mode",
-          message: "Label while scanning mode requires scan and label.",
-        },
-      },
-    };
-  }
-
-  if (
-    config.practiceMode !== "label_with_anchor" &&
-    config.practiceMode !== "label_while_scanning" &&
-    config.labelingMode !== "none"
-  ) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_labeling_mode",
-          message: "Labeling mode must be none for non-label practice modes.",
-        },
-      },
-    };
-  }
-
-  if (
-    (config.durationMinutes === 1 || config.durationMinutes === 2) &&
-    config.silenceProfile === "extended_silence"
-  ) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_silence_profile",
-          message: "Extended silence is only allowed for 5 or 12 minute sessions.",
-        },
-      },
-    };
-  }
-
-  if (
-    (config.durationMinutes === 1 || config.durationMinutes === 2) &&
-    config.normalizationFrequency !== "once"
-  ) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_normalization_frequency",
-          message: "Short sessions require normalization frequency of once.",
-        },
-      },
-    };
-  }
-
-  if (config.durationMinutes === 5 && config.normalizationFrequency !== "periodic") {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_normalization_frequency",
-          message: "5-minute sessions require periodic normalization.",
-        },
-      },
-    };
-  }
-
-  if (config.durationMinutes === 12 && config.normalizationFrequency !== "repeated") {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_normalization_frequency",
-          message: "12-minute sessions require repeated normalization.",
-        },
-      },
-    };
-  }
-
-  if (
-    (config.durationMinutes === 1 || config.durationMinutes === 2) &&
-    config.closingStyle !== "minimal"
-  ) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_closing_style",
-          message: "2-minute sessions require minimal closing style.",
-        },
-      },
-    };
-  }
-
-  if (config.durationMinutes === 5 && config.closingStyle !== "pq_framed") {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_closing_style",
-          message: "5-minute sessions require PQ-framed closing style.",
-        },
-      },
-    };
-  }
-
-  if (
-    config.durationMinutes === 12 &&
-    config.closingStyle !== "pq_framed_with_progression"
-  ) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_closing_style",
-          message: "12-minute sessions require PQ framing with progression.",
-        },
-      },
-    };
-  }
 
   return {
     ok: true,
     value: {
-      config: {
-        practiceMode: config.practiceMode,
-        bodyState: config.bodyState,
-        eyeState: config.eyeState,
-        primarySense: config.primarySense,
+      config: deriveGenerateConfig({
+        practiceType: config.practiceType,
+        focus: config.focus,
         durationMinutes: config.durationMinutes,
-        labelingMode: config.labelingMode,
-        silenceProfile: config.silenceProfile,
-        normalizationFrequency: config.normalizationFrequency,
-        closingStyle: config.closingStyle,
-        senseRotation: config.senseRotation,
-        languages: config.languages,
-        audience: config.audience,
-        voiceStyle: config.voiceStyle,
+        language: config.language,
+        voiceGender: config.voiceGender,
         ttsNewlinePauseSeconds:
           parsedNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
-      },
+      }),
       outputMode: config.outputMode,
       debugTtsPrompt: config.debugTtsPrompt ?? false,
     },

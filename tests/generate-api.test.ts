@@ -4,19 +4,11 @@ import { buildPrompt } from "../src/lib/promptBuilder";
 import { validateGenerateConfig } from "../src/lib/generateValidation";
 
 const validPayload = {
-  practiceMode: "sitting",
-  bodyState: "still_seated",
-  eyeState: "open_focused",
-  primarySense: "breath",
+  practiceType: "still_eyes_open",
+  focus: "breath",
   durationMinutes: 5,
-  labelingMode: "none",
-  silenceProfile: "short_pauses",
-  normalizationFrequency: "periodic",
-  closingStyle: "pq_framed",
-  senseRotation: "guided_rotation",
-  languages: ["en", "es"],
-  audience: "busy professionals",
-  voiceStyle: "sage",
+  language: "en",
+  voiceGender: "female",
 };
 
 function assertConfigMapping(result: ReturnType<typeof validateGenerateConfig>) {
@@ -26,24 +18,23 @@ function assertConfigMapping(result: ReturnType<typeof validateGenerateConfig>) 
   }
 
   const { config } = result.value;
-  assert.equal(config.practiceMode, validPayload.practiceMode);
-  assert.equal(config.bodyState, validPayload.bodyState);
-  assert.equal(config.eyeState, validPayload.eyeState);
-  assert.equal(config.primarySense, validPayload.primarySense);
+  assert.equal(config.practiceMode, "sitting");
+  assert.equal(config.bodyState, "still_seated");
+  assert.equal(config.eyeState, "open_diffused");
+  assert.equal(config.primarySense, "breath");
   assert.equal(config.durationMinutes, validPayload.durationMinutes);
-  assert.equal(config.labelingMode, validPayload.labelingMode);
-  assert.equal(config.silenceProfile, validPayload.silenceProfile);
-  assert.equal(config.normalizationFrequency, validPayload.normalizationFrequency);
-  assert.equal(config.closingStyle, validPayload.closingStyle);
-  assert.equal(config.senseRotation, validPayload.senseRotation);
-  assert.deepEqual(config.languages, validPayload.languages);
-  assert.equal(config.audience, validPayload.audience);
-  assert.equal(config.voiceStyle, validPayload.voiceStyle);
+  assert.equal(config.labelingMode, "none");
+  assert.equal(config.silenceProfile, "short_pauses");
+  assert.equal(config.normalizationFrequency, "periodic");
+  assert.equal(config.closingStyle, "pq_framed");
+  assert.equal(config.senseRotation, "guided_rotation");
+  assert.deepEqual(config.languages, ["en"]);
+  assert.equal(config.voiceStyle, "alloy");
 
   const prompt = buildPrompt(config);
   assert.match(prompt, /Practice mode: sitting\./);
   assert.match(prompt, /Body state: still_seated\./);
-  assert.match(prompt, /Eye state: open_focused\./);
+  assert.match(prompt, /Eye state: open_diffused\./);
   assert.match(prompt, /Primary sense: breath\./);
   assert.match(prompt, /Duration: 5 minutes\./);
   assert.doesNotMatch(prompt, /undefined/);
