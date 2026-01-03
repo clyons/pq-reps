@@ -13,6 +13,34 @@ export type TtsResponse = {
   voice: string;
 };
 
+export const MAX_TTS_SEGMENTS = 32;
+export const MAX_TTS_CHARS = 4000;
+
+export class TtsScriptTooLargeError extends Error {
+  code = "script_too_large" as const;
+  maxSegments: number;
+  maxChars: number;
+  segmentCount: number;
+  charCount: number;
+
+  constructor(details: {
+    maxSegments: number;
+    maxChars: number;
+    segmentCount: number;
+    charCount: number;
+  }) {
+    super(
+      `Script exceeds TTS limits (segments: ${details.segmentCount}/${details.maxSegments}, ` +
+        `chars: ${details.charCount}/${details.maxChars}).`,
+    );
+    this.name = "TtsScriptTooLargeError";
+    this.maxSegments = details.maxSegments;
+    this.maxChars = details.maxChars;
+    this.segmentCount = details.segmentCount;
+    this.charCount = details.charCount;
+  }
+}
+
 type WavFormat = {
   audioData: Buffer;
   sampleRate: number;
@@ -227,6 +255,22 @@ export async function synthesizeSpeech(
   const tokens = tokenizeScript(request.script);
   if (tokens.length === 0) {
     throw new Error("Script is empty after parsing pause markers.");
+  }
+
+  const totalChars = tokens.reduce((sum, token) => {
+    if (token.type === "text") {
+      return sum + token.value.length;
+    }
+    return sum;
+  }, 0);
+
+  if (tokens.length > MAX_TTS_SEGMENTS || totalChars > MAX_TTS_CHARS) {
+    throw new TtsScriptTooLargeError({
+      maxSegments: MAX_TTS_SEGMENTS,
+      maxChars: MAX_TTS_CHARS,
+      segmentCount: tokens.length,
+      charCount: totalChars,
+    });
   }
 
   const audioChunks: Buffer[] = [];
