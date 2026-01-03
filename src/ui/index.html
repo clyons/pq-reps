@@ -70,6 +70,9 @@
         display: grid;
         gap: 0.5rem;
       }
+      .status-panel[hidden] {
+        display: none;
+      }
       .status-row {
         display: flex;
         align-items: center;
@@ -278,14 +281,8 @@
           <input type="checkbox" name="debugTtsPrompt" />
         </label>
 
-        <label>
-          <span>Debug TTS prompt</span>
-          <span class="hint">Include the raw TTS payload for OpenAI playground testing.</span>
-          <input type="checkbox" name="debugTtsPrompt" />
-        </label>
-
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-          <button type="submit" id="submit-button">Generate audio</button>
+          <button type="submit" id="submit-button">Generate</button>
           <button type="button" id="reset-button" class="button-secondary">
             Reset to defaults
           </button>
