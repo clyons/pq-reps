@@ -101,11 +101,6 @@ export default function HomePage() {
 
   const isLoading = status === "loading";
 
-  const durationLabel = useMemo(
-    () => formatDurationLabel(formState.durationMinutes),
-    [formState.durationMinutes],
-  );
-
   const allowedBodyStates = useMemo(() => {
     if (formState.practiceMode === "moving") {
       return ["moving"] as FormState["bodyState"][];
@@ -456,7 +451,6 @@ export default function HomePage() {
               </option>
             ))}
           </select>
-          <span style={{ color: "#555" }}>{durationLabel}</span>
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
