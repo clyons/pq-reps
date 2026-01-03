@@ -588,6 +588,9 @@ export default async function handler(
   const { config, outputMode: requestedMode } = validation.value;
   const prompt = buildPrompt(config);
   const pauseMarkerRegex = /\s*\[pause:(\d+(?:\.\d+)?)\]\s*/gi;
+  const acceptHeader = req.headers.accept ?? "";
+  const outputMode: OutputMode =
+    requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
 
   try {
     const { script } = await generateScript({ prompt });
@@ -634,22 +637,17 @@ export default async function handler(
       },
     };
 
-    const acceptHeader = req.headers.accept ?? "";
     if (acceptHeader.includes("application/json")) {
-    if (outputMode === "text-audio") {
-      const response: SuccessResponse = {
-        script,
-        metadata: {
-          sense: config.sense,
-          languages: config.languages,
-          durationSeconds: config.durationSeconds,
-          prompt,
-          ttsProvider: ttsResult.provider,
-          voice: ttsResult.voice,
-        },
-        audioBase64: ttsResult.audio.toString("base64"),
-        audioContentType: ttsResult.contentType,
-      };
+      if (outputMode === "text-audio") {
+        const responseWithAudio: SuccessResponse = {
+          ...response,
+          audioBase64: ttsResult.audio.toString("base64"),
+          audioContentType: ttsResult.contentType,
+        };
+        sendJson(res, 200, responseWithAudio);
+        return;
+      }
+
       sendJson(res, 200, response);
       return;
     }
