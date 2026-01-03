@@ -175,7 +175,7 @@
         </label>
 
         <label>
-          Duration: <span id="duration-label">2 minutes</span>
+          Duration
           <select name="durationMinutes" required>
             <option value="1">1 minute</option>
             <option value="2">2 minutes</option>
@@ -251,7 +251,6 @@
       const practiceTypeInput = form.querySelector("select[name='practiceType']");
       const focusInput = form.querySelector("select[name='focus']");
       const durationInput = form.querySelector("select[name='durationMinutes']");
-      const durationLabel = document.getElementById("duration-label");
       const status = document.getElementById("status");
       const statusPanel = document.getElementById("status-panel");
       const spinner = document.getElementById("spinner");
@@ -277,9 +276,96 @@
         devControls.hidden = !isDevMode;
       }
 
-      const updateDurationLabel = () => {
-        const minutes = Number(durationInput.value);
-        durationLabel.textContent = `${minutes} minute${minutes === 1 ? "" : "s"}`;
+      const derivePracticeConfig = (practiceType, durationMinutes) => {
+        if (practiceType === "still_eyes_closed") {
+          return {
+            practiceMode: "tactile",
+            bodyState: "still_seated_closed_eyes",
+            eyeState: "closed",
+            labelingMode: "none",
+          };
+        }
+        if (practiceType === "still_eyes_open") {
+          return {
+            practiceMode: "sitting",
+            bodyState: "still_seated",
+            eyeState: "open_diffused",
+            labelingMode: "none",
+          };
+        }
+        if (practiceType === "moving") {
+          return {
+            practiceMode: "moving",
+            bodyState: "moving",
+            eyeState: "open_focused",
+            labelingMode: "none",
+          };
+        }
+        const labelingMode = durationMinutes < 5 ? "breath_anchor" : "scan_and_label";
+        return {
+          practiceMode: durationMinutes < 5 ? "label_with_anchor" : "label_while_scanning",
+          bodyState: "still_seated_closed_eyes",
+          eyeState: "closed",
+          labelingMode,
+        };
+      };
+
+      const deriveDurationConfig = (durationMinutes) => {
+        if (durationMinutes === 1 || durationMinutes === 2) {
+          return {
+            silenceProfile: "none",
+            normalizationFrequency: "once",
+            closingStyle: "minimal",
+          };
+        }
+        if (durationMinutes === 5) {
+          return {
+            silenceProfile: "short_pauses",
+            normalizationFrequency: "periodic",
+            closingStyle: "pq_framed",
+          };
+        }
+        return {
+          silenceProfile: "extended_silence",
+          normalizationFrequency: "repeated",
+          closingStyle: "pq_framed_with_progression",
+        };
+      };
+
+      const deriveSenseRotation = (practiceType, durationMinutes) => {
+        if (durationMinutes >= 5 && practiceType !== "labeling") {
+          return "guided_rotation";
+        }
+        return "none";
+      };
+
+      const derivePrimarySense = (focus, eyeState) => {
+        if (focus === "sight" && eyeState === "closed") {
+          return "touch";
+        }
+        return focus;
+      };
+
+      const updateFocusOptions = (eyeState) => {
+        const sightOption = focusInput.querySelector("option[value='sight']");
+        if (!sightOption) {
+          return;
+        }
+        if (eyeState === "closed") {
+          sightOption.hidden = true;
+          if (focusInput.value === "sight") {
+            focusInput.value = "touch";
+          }
+        } else {
+          sightOption.hidden = false;
+        }
+      };
+
+      const updateDerivedFields = () => {
+        const practiceType = practiceTypeInput.value;
+        const durationMinutes = Number(durationInput.value);
+        const { eyeState } = derivePracticeConfig(practiceType, durationMinutes);
+        updateFocusOptions(eyeState);
       };
 
       const derivePracticeConfig = (practiceType, durationMinutes) => {
@@ -386,7 +472,6 @@
             field.value = value;
           }
         });
-        updateDurationLabel();
       };
 
       const defaultValues = getFormValues();
@@ -403,9 +488,7 @@
         }
       }
 
-      updateDurationLabel();
       updateDerivedFields();
-      durationInput.addEventListener("change", updateDurationLabel);
       durationInput.addEventListener("change", updateDerivedFields);
       practiceTypeInput.addEventListener("change", updateDerivedFields);
 
