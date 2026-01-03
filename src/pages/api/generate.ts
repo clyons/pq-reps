@@ -18,13 +18,13 @@ type ErrorResponse = {
 
 type SuccessResponse = {
   script: string;
-  audioUrl: string;
   metadata: {
     sense: Sense;
     languages: string[];
     durationSeconds: number;
     prompt: string;
     ttsProvider: string;
+    voice: string;
   };
 };
 
@@ -208,6 +208,7 @@ export default async function handler(
   ].join(" ");
 
   try {
+    console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
     const ttsResult = await synthesizeSpeech({
       script,
       language: config.languages[0],
@@ -216,17 +217,26 @@ export default async function handler(
 
     const response: SuccessResponse = {
       script,
-      audioUrl: ttsResult.audioUrl,
       metadata: {
         sense: config.sense,
         languages: config.languages,
         durationSeconds: config.durationSeconds,
         prompt,
         ttsProvider: ttsResult.provider,
+        voice: ttsResult.voice,
       },
     };
 
-    sendJson(res, 200, response);
+    const acceptHeader = req.headers.accept ?? "";
+    if (acceptHeader.includes("application/json")) {
+      sendJson(res, 200, response);
+      return;
+    }
+
+    res.statusCode = 200;
+    res.setHeader("Content-Type", ttsResult.contentType);
+    res.setHeader("Content-Disposition", "attachment; filename=\"pq-reps.mp3\"");
+    res.end(ttsResult.audio);
   } catch (error) {
     sendJson(res, 500, {
       error: {
