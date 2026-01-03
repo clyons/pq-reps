@@ -38,10 +38,24 @@ type SuccessResponse = {
   audioContentType?: string;
 };
 
+type StreamEvent = "status" | "done" | "error";
+
 function sendJson(res: ServerResponse, status: number, payload: unknown) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(payload));
+}
+
+function sendEventStreamHeaders(res: ServerResponse) {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+}
+
+function sendEvent(res: ServerResponse, event: StreamEvent, data: string) {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${data}\n\n`);
 }
 
 async function parseJsonBody(req: IncomingMessage): Promise<unknown> {
@@ -150,6 +164,7 @@ export default async function handler(
   const { config, outputMode: requestedMode } = validation.value;
   const prompt = buildPrompt(config);
   const acceptHeader = req.headers.accept ?? "";
+  const wantsStream = acceptHeader.includes("text/event-stream");
   const outputMode =
     requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
 
@@ -164,9 +179,13 @@ export default async function handler(
   }
 
   try {
+    if (wantsStream) {
+      sendEventStreamHeaders(res);
+      sendEvent(res, "status", "generating script…");
+    }
     const { script } = await generateScript({ prompt });
     if (outputMode === "text") {
-      sendJson(res, 200, {
+      const response = {
         script,
         metadata: {
           practiceMode: config.practiceMode,
@@ -184,10 +203,21 @@ export default async function handler(
           ttsProvider: "none",
           voice: "n/a",
         },
-      } satisfies SuccessResponse);
+      } satisfies SuccessResponse;
+
+      if (wantsStream) {
+        sendEvent(res, "done", JSON.stringify(response));
+        res.end();
+        return;
+      }
+
+      sendJson(res, 200, response);
       return;
     }
 
+    if (wantsStream) {
+      sendEvent(res, "status", "synthesizing audio…");
+    }
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
     const ttsResult = await synthesizeSpeech({
       script,
@@ -195,28 +225,37 @@ export default async function handler(
       voice: config.voiceStyle,
     });
 
+    const response: SuccessResponse = {
+      script,
+      metadata: {
+        practiceMode: config.practiceMode,
+        bodyState: config.bodyState,
+        eyeState: config.eyeState,
+        primarySense: config.primarySense,
+        durationMinutes: config.durationMinutes,
+        labelingMode: config.labelingMode,
+        silenceProfile: config.silenceProfile,
+        normalizationFrequency: config.normalizationFrequency,
+        closingStyle: config.closingStyle,
+        senseRotation: config.senseRotation,
+        languages: config.languages,
+        prompt,
+        ttsProvider: ttsResult.provider,
+        voice: ttsResult.voice,
+      },
+    };
+
+    if (wantsStream) {
+      response.audioBase64 = ttsResult.audio.toString("base64");
+      response.audioContentType = ttsResult.contentType;
+      sendEvent(res, "done", JSON.stringify(response));
+      res.end();
+      return;
+    }
+
     if (outputMode === "text-audio") {
-      const response: SuccessResponse = {
-        script,
-        metadata: {
-          practiceMode: config.practiceMode,
-          bodyState: config.bodyState,
-          eyeState: config.eyeState,
-          primarySense: config.primarySense,
-          durationMinutes: config.durationMinutes,
-          labelingMode: config.labelingMode,
-          silenceProfile: config.silenceProfile,
-          normalizationFrequency: config.normalizationFrequency,
-          closingStyle: config.closingStyle,
-          senseRotation: config.senseRotation,
-          languages: config.languages,
-          prompt,
-          ttsProvider: ttsResult.provider,
-          voice: ttsResult.voice,
-        },
-        audioBase64: ttsResult.audio.toString("base64"),
-        audioContentType: ttsResult.contentType,
-      };
+      response.audioBase64 = ttsResult.audio.toString("base64");
+      response.audioContentType = ttsResult.contentType;
       sendJson(res, 200, response);
       return;
     }
@@ -226,6 +265,15 @@ export default async function handler(
     res.setHeader("Content-Disposition", "attachment; filename=\"pq-reps.wav\"");
     res.end(ttsResult.audio);
   } catch (error) {
+    if (wantsStream) {
+      const message =
+        error instanceof TtsScriptTooLargeError
+          ? "Script exceeds the maximum length supported for TTS."
+          : "Failed to generate a response.";
+      sendEvent(res, "error", message);
+      res.end();
+      return;
+    }
     if (error instanceof TtsScriptTooLargeError) {
       sendJson(res, 400, {
         error: {
