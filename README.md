@@ -7,6 +7,15 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - A minimal HTTP API server exposing `POST /api/generate`
 - Placeholder TTS service that returns a fake audio URL
 
+## Spec task list
+- [x] Define core prompt builder types and templates.
+- [x] Implement a `POST /api/generate` endpoint for script + audio metadata.
+- [x] Provide local setup instructions for macOS.
+- [ ] Build a configuration UI for sense, eyes, duration, and language.
+- [ ] Add real TTS integration and storage for generated audio.
+- [ ] Support multi-language template expansion beyond English/Spanish.
+- [ ] Add tests for prompt outline and API validation.
+
 ## Local setup (macOS)
 
 ### Prerequisites
