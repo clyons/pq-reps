@@ -13,7 +13,7 @@ import {
   SenseRotation,
 } from "../../../lib/promptBuilder";
 import { OutputMode, validateGenerateConfig } from "../../../lib/generateValidation";
-import { generateScript } from "../../../services/script";
+import { generateScript, SCRIPT_SYSTEM_PROMPT } from "../../../services/script";
 import { synthesizeSpeech } from "../../../services/tts";
 
 export const runtime = "nodejs";
@@ -43,6 +43,9 @@ type SuccessResponse = {
     voice: string;
     input: string;
     response_format: string;
+    voiceStylePreference?: string;
+    scriptSystemPrompt: string;
+    scriptUserPrompt: string;
   };
   audioBase64?: string;
   audioContentType?: string;
@@ -129,6 +132,9 @@ export async function POST(request: Request) {
           voice: ttsResult.voice,
           input: script,
           response_format: "wav",
+          voiceStylePreference: config.voiceStyle,
+          scriptSystemPrompt: SCRIPT_SYSTEM_PROMPT,
+          scriptUserPrompt: prompt,
         }
       : undefined;
 
