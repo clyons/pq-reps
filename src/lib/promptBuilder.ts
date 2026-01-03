@@ -2,7 +2,7 @@ import { Duration, Eyes, Language, PromptConfig, Sense } from "./types";
 
 export type Sense = "calm" | "energizing" | "focus" | "uplifting";
 
-export type GenerateConfig = {
+export type LegacyGenerateConfig = {
   sense: Sense;
   languages: string[];
   durationSeconds: number;
@@ -10,6 +10,24 @@ export type GenerateConfig = {
   topic?: string;
   voiceStyle?: string;
 };
+
+export type PracticeGenerateConfig = {
+  practiceMode: string;
+  bodyState: string;
+  eyeState: string;
+  primarySense: string;
+  durationMinutes: number;
+  labelingMode: string;
+  silenceProfile: string;
+  normalizationFrequency: string;
+  closingStyle: string;
+  senseRotation?: string;
+  languages: string[];
+  audience?: string;
+  voiceStyle?: string;
+};
+
+export type GenerateConfig = LegacyGenerateConfig | PracticeGenerateConfig;
 
 export const SUPPORTED_LANGUAGES = [
   "en",
@@ -24,6 +42,27 @@ export const DURATION_BOUNDS = {
 };
 
 export function buildPrompt(config: GenerateConfig): string {
+  if ("practiceMode" in config || "durationMinutes" in config) {
+    return [
+      `Practice mode: ${config.practiceMode}.`,
+      `Body state: ${config.bodyState}.`,
+      `Eye state: ${config.eyeState}.`,
+      `Primary sense: ${config.primarySense}.`,
+      `Duration: ${config.durationMinutes} minutes.`,
+      `Labeling mode: ${config.labelingMode}.`,
+      `Silence profile: ${config.silenceProfile}.`,
+      `Normalization frequency: ${config.normalizationFrequency}.`,
+      `Closing style: ${config.closingStyle}.`,
+      `Sense rotation: ${config.senseRotation ?? "none"}.`,
+      `Language: ${config.languages.join(", ")}.`,
+      config.audience ? `Audience: ${config.audience}.` : "Audience: general.",
+      config.voiceStyle
+        ? `Voice style preference: ${config.voiceStyle}. Use only if it does not conflict with tone rules.`
+        : "No additional voice style preference provided.",
+      "Use these inputs exactly. Do not invent additional modes, senses, or counts.",
+    ].join("\n");
+  }
+
   const {
     sense,
     languages,
