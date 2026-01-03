@@ -18,6 +18,8 @@ import { synthesizeSpeech } from "../../../services/tts";
 
 export const runtime = "nodejs";
 
+const PAUSE_MARKER_REGEX = /\[pause:(\d+(?:\.\d+)?)\]/gi;
+
 type SuccessResponse = {
   script: string;
   metadata: {
@@ -40,6 +42,8 @@ type SuccessResponse = {
   audioContentType?: string;
 };
 
+const stripPauseMarkers = (script: string) =>
+  script.replace(PAUSE_MARKER_REGEX, "").replace(/\s{2,}/g, " ").trim();
 
 export async function POST(request: Request) {
   let payload: unknown;
@@ -83,9 +87,10 @@ export async function POST(request: Request) {
 
   try {
     const { script } = await generateScript({ prompt });
+    const cleanedScript = stripPauseMarkers(script);
     if (outputMode === "text") {
       const response: SuccessResponse = {
-        script,
+        script: cleanedScript,
         metadata: {
           practiceMode: config.practiceMode,
           bodyState: config.bodyState,
@@ -115,7 +120,7 @@ export async function POST(request: Request) {
 
     if (outputMode === "text-audio") {
       const response: SuccessResponse = {
-        script,
+        script: cleanedScript,
         metadata: {
           practiceMode: config.practiceMode,
           bodyState: config.bodyState,
