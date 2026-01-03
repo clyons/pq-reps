@@ -113,6 +113,15 @@
           <input type="range" name="duration" min="30" max="900" step="30" value="120" />
         </label>
 
+        <label>
+          Output
+          <select name="outputMode">
+            <option value="text">Text only</option>
+            <option value="audio" selected>Audio only</option>
+            <option value="text-audio">Text + audio</option>
+          </select>
+        </label>
+
         <button type="submit" id="submit-button">Generate audio</button>
       </form>
 
@@ -121,8 +130,11 @@
 
       <section id="result" class="result" hidden>
         <h2>Your session is ready</h2>
-        <audio id="audio-player" controls style="width: 100%;"></audio>
-        <a id="download-link" class="download-link" download="pq-reps.mp3">Download the MP3</a>
+        <audio id="audio-player" controls style="width: 100%;" hidden></audio>
+        <a id="download-link" class="download-link" download="pq-reps.mp3" hidden>
+          Download the MP3
+        </a>
+        <p id="script-output" style="margin-top: 1rem; white-space: pre-line;" hidden></p>
       </section>
     </main>
 
@@ -135,6 +147,7 @@
       const result = document.getElementById("result");
       const audioPlayer = document.getElementById("audio-player");
       const downloadLink = document.getElementById("download-link");
+      const scriptOutput = document.getElementById("script-output");
       const submitButton = document.getElementById("submit-button");
       let currentUrl = null;
 
@@ -151,6 +164,7 @@
         error.textContent = "";
         status.textContent = "";
         result.hidden = true;
+        scriptOutput.textContent = "";
 
         if (currentUrl) {
           URL.revokeObjectURL(currentUrl);
@@ -164,11 +178,30 @@
           durationSeconds: Number(formData.get("duration")),
           topic: formData.get("topic") || undefined,
         };
+        const outputMode = formData.get("outputMode");
 
         submitButton.disabled = true;
         status.textContent = "Generating audio. This can take a few seconds.";
 
-        try {
+        const requestJson = async () => {
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const errorBody = await response.json();
+            throw new Error(errorBody?.error?.message || "The generator failed to respond.");
+          }
+
+          return response.json();
+        };
+
+        const requestAudio = async () => {
           const response = await fetch("/api/generate", {
             method: "POST",
             headers: {
@@ -189,13 +222,42 @@
 
           const audioBuffer = await response.arrayBuffer();
           const contentType = response.headers.get("content-type") || "audio/mpeg";
-          const blob = new Blob([audioBuffer], { type: contentType });
-          currentUrl = URL.createObjectURL(blob);
+          return new Blob([audioBuffer], { type: contentType });
+        };
 
-          audioPlayer.src = currentUrl;
-          downloadLink.href = currentUrl;
+        try {
+          let script = "";
+          let audioBlob = null;
+
+          if (outputMode === "text" || outputMode === "text-audio") {
+            const jsonResponse = await requestJson();
+            script = jsonResponse?.script || "";
+          }
+
+          if (outputMode === "audio" || outputMode === "text-audio") {
+            audioBlob = await requestAudio();
+          }
+
+          if (audioBlob) {
+            currentUrl = URL.createObjectURL(audioBlob);
+            audioPlayer.src = currentUrl;
+            audioPlayer.hidden = false;
+            downloadLink.href = currentUrl;
+            downloadLink.hidden = false;
+          } else {
+            audioPlayer.hidden = true;
+            downloadLink.hidden = true;
+          }
+
+          if (script) {
+            scriptOutput.textContent = script;
+            scriptOutput.hidden = false;
+          } else {
+            scriptOutput.hidden = true;
+          }
+
           result.hidden = false;
-          status.textContent = "Audio ready!";
+          status.textContent = outputMode === "text" ? "Text ready!" : "Output ready!";
         } catch (err) {
           error.hidden = false;
           error.textContent = err instanceof Error ? err.message : "Something went wrong.";

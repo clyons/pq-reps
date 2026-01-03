@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 
 type GenerationResult = {
-  audioUrl: string;
+  audioUrl?: string;
+  script?: string;
 };
 
 type FormState = {
@@ -11,6 +12,7 @@ type FormState = {
   durationSeconds: number;
   language: string;
   topic: string;
+  outputMode: "text" | "audio" | "text-audio";
 };
 
 const DEFAULT_STATE: FormState = {
@@ -18,6 +20,7 @@ const DEFAULT_STATE: FormState = {
   durationSeconds: 120,
   language: "en",
   topic: "",
+  outputMode: "audio",
 };
 
 const LANGUAGE_OPTIONS = [
@@ -87,14 +90,32 @@ export default function HomePage() {
 
     setStatus("loading");
 
-    try {
-      const payload = {
-        sense: formState.sense,
-        languages: [formState.language],
-        durationSeconds: formState.durationSeconds,
-        topic: formState.topic || undefined,
-      };
+    const payload = {
+      sense: formState.sense,
+      languages: [formState.language],
+      durationSeconds: formState.durationSeconds,
+      topic: formState.topic || undefined,
+    };
 
+    const requestJson = async () => {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorBody = (await response.json()) as { error?: { message?: string } };
+        throw new Error(errorBody.error?.message ?? "The generator failed to respond.");
+      }
+
+      return (await response.json()) as { script: string };
+    };
+
+    const requestAudio = async () => {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
@@ -115,15 +136,30 @@ export default function HomePage() {
 
       const audioBuffer = await response.arrayBuffer();
       const contentType = response.headers.get("content-type") ?? "audio/mpeg";
-      const audioBlob = new Blob([audioBuffer], { type: contentType });
-      const audioUrl = URL.createObjectURL(audioBlob);
+      return new Blob([audioBuffer], { type: contentType });
+    };
+
+    try {
+      let script: string | undefined;
+      let audioUrl: string | undefined;
+
+      if (formState.outputMode === "text" || formState.outputMode === "text-audio") {
+        const jsonResult = await requestJson();
+        script = jsonResult.script;
+      }
+
+      if (formState.outputMode === "audio" || formState.outputMode === "text-audio") {
+        const audioBlob = await requestAudio();
+        audioUrl = URL.createObjectURL(audioBlob);
+      }
 
       setResult((prev) => {
         if (prev?.audioUrl) {
           URL.revokeObjectURL(prev.audioUrl);
         }
-        return { audioUrl };
+        return { audioUrl, script };
       });
+
       setStatus("success");
     } catch (error) {
       setStatus("error");
@@ -204,6 +240,22 @@ export default function HomePage() {
           </select>
         </label>
 
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Output</span>
+          <select
+            name="outputMode"
+            value={formState.outputMode}
+            onChange={(event) =>
+              updateFormState({ outputMode: event.target.value as FormState["outputMode"] })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            <option value="text">Text only</option>
+            <option value="audio">Audio only</option>
+            <option value="text-audio">Text + audio</option>
+          </select>
+        </label>
+
         {errors.length > 0 && (
           <div
             role="alert"
@@ -244,13 +296,20 @@ export default function HomePage() {
       {status === "success" && result && (
         <section style={{ marginTop: "2rem", padding: "1.5rem", borderRadius: 12, background: "#f7f7f7" }}>
           <h2 style={{ marginTop: 0 }}>Your session is ready</h2>
-          <audio controls style={{ width: "100%", marginBottom: "1rem" }}>
-            <source src={result.audioUrl} />
-            Your browser does not support the audio element.
-          </audio>
-          <a href={result.audioUrl} download="pq-reps.mp3" style={{ fontWeight: 600 }}>
-            Download the MP3
-          </a>
+          {result.audioUrl && (
+            <>
+              <audio controls style={{ width: "100%", marginBottom: "1rem" }}>
+                <source src={result.audioUrl} />
+                Your browser does not support the audio element.
+              </audio>
+              <a href={result.audioUrl} download="pq-reps.mp3" style={{ fontWeight: 600 }}>
+                Download the MP3
+              </a>
+            </>
+          )}
+          {result.script && (
+            <p style={{ marginTop: "1rem", whiteSpace: "pre-line" }}>{result.script}</p>
+          )}
         </section>
       )}
     </main>
