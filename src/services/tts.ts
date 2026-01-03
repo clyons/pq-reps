@@ -15,6 +15,18 @@ export type TtsResponse = {
 
 export const MAX_TTS_SEGMENTS = 32;
 export const MAX_TTS_CHARS = 4000;
+export const TTS_SYSTEM_PROMPT = [
+  "You are delivering a Positive Intelligence (PQ) Reps script as a trained PQ Coach.",
+  "The goal is to sound like Shirzad Chamine's instructional style: calm, grounded, and practical.",
+  "Delivery & Expression:",
+  "- Use a neutral accent appropriate to the selected language/region; clear, standard pronunciation",
+  "- Very narrow and steady emotional range; calm, reassuring, emotionally neutral",
+  "- Gentle, mostly flat intonation with slight downward inflection at sentence ends",
+  "- Sound like a calm, experienced mindfulness teacher guiding a practical exercise",
+  "- Slow, steady pace with natural pauses between phrases and instructions",
+  "- Warm, composed, matter-of-fact delivery; avoid hype or sentimental softness",
+  "- Do not whisper; keep a soft but fully voiced delivery",
+].join("\n");
 
 export class TtsScriptTooLargeError extends Error {
   code = "script_too_large" as const;

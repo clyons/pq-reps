@@ -14,7 +14,7 @@ import {
 } from "../../../lib/promptBuilder";
 import { OutputMode, validateGenerateConfig } from "../../../lib/generateValidation";
 import { generateScript, SCRIPT_SYSTEM_PROMPT } from "../../../services/script";
-import { synthesizeSpeech } from "../../../services/tts";
+import { synthesizeSpeech, TTS_SYSTEM_PROMPT } from "../../../services/tts";
 
 export const runtime = "nodejs";
 
@@ -46,6 +46,7 @@ type SuccessResponse = {
     voiceStylePreference?: string;
     scriptSystemPrompt: string;
     scriptUserPrompt: string;
+    ttsSystemPrompt: string;
   };
   audioBase64?: string;
   audioContentType?: string;
@@ -135,6 +136,7 @@ export async function POST(request: Request) {
           voiceStylePreference: config.voiceStyle,
           scriptSystemPrompt: SCRIPT_SYSTEM_PROMPT,
           scriptUserPrompt: prompt,
+          ttsSystemPrompt: TTS_SYSTEM_PROMPT,
         }
       : undefined;
 
