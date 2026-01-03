@@ -49,12 +49,18 @@ curl -X POST http://localhost:3000/api/generate \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{
-    "sense": "clarity",
-    "eyePosition": "forward",
+    "practiceMode": "sitting",
+    "bodyState": "still_seated",
+    "eyeState": "open_focused",
+    "primarySense": "breath",
+    "durationMinutes": 5,
+    "labelingMode": "none",
+    "silenceProfile": "short_pauses",
+    "normalizationFrequency": "periodic",
+    "closingStyle": "pq_framed",
+    "senseRotation": "guided_rotation",
     "languages": ["en", "es"],
-    "durationSeconds": 180,
     "audience": "busy professionals",
-    "topic": "resetting between meetings",
     "voiceStyle": "sage"
   }'
 ```
@@ -64,12 +70,20 @@ Example response:
 {
   "script": "Hook (calm): Imagine ...",
   "metadata": {
-    "sense": "calm",
-    "languages": ["en"],
-    "durationSeconds": 120,
+    "practiceMode": "sitting",
+    "bodyState": "still_seated",
+    "eyeState": "open_focused",
+    "primarySense": "breath",
+    "durationMinutes": 5,
+    "labelingMode": "none",
+    "silenceProfile": "short_pauses",
+    "normalizationFrequency": "periodic",
+    "closingStyle": "pq_framed",
+    "senseRotation": "guided_rotation",
+    "languages": ["en", "es"],
     "prompt": "...",
     "ttsProvider": "openai",
-    "voice": "marin"
+    "voice": "sage"
   }
 }
 ```
