@@ -1,3 +1,5 @@
+import { createHash } from "crypto";
+
 export type TtsRequest = {
   script: string;
   voice?: string;
@@ -56,6 +58,17 @@ export async function synthesizeSpeech(
   }
 
   const voice = resolveVoice(request.voice, request.language);
+  const scriptHash = createHash("sha256")
+    .update(request.script)
+    .digest("hex")
+    .slice(0, 12);
+
+  console.info("OpenAI API call: audio.speech", {
+    model: "gpt-4o-mini-tts",
+    voice,
+    scriptLength: request.script.length,
+    scriptHash,
+  });
 
   const response = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
