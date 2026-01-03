@@ -27,6 +27,7 @@ type ValidationResult = {
   value: {
     config: GenerateConfig;
     outputMode?: OutputMode;
+    debugTtsPrompt?: boolean;
   };
 } | {
   ok: false;
@@ -107,7 +108,10 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
     };
   }
 
-  const config = payload as Partial<GenerateConfig> & { outputMode?: OutputMode };
+  const config = payload as Partial<GenerateConfig> & {
+    outputMode?: OutputMode;
+    debugTtsPrompt?: boolean;
+  };
 
   if (!config.practiceMode || !ALLOWED_PRACTICE_MODES.includes(config.practiceMode)) {
     return {
@@ -506,6 +510,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
         voiceStyle: config.voiceStyle,
       },
       outputMode: config.outputMode,
+      debugTtsPrompt: config.debugTtsPrompt ?? false,
     },
   };
 }
