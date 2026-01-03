@@ -65,6 +65,14 @@
         margin-top: 1rem;
         color: #444;
       }
+      .progress-list {
+        margin: 0.5rem 0 0;
+        padding-left: 1.25rem;
+        color: #444;
+      }
+      .progress-list li {
+        margin: 0.25rem 0;
+      }
       .error {
         background: #ffecec;
         color: #b30000;
@@ -212,6 +220,11 @@
           </select>
         </label>
 
+        <label>
+          <input type="checkbox" name="streaming" />
+          Stream progress updates
+        </label>
+
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
           <button type="submit" id="submit-button">Generate audio</button>
           <button type="button" id="reset-button" class="button-secondary">
@@ -221,6 +234,7 @@
       </form>
 
       <p class="status" id="status"></p>
+      <ol id="progress-list" class="progress-list" hidden></ol>
       <div id="error" class="error" hidden></div>
 
       <section id="result" class="result" hidden>
@@ -244,6 +258,8 @@
       const downloadLink = document.getElementById("download-link");
       const scriptOutput = document.getElementById("script-output");
       const submitButton = document.getElementById("submit-button");
+      const progressList = document.getElementById("progress-list");
+      const streamingInput = form.querySelector("input[name='streaming']");
       const appVersion = document.getElementById("app-version");
       const resetButton = document.getElementById("reset-button");
       let currentUrl = null;
@@ -251,6 +267,18 @@
 
       const updateDurationLabel = () => {
         durationLabel.textContent = `${durationInput.value} minutes`;
+      };
+
+      const resetProgress = () => {
+        progressList.innerHTML = "";
+        progressList.hidden = true;
+      };
+
+      const addProgressStep = (message) => {
+        const item = document.createElement("li");
+        item.textContent = message;
+        progressList.appendChild(item);
+        progressList.hidden = false;
       };
 
       const getFormValues = () => {
@@ -309,6 +337,7 @@
         error.hidden = true;
         error.textContent = "";
         status.textContent = "";
+        resetProgress();
         result.hidden = true;
         scriptOutput.textContent = "";
 
@@ -334,6 +363,7 @@
           outputMode: formData.get("outputMode"),
         };
         const outputMode = formData.get("outputMode");
+        const streamingEnabled = streamingInput.checked;
 
         submitButton.disabled = true;
         status.textContent = "Generating audio. This can take a few seconds.";
@@ -354,6 +384,79 @@
           }
 
           return response.json();
+        };
+
+        const requestStreamed = async () => {
+          const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "text/event-stream",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const errorContentType = response.headers.get("content-type") || "";
+            if (errorContentType.includes("application/json")) {
+              const errorBody = await response.json();
+              throw new Error(errorBody?.error?.message || "The generator failed to respond.");
+            }
+            throw new Error(`The generator failed to respond. (${response.status})`);
+          }
+
+          if (!response.body) {
+            throw new Error("Streaming updates are not available.");
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let finalPayload = null;
+
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+              break;
+            }
+
+            buffer += decoder.decode(value, { stream: true });
+            let delimiterIndex = buffer.indexOf("\n\n");
+            while (delimiterIndex !== -1) {
+              const rawEvent = buffer.slice(0, delimiterIndex).trim();
+              buffer = buffer.slice(delimiterIndex + 2);
+              delimiterIndex = buffer.indexOf("\n\n");
+
+              if (!rawEvent) {
+                continue;
+              }
+
+              let eventType = "message";
+              let data = "";
+              for (const line of rawEvent.split("\n")) {
+                if (line.startsWith("event:")) {
+                  eventType = line.slice(6).trim();
+                } else if (line.startsWith("data:")) {
+                  data += line.slice(5).trim();
+                }
+              }
+
+              if (eventType === "status") {
+                addProgressStep(data);
+                status.textContent = data;
+              } else if (eventType === "done") {
+                finalPayload = JSON.parse(data);
+              } else if (eventType === "error") {
+                throw new Error(data || "Streaming failed.");
+              }
+            }
+          }
+
+          if (!finalPayload) {
+            throw new Error("The stream ended before returning a response.");
+          }
+
+          return finalPayload;
         };
 
         const requestAudio = async () => {
@@ -384,7 +487,20 @@
           let script = "";
           let audioBlob = null;
 
-          if (outputMode === "audio") {
+          if (streamingEnabled) {
+            const streamedResponse = await requestStreamed();
+            script = streamedResponse?.script || "";
+            if (streamedResponse?.audioBase64) {
+              const binary = atob(streamedResponse.audioBase64);
+              const bytes = new Uint8Array(binary.length);
+              for (let index = 0; index < binary.length; index += 1) {
+                bytes[index] = binary.charCodeAt(index);
+              }
+              audioBlob = new Blob([bytes], {
+                type: streamedResponse?.audioContentType || "audio/wav",
+              });
+            }
+          } else if (outputMode === "audio") {
             audioBlob = await requestAudio();
           } else {
             const jsonResponse = await requestJson();
