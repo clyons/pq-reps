@@ -1,0 +1,15 @@
+{
+  "name": "pq-reps",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc --outDir dist",
+    "start": "node --enable-source-maps dist/server.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "tsx": "^4.7.2",
+    "typescript": "^5.4.5"
+  }
+}
