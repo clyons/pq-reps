@@ -181,6 +181,9 @@ export default function HomePage() {
       closingStyle: formState.closingStyle,
       senseRotation: formState.senseRotation,
       languages: [formState.language],
+      durationSeconds: formState.durationSeconds,
+      topic: formState.topic || undefined,
+      outputMode: formState.outputMode,
     };
 
     const requestJson = async () => {

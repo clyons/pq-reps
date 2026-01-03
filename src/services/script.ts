@@ -72,6 +72,12 @@ export async function generateScript(
     "Return only the finished script text.",
   ].join("\n");
 
+  console.info("OpenAI API call: chat.completions", {
+    model: "gpt-4o-mini",
+    promptLength: request.prompt.length,
+    systemPromptLength: systemPrompt.length,
+  });
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {

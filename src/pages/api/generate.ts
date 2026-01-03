@@ -141,32 +141,6 @@ function validateConfig(payload: unknown): {
 
   const config = payload as Partial<GenerateConfig> & { outputMode?: OutputMode };
 
-  if (!config.practiceMode || !ALLOWED_PRACTICE_MODES.includes(config.practiceMode)) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_practice_mode",
-          message: "Practice mode must be one of the supported values.",
-          details: { allowed: ALLOWED_PRACTICE_MODES },
-        },
-      },
-    };
-  }
-
-  if (!config.bodyState || !ALLOWED_BODY_STATES.includes(config.bodyState)) {
-    return {
-      ok: false,
-      error: {
-        error: {
-          code: "invalid_body_state",
-          message: "Body state must be one of the supported values.",
-          details: { allowed: ALLOWED_BODY_STATES },
-        },
-      },
-    };
-  }
-
   if (!config.eyeState || !ALLOWED_EYE_STATES.includes(config.eyeState)) {
     return {
       ok: false,
@@ -514,20 +488,14 @@ function validateConfig(payload: unknown): {
     ok: true,
     value: {
       config: {
+        sense: config.sense,
         languages: config.languages,
-        practiceMode: config.practiceMode,
-        bodyState: config.bodyState,
-        eyeState: config.eyeState,
-        primarySense: config.primarySense,
-        durationMinutes: config.durationMinutes,
-        labelingMode: config.labelingMode,
-        silenceProfile: config.silenceProfile,
-        normalizationFrequency: config.normalizationFrequency,
-        closingStyle: config.closingStyle,
-        senseRotation: config.senseRotation,
+        durationSeconds: config.durationSeconds,
         audience: config.audience,
+        topic: config.topic,
         voiceStyle: config.voiceStyle,
       },
+      outputMode: config.outputMode,
     },
   };
 }
@@ -589,10 +557,19 @@ export default async function handler(
 
   const { config, outputMode: requestedMode } = validation.value;
   const prompt = buildPrompt(config);
-  const pauseMarkerRegex = /\s*\[pause:(\d+(?:\.\d+)?)\]\s*/gi;
   const acceptHeader = req.headers.accept ?? "";
-  const outputMode: OutputMode =
+  const outputMode =
     requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
+
+  if (requestedMode && !["text", "audio", "text-audio"].includes(requestedMode)) {
+    sendJson(res, 400, {
+      error: {
+        code: "invalid_output_mode",
+        message: "Output mode must be one of: text, audio, text-audio.",
+      },
+    });
+    return;
+  }
 
   try {
     const { script } = await generateScript({ prompt });
@@ -600,17 +577,9 @@ export default async function handler(
       sendJson(res, 200, {
         script,
         metadata: {
-          practiceMode: config.practiceMode,
-          bodyState: config.bodyState,
-          eyeState: config.eyeState,
-          primarySense: config.primarySense,
-          durationMinutes: config.durationMinutes,
-          labelingMode: config.labelingMode,
-          silenceProfile: config.silenceProfile,
-          normalizationFrequency: config.normalizationFrequency,
-          closingStyle: config.closingStyle,
-          senseRotation: config.senseRotation,
+          sense: config.sense,
           languages: config.languages,
+          durationSeconds: config.durationSeconds,
           prompt,
           ttsProvider: "none",
           voice: "n/a",
@@ -626,38 +595,20 @@ export default async function handler(
       voice: config.voiceStyle,
     });
 
-    const displayScript = script.replace(pauseMarkerRegex, "\n\n").trim();
-    const response: SuccessResponse = {
-      script: displayScript,
-      metadata: {
-        practiceMode: config.practiceMode,
-        bodyState: config.bodyState,
-        eyeState: config.eyeState,
-        primarySense: config.primarySense,
-        durationMinutes: config.durationMinutes,
-        labelingMode: config.labelingMode,
-        silenceProfile: config.silenceProfile,
-        normalizationFrequency: config.normalizationFrequency,
-        closingStyle: config.closingStyle,
-        senseRotation: config.senseRotation,
-        languages: config.languages,
-        prompt,
-        ttsProvider: ttsResult.provider,
-        voice: ttsResult.voice,
-      },
-    };
-
-    if (acceptHeader.includes("application/json")) {
-      if (outputMode === "text-audio") {
-        const responseWithAudio: SuccessResponse = {
-          ...response,
-          audioBase64: ttsResult.audio.toString("base64"),
-          audioContentType: ttsResult.contentType,
-        };
-        sendJson(res, 200, responseWithAudio);
-        return;
-      }
-
+    if (outputMode === "text-audio") {
+      const response: SuccessResponse = {
+        script,
+        metadata: {
+          sense: config.sense,
+          languages: config.languages,
+          durationSeconds: config.durationSeconds,
+          prompt,
+          ttsProvider: ttsResult.provider,
+          voice: ttsResult.voice,
+        },
+        audioBase64: ttsResult.audio.toString("base64"),
+        audioContentType: ttsResult.contentType,
+      };
       sendJson(res, 200, response);
       return;
     }

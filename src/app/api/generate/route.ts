@@ -510,20 +510,14 @@ function validateConfig(payload: unknown): {
     ok: true,
     value: {
       config: {
+        sense: config.sense,
         languages: config.languages,
-        practiceMode: config.practiceMode,
-        bodyState: config.bodyState,
-        eyeState: config.eyeState,
-        primarySense: config.primarySense,
-        durationMinutes: config.durationMinutes,
-        labelingMode: config.labelingMode,
-        silenceProfile: config.silenceProfile,
-        normalizationFrequency: config.normalizationFrequency,
-        closingStyle: config.closingStyle,
-        senseRotation: config.senseRotation,
+        durationSeconds: config.durationSeconds,
         audience: config.audience,
+        topic: config.topic,
         voiceStyle: config.voiceStyle,
       },
+      outputMode: config.outputMode,
     },
   };
 }
@@ -552,10 +546,21 @@ export async function POST(request: Request) {
 
   const { config, outputMode: requestedMode } = validation.value;
   const prompt = buildPrompt(config);
-  const pauseMarkerRegex = /\s*\[pause:(\d+(?:\.\d+)?)\]\s*/gi;
   const acceptHeader = request.headers.get("accept") ?? "";
-  const outputMode: OutputMode =
+  const outputMode =
     requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
+
+  if (requestedMode && !["text", "audio", "text-audio"].includes(requestedMode)) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "invalid_output_mode",
+          message: "Output mode must be one of: text, audio, text-audio.",
+        },
+      },
+      { status: 400 },
+    );
+  }
 
   try {
     const { script } = await generateScript({ prompt });
@@ -563,17 +568,9 @@ export async function POST(request: Request) {
       const response: SuccessResponse = {
         script,
         metadata: {
-          practiceMode: config.practiceMode,
-          bodyState: config.bodyState,
-          eyeState: config.eyeState,
-          primarySense: config.primarySense,
-          durationMinutes: config.durationMinutes,
-          labelingMode: config.labelingMode,
-          silenceProfile: config.silenceProfile,
-          normalizationFrequency: config.normalizationFrequency,
-          closingStyle: config.closingStyle,
-          senseRotation: config.senseRotation,
+          sense: config.sense,
           languages: config.languages,
+          durationSeconds: config.durationSeconds,
           prompt,
           ttsProvider: "none",
           voice: "n/a",
@@ -589,8 +586,7 @@ export async function POST(request: Request) {
       voice: config.voiceStyle,
     });
 
-    if (acceptHeader.includes("application/json")) {
-      const displayScript = script.replace(pauseMarkerRegex, "\n\n").trim();
+    if (outputMode === "text-audio") {
       const response: SuccessResponse = {
         script: displayScript,
         metadata: {
@@ -609,6 +605,8 @@ export async function POST(request: Request) {
           ttsProvider: ttsResult.provider,
           voice: ttsResult.voice,
         },
+        audioBase64: ttsResult.audio.toString("base64"),
+        audioContentType: ttsResult.contentType,
       };
 
       if (outputMode === "text-audio") {
