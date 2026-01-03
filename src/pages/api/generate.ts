@@ -6,6 +6,7 @@ import {
   Sense,
   SUPPORTED_LANGUAGES,
 } from "../../lib/promptBuilder";
+import { generateScript } from "../../services/script";
 import { synthesizeSpeech } from "../../services/tts";
 
 type ErrorResponse = {
@@ -201,13 +202,9 @@ export default async function handler(
 
   const config = validation.value;
   const prompt = buildPrompt(config);
-  const script = [
-    `Hook (${config.sense}): Imagine ${config.topic ?? "a new possibility"} taking shape.`,
-    "Body: Describe the journey in simple, vivid language.",
-    `Closing CTA: Take one step today toward that ${config.topic ?? "goal"}.`,
-  ].join(" ");
 
   try {
+    const { script } = await generateScript({ prompt });
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
     const ttsResult = await synthesizeSpeech({
       script,
