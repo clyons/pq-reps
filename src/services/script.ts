@@ -52,7 +52,7 @@ export async function generateScript(
     "Duration Control:",
     "- The script must naturally fill the requested duration",
     "- Include explicit silence cues (e.g., “I’ll be quiet for a little while now”)",
-    "- When silence should occur, insert a pause marker in the form [pause:5] (seconds)",
+    "- Immediately after a silence cue, insert a pause marker in the form [pause:5] where the number is seconds",
     "- Do not mention exact rep counts unless duration is at least 5 minutes",
     "Eyes Instruction:",
     "- If eyes are closed, instruct gently and early",
