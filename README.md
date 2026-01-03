@@ -92,7 +92,7 @@ Example response:
 ```
 
 To download audio bytes directly, omit the `Accept: application/json` header. The response
-will be `audio/mpeg` with a `Content-Disposition` attachment header.
+will be `audio/wav` with `Content-Disposition: attachment; filename="pq-reps.wav"`.
 
 ## Build and run (optional)
 ```bash
@@ -101,5 +101,5 @@ npm start
 ```
 
 ## Notes
-- The API defaults to OpenAI TTS voice `marin` and selects a fallback voice per language.
-- `voiceStyle` must be one of: `alloy`, `ash`, `ballad`, `cedar`, `coral`, `echo`, `fable`, `marin`, `nova`, `onyx`, `sage`, `shimmer`, `verse`.
+- The API defaults to OpenAI TTS voice `alloy`, with language-based fallbacks (`en: alloy`, `es: nova`, `fr: nova`, `de: alloy`).
+- `voiceStyle` must be one of: `alloy`, `ash`, `nova`, `onyx`.
