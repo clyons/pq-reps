@@ -1,24 +1,23 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type GenerationResult = {
   audioUrl: string;
-  transcript: string;
 };
 
 type FormState = {
-  sense: string;
-  eyes: "open" | "closed";
-  duration: number;
+  sense: "calm" | "energizing" | "focus" | "uplifting";
+  durationSeconds: number;
   language: string;
+  topic: string;
 };
 
 const DEFAULT_STATE: FormState = {
-  sense: "",
-  eyes: "open",
-  duration: 30,
+  sense: "calm",
+  durationSeconds: 120,
   language: "en",
+  topic: "",
 };
 
 const LANGUAGE_OPTIONS = [
@@ -26,7 +25,13 @@ const LANGUAGE_OPTIONS = [
   { value: "es", label: "Spanish" },
   { value: "fr", label: "French" },
   { value: "de", label: "German" },
-  { value: "ja", label: "Japanese" },
+];
+
+const SENSE_OPTIONS: FormState["sense"][] = [
+  "calm",
+  "energizing",
+  "focus",
+  "uplifting",
 ];
 
 export default function HomePage() {
@@ -37,7 +42,18 @@ export default function HomePage() {
 
   const isLoading = status === "loading";
 
-  const durationLabel = useMemo(() => `${formState.duration} seconds`, [formState.duration]);
+  const durationLabel = useMemo(
+    () => `${formState.durationSeconds} seconds`,
+    [formState.durationSeconds],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (result?.audioUrl) {
+        URL.revokeObjectURL(result.audioUrl);
+      }
+    };
+  }, [result]);
 
   const updateFormState = (updates: Partial<FormState>) => {
     setFormState((prev) => ({ ...prev, ...updates }));
@@ -46,12 +62,8 @@ export default function HomePage() {
   const validate = (state: FormState) => {
     const nextErrors: string[] = [];
 
-    if (!state.sense.trim()) {
-      nextErrors.push("Please enter the sense or focus you want to generate.");
-    }
-
-    if (state.duration < 5 || state.duration > 120) {
-      nextErrors.push("Duration must be between 5 and 120 seconds.");
+    if (state.durationSeconds < 30 || state.durationSeconds > 900) {
+      nextErrors.push("Duration must be between 30 and 900 seconds.");
     }
 
     if (!state.language) {
@@ -76,20 +88,42 @@ export default function HomePage() {
     setStatus("loading");
 
     try {
+      const payload = {
+        sense: formState.sense,
+        languages: [formState.language],
+        durationSeconds: formState.durationSeconds,
+        topic: formState.topic || undefined,
+      };
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Accept: "audio/mpeg",
         },
-        body: JSON.stringify(formState),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error("The generator failed to respond.");
+        const errorContentType = response.headers.get("content-type") ?? "";
+        if (errorContentType.includes("application/json")) {
+          const errorBody = (await response.json()) as { error?: { message?: string } };
+          throw new Error(errorBody.error?.message ?? "The generator failed to respond.");
+        }
+        throw new Error(`The generator failed to respond. (${response.status})`);
       }
 
-      const data = (await response.json()) as GenerationResult;
-      setResult(data);
+      const audioBuffer = await response.arrayBuffer();
+      const contentType = response.headers.get("content-type") ?? "audio/mpeg";
+      const audioBlob = new Blob([audioBuffer], { type: contentType });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      setResult((prev) => {
+        if (prev?.audioUrl) {
+          URL.revokeObjectURL(prev.audioUrl);
+        }
+        return { audioUrl };
+      });
       setStatus("success");
     } catch (error) {
       setStatus("error");
@@ -110,50 +144,46 @@ export default function HomePage() {
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
         <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Sense focus</span>
-          <input
-            type="text"
+          <span style={{ fontWeight: 600 }}>Sense</span>
+          <select
             name="sense"
             value={formState.sense}
-            onChange={(event) => updateFormState({ sense: event.target.value })}
-            placeholder="e.g. warmth in your hands"
+            onChange={(event) =>
+              updateFormState({ sense: event.target.value as FormState["sense"] })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            {SENSE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option.charAt(0).toUpperCase() + option.slice(1)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Topic (optional)</span>
+          <input
+            type="text"
+            name="topic"
+            value={formState.topic}
+            onChange={(event) => updateFormState({ topic: event.target.value })}
+            placeholder="e.g. building focus"
             style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
           />
         </label>
-
-        <fieldset style={{ border: "1px solid #eee", padding: "1rem", borderRadius: 8 }}>
-          <legend style={{ fontWeight: 600, padding: "0 0.5rem" }}>Eyes</legend>
-          <label style={{ marginRight: "1rem" }}>
-            <input
-              type="radio"
-              name="eyes"
-              value="open"
-              checked={formState.eyes === "open"}
-              onChange={() => updateFormState({ eyes: "open" })}
-            />{" "}
-            Open
-          </label>
-          <label>
-            <input
-              type="radio"
-              name="eyes"
-              value="closed"
-              checked={formState.eyes === "closed"}
-              onChange={() => updateFormState({ eyes: "closed" })}
-            />{" "}
-            Closed
-          </label>
-        </fieldset>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Duration</span>
           <input
             type="range"
-            min={5}
-            max={120}
-            step={5}
-            value={formState.duration}
-            onChange={(event) => updateFormState({ duration: Number(event.target.value) })}
+            min={30}
+            max={900}
+            step={30}
+            value={formState.durationSeconds}
+            onChange={(event) =>
+              updateFormState({ durationSeconds: Number(event.target.value) })
+            }
           />
           <span style={{ color: "#555" }}>{durationLabel}</span>
         </label>
@@ -218,7 +248,9 @@ export default function HomePage() {
             <source src={result.audioUrl} />
             Your browser does not support the audio element.
           </audio>
-          <p style={{ margin: 0, whiteSpace: "pre-line" }}>{result.transcript}</p>
+          <a href={result.audioUrl} download="pq-reps.mp3" style={{ fontWeight: 600 }}>
+            Download the MP3
+          </a>
         </section>
       )}
     </main>
