@@ -23,6 +23,11 @@
       h1 {
         margin-top: 0;
       }
+      .version {
+        margin-top: -0.25rem;
+        color: #666;
+        font-size: 0.9rem;
+      }
       form {
         display: grid;
         gap: 1.5rem;
@@ -255,6 +260,7 @@
       const submitButton = document.getElementById("submit-button");
       const progressList = document.getElementById("progress-list");
       const streamingInput = form.querySelector("input[name='streaming']");
+      const appVersion = document.getElementById("app-version");
       const resetButton = document.getElementById("reset-button");
       let currentUrl = null;
       const storageKey = "pq-reps-form";
@@ -307,6 +313,20 @@
       updateDurationLabel();
       durationInput.addEventListener("change", updateDurationLabel);
 
+      const loadVersion = async () => {
+        try {
+          const response = await fetch("/version");
+          if (!response.ok) {
+            throw new Error("Version unavailable.");
+          }
+          const data = await response.json();
+          appVersion.textContent = `Version: ${data?.version || "unknown"}`;
+        } catch (err) {
+          appVersion.textContent = "Version: unavailable";
+        }
+      };
+
+      loadVersion();
       resetButton.addEventListener("click", () => {
         setFormValues(defaultValues);
         localStorage.removeItem(storageKey);
