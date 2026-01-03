@@ -106,6 +106,11 @@
         color: #0f2d81;
         text-decoration: none;
       }
+      .option-hint {
+        font-weight: 400;
+        color: #555;
+        font-size: 0.9rem;
+      }
     </style>
   </head>
   <body>
@@ -228,6 +233,15 @@
         </label>
 
         <label>
+          Voice gender
+          <select name="voiceGender" required>
+            <option value="female">Female (Alloy / Nova)</option>
+            <option value="male">Male (Ash / Onyx)</option>
+          </select>
+          <span class="option-hint">Spanish/French use Nova or Onyx; English/German use Alloy or Ash.</span>
+        </label>
+
+        <label>
           Output
           <select name="outputMode">
             <option value="text">Text only</option>
@@ -293,6 +307,8 @@
       const debugOutput = document.getElementById("debug-output");
       let currentUrl = null;
       const storageKey = "pq-reps-form";
+      const femaleVoiceByLanguage = { es: "nova", fr: "nova" };
+      const maleVoiceByLanguage = { es: "onyx", fr: "onyx" };
 
       const updateDurationLabel = () => {
         const minutes = Number(durationInput.value);
@@ -387,6 +403,12 @@
         const debugEnabled = debugInput.checked;
         const effectiveOutputMode =
           debugEnabled && outputMode !== "text-audio" ? "text-audio" : outputMode;
+        const language = formData.get("language");
+        const voiceGender = formData.get("voiceGender");
+        const voiceStyle =
+          voiceGender === "male"
+            ? maleVoiceByLanguage[language] || "ash"
+            : femaleVoiceByLanguage[language] || "alloy";
         const payload = {
           practiceMode: formData.get("practiceMode"),
           bodyState: formData.get("bodyState"),
@@ -398,7 +420,8 @@
           normalizationFrequency: formData.get("normalizationFrequency"),
           closingStyle: formData.get("closingStyle"),
           senseRotation: formData.get("senseRotation") || undefined,
-          languages: [formData.get("language")],
+          languages: [language],
+          voiceStyle,
           outputMode: effectiveOutputMode,
           debugTtsPrompt: debugEnabled,
         };

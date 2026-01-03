@@ -48,28 +48,14 @@ type WavFormat = {
   bitsPerSample: number;
 };
 
-const DEFAULT_VOICE = "marin";
-const SUPPORTED_VOICES = new Set([
-  "alloy",
-  "ash",
-  "ballad",
-  "cedar",
-  "coral",
-  "echo",
-  "fable",
-  "marin",
-  "nova",
-  "onyx",
-  "sage",
-  "shimmer",
-  "verse",
-]);
+const DEFAULT_VOICE = "alloy";
+const SUPPORTED_VOICES = new Set(["alloy", "ash", "nova", "onyx"]);
 
 const LANGUAGE_VOICE_MAP: Record<string, string> = {
-  en: "marin",
-  es: "cedar",
-  fr: "cedar",
-  de: "marin",
+  en: "alloy",
+  es: "nova",
+  fr: "nova",
+  de: "alloy",
 };
 
 const resolveVoice = (voice: string | undefined, language?: string): string => {

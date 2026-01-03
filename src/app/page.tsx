@@ -33,6 +33,7 @@ type FormState = {
   closingStyle: "minimal" | "pq_framed" | "pq_framed_with_progression";
   senseRotation?: "none" | "guided_rotation" | "free_choice";
   language: string;
+  voiceGender: "female" | "male";
   outputMode: "text" | "audio" | "text-audio";
   debugTtsPrompt: boolean;
 };
@@ -49,6 +50,7 @@ const DEFAULT_STATE: FormState = {
   closingStyle: "minimal",
   senseRotation: "none",
   language: "en",
+  voiceGender: "female",
   outputMode: "audio",
   debugTtsPrompt: false,
 };
@@ -95,6 +97,23 @@ const SENSE_ROTATION_OPTIONS: NonNullable<FormState["senseRotation"]>[] = [
   "guided_rotation",
   "free_choice",
 ];
+
+const FEMALE_VOICES_BY_LANGUAGE: Record<string, string> = {
+  es: "nova",
+  fr: "nova",
+};
+
+const MALE_VOICES_BY_LANGUAGE: Record<string, string> = {
+  es: "onyx",
+  fr: "onyx",
+};
+
+const resolveVoiceForGender = (gender: FormState["voiceGender"], language: string) => {
+  if (gender === "male") {
+    return MALE_VOICES_BY_LANGUAGE[language] ?? "ash";
+  }
+  return FEMALE_VOICES_BY_LANGUAGE[language] ?? "alloy";
+};
 
 export default function HomePage() {
   const [formState, setFormState] = useState<FormState>(DEFAULT_STATE);
@@ -259,6 +278,7 @@ export default function HomePage() {
       closingStyle: formState.closingStyle,
       senseRotation: formState.senseRotation,
       languages: [formState.language],
+      voiceStyle: resolveVoiceForGender(formState.voiceGender, formState.language),
       durationSeconds: formState.durationSeconds,
       topic: formState.topic || undefined,
       outputMode: effectiveOutputMode,
@@ -582,6 +602,21 @@ export default function HomePage() {
                 {option.label}
               </option>
             ))}
+          </select>
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Voice gender</span>
+          <select
+            name="voiceGender"
+            value={formState.voiceGender}
+            onChange={(event) =>
+              updateFormState({ voiceGender: event.target.value as FormState["voiceGender"] })
+            }
+            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          >
+            <option value="female">Female (Alloy / Nova)</option>
+            <option value="male">Male (Ash / Onyx)</option>
           </select>
         </label>
 
