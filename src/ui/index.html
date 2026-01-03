@@ -292,7 +292,6 @@
           <span id="spinner" class="spinner" aria-hidden="true"></span>
           <p class="status" id="status" aria-live="polite"></p>
         </div>
-        <ol id="progress-list" class="progress-list" hidden></ol>
       </section>
       <div id="error" class="error" hidden></div>
 
@@ -323,7 +322,6 @@
       const downloadLink = document.getElementById("download-link");
       const scriptOutput = document.getElementById("script-output");
       const submitButton = document.getElementById("submit-button");
-      const progressList = document.getElementById("progress-list");
       const debugInput = form.querySelector("input[name='debugTtsPrompt']");
       const appVersion = document.getElementById("app-version");
       const resetButton = document.getElementById("reset-button");
@@ -335,18 +333,6 @@
       const updateDurationLabel = () => {
         const minutes = Number(durationInput.value);
         durationLabel.textContent = `${minutes} minute${minutes === 1 ? "" : "s"}`;
-      };
-
-      const resetProgress = () => {
-        progressList.innerHTML = "";
-        progressList.hidden = true;
-      };
-
-      const addProgressStep = (message) => {
-        const item = document.createElement("li");
-        item.textContent = message;
-        progressList.appendChild(item);
-        progressList.hidden = false;
       };
 
       const getFormValues = () => {
@@ -410,7 +396,6 @@
         status.textContent = "";
         statusPanel.hidden = true;
         spinner.hidden = true;
-        resetProgress();
         result.hidden = true;
         scriptOutput.textContent = "";
         debugOutput.textContent = "";
@@ -523,7 +508,6 @@
               }
 
               if (eventType === "status") {
-                addProgressStep(data);
                 status.textContent = data;
               } else if (eventType === "done") {
                 finalPayload = JSON.parse(data);
