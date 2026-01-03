@@ -246,6 +246,8 @@ export default async function handler(
     };
 
     if (wantsStream) {
+      response.audioBase64 = ttsResult.audio.toString("base64");
+      response.audioContentType = ttsResult.contentType;
       sendEvent(res, "done", JSON.stringify({
         script,
         metadata: {
@@ -284,7 +286,11 @@ export default async function handler(
     res.end(ttsResult.audio);
   } catch (error) {
     if (wantsStream) {
-      sendEvent(res, "error", "Failed to generate a response.");
+      const message =
+        error instanceof TtsScriptTooLargeError
+          ? "Script exceeds the maximum length supported for TTS."
+          : "Failed to generate a response.";
+      sendEvent(res, "error", message);
       res.end();
       return;
     }
