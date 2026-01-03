@@ -217,6 +217,7 @@ const synthesizeWavSegment = async (
         model: "gpt-4o-mini-tts",
         voice,
         input: script,
+        instructions: TTS_SYSTEM_PROMPT,
         response_format: "wav",
       }),
       signal: controller.signal,
