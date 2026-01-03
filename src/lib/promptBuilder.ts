@@ -33,17 +33,25 @@ export function buildPrompt(config: GenerateConfig): string {
     voiceStyle,
   } = config;
 
+  const durationRule =
+    durationSeconds >= 300
+      ? "You may mention exact rep counts if it helps pacing."
+      : "Do not mention exact rep counts because the duration is under 5 minutes.";
+
   return [
-    "You are a creative narrator for short-form audio scripts.",
-    `Sense: ${sense}.`,
-    `Languages: ${languages.join(", ")}.`,
+    `Selected sense: ${sense}.`,
     `Target duration: ${durationSeconds} seconds.`,
+    `Language: ${languages.join(", ")}.`,
     audience ? `Audience: ${audience}.` : "Audience: general.",
-    topic ? `Topic: ${topic}.` : "Topic: motivational prompt.",
-    voiceStyle ? `Voice style: ${voiceStyle}.` : "Voice style: warm and natural.",
-    "Structure: hook, body, and closing CTA.",
-    "Keep pacing aligned with target duration.",
-  ].join(" ");
+    topic
+      ? `Topic: ${topic}. Keep it subtle and aligned with PQ Reps guidance.`
+      : "No topic provided.",
+    voiceStyle
+      ? `Voice style preference: ${voiceStyle}. Use only if it does not conflict with tone rules.`
+      : "No additional voice style preference provided.",
+    durationRule,
+    "If you include any movement guidance, include the required safety disclaimer.",
+  ].join("\n");
 }
 
 export interface PromptSection {
