@@ -197,7 +197,7 @@ export default function HomePage() {
 
     setStatus("loading");
 
-    const effectiveOutputMode = formState.debugTtsPrompt ? "text-audio" : "audio";
+    const effectiveOutputMode = "text-audio";
     const primarySense = focusOptions.includes(formState.focus)
       ? formState.focus
       : "touch";

@@ -442,8 +442,7 @@
         const formData = new FormData(form);
         localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(formData.entries())));
         const debugEnabled = isDevMode && debugInput?.checked;
-        const effectiveOutputMode =
-          debugEnabled && "text-audio";
+        const effectiveOutputMode = "text-audio";
         const language = formData.get("language");
         const voiceGender = formData.get("voiceGender");
         const voiceStyle =
@@ -473,7 +472,7 @@
           ...(isDevMode
             ? { ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0 }
             : {}),
-          outputMode: effectiveOutputMode || "audio",
+          outputMode: effectiveOutputMode,
           ...(debugEnabled ? { debugTtsPrompt: true } : {}),
         };
         const streamingEnabled = true;
@@ -666,8 +665,8 @@
           }
 
           result.hidden = false;
-          status.textContent =
-            effectiveOutputMode === "text" ? "Text ready!" : "Output ready!";
+          status.textContent = "";
+          statusPanel.hidden = true;
           spinner.hidden = true;
         } catch (err) {
           error.hidden = false;
