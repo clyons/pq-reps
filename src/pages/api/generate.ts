@@ -379,6 +379,10 @@ export default async function handler(
     res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
     res.end(ttsResult.audio);
   } catch (error) {
+    if (res.headersSent || res.writableEnded) {
+      res.end();
+      return;
+    }
     if (wantsStream) {
       const message =
         error instanceof TtsScriptTooLargeError
