@@ -136,7 +136,9 @@ export async function POST(request: Request) {
   }
 
   try {
+    const scriptStart = Date.now();
     const { script } = await generateScript({ prompt });
+    console.info(`Script generation took ${Date.now() - scriptStart}ms.`);
     const cleanedScript = stripPauseMarkers(script);
     if (outputMode === "text") {
       const response: SuccessResponse = {
@@ -163,6 +165,7 @@ export async function POST(request: Request) {
     }
 
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
+    const ttsStart = Date.now();
     const ttsResult = wantsAudioStream && outputMode === "audio"
       ? await synthesizeSpeechStream({
           script,
@@ -176,6 +179,7 @@ export async function POST(request: Request) {
           voice: config.voiceStyle,
           newlinePauseSeconds: config.ttsNewlinePauseSeconds,
         });
+    console.info(`Audio synthesis took ${Date.now() - ttsStart}ms.`);
     const downloadFilename = buildDownloadFilename({
       voice: ttsResult.voice,
       durationMinutes: config.durationMinutes,
