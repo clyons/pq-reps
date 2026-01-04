@@ -193,6 +193,29 @@ const buildWav = (format: Omit<WavFormat, "audioData">, audioData: Buffer): Buff
   return Buffer.concat([header, audioData]);
 };
 
+const buildStreamingWavHeader = (format: Omit<WavFormat, "audioData">): Buffer => {
+  const header = Buffer.alloc(44);
+  const dataSizePlaceholder = 0xffffffff;
+  const byteRate = (format.sampleRate * format.channels * format.bitsPerSample) / 8;
+  const blockAlign = (format.channels * format.bitsPerSample) / 8;
+
+  header.write("RIFF", 0);
+  header.writeUInt32LE(dataSizePlaceholder, 4);
+  header.write("WAVE", 8);
+  header.write("fmt ", 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(format.channels, 22);
+  header.writeUInt32LE(format.sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(format.bitsPerSample, 34);
+  header.write("data", 36);
+  header.writeUInt32LE(dataSizePlaceholder, 40);
+
+  return header;
+};
+
 const chunkBuffer = async function* (
   buffer: Buffer,
   chunkSize = 64 * 1024,
@@ -259,9 +282,7 @@ const synthesizeWavSegment = async (
   return Buffer.from(await response.arrayBuffer());
 };
 
-export async function synthesizeSpeech(
-  request: TtsRequest,
-): Promise<TtsResponse> {
+const prepareTtsRequest = (request: TtsRequest) => {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("Missing OPENAI_API_KEY environment variable.");
@@ -299,6 +320,19 @@ export async function synthesizeSpeech(
       charCount: totalChars,
     });
   }
+
+  return {
+    apiKey,
+    voice,
+    inputScript,
+    tokens,
+  };
+};
+
+export async function synthesizeSpeech(
+  request: TtsRequest,
+): Promise<TtsResponse> {
+  const { apiKey, voice, inputScript, tokens } = prepareTtsRequest(request);
 
   const audioChunks: Buffer[] = [];
   let format: Omit<WavFormat, "audioData"> | null = null;
@@ -357,12 +391,62 @@ export async function synthesizeSpeechStream(
   request: TtsRequest,
   options?: { chunkSize?: number },
 ): Promise<TtsStreamResponse> {
-  const response = await synthesizeSpeech(request);
+  const { apiKey, voice, inputScript, tokens } = prepareTtsRequest(request);
+  const chunkSize = options?.chunkSize;
+
+  const stream = (async function* () {
+    let format: Omit<WavFormat, "audioData"> | null = null;
+    let pendingPauseSeconds = 0;
+    let headerSent = false;
+
+    for (const token of tokens) {
+      if (token.type === "pause") {
+        if (format) {
+          yield* chunkBuffer(createSilenceBuffer(token.value, format), chunkSize);
+        } else {
+          pendingPauseSeconds += token.value;
+        }
+        continue;
+      }
+
+      const wavBuffer = await synthesizeWavSegment(apiKey, voice, token.value);
+      const wavData = parseWav(wavBuffer);
+
+      if (!format) {
+        format = {
+          sampleRate: wavData.sampleRate,
+          channels: wavData.channels,
+          bitsPerSample: wavData.bitsPerSample,
+        };
+        if (!headerSent) {
+          headerSent = true;
+          yield* chunkBuffer(buildStreamingWavHeader(format), chunkSize);
+        }
+        if (pendingPauseSeconds > 0) {
+          yield* chunkBuffer(createSilenceBuffer(pendingPauseSeconds, format), chunkSize);
+          pendingPauseSeconds = 0;
+        }
+      } else if (
+        wavData.sampleRate !== format.sampleRate ||
+        wavData.channels !== format.channels ||
+        wavData.bitsPerSample !== format.bitsPerSample
+      ) {
+        throw new Error("TTS returned inconsistent WAV formats for segments.");
+      }
+
+      yield* chunkBuffer(wavData.audioData, chunkSize);
+    }
+
+    if (!format) {
+      throw new Error("No spoken audio segments were generated.");
+    }
+  })();
+
   return {
-    stream: chunkBuffer(response.audio, options?.chunkSize),
-    contentType: response.contentType,
-    provider: response.provider,
-    voice: response.voice,
-    inputScript: response.inputScript,
+    stream,
+    contentType: "audio/wav",
+    provider: "openai",
+    voice,
+    inputScript,
   };
 }
