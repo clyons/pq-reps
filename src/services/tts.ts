@@ -238,6 +238,14 @@ const createSilenceBuffer = (
   return Buffer.alloc(totalBytes, 0);
 };
 
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+const shouldRetryStatus = (status: number) =>
+  status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
+
 const synthesizeWavSegment = async (
   apiKey: string,
   voice: string,
@@ -245,41 +253,65 @@ const synthesizeWavSegment = async (
 ): Promise<Buffer> => {
   const timeoutValue = Number.parseInt(process.env.OPENAI_TIMEOUT_MS ?? "", 10);
   const timeoutMs = Number.isFinite(timeoutValue) && timeoutValue > 0 ? timeoutValue : 60000;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  let response: Response;
+  const maxRetries = 2;
+  let lastError: Error | null = null;
 
-  try {
-    response = await fetch("https://api.openai.com/v1/audio/speech", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini-tts",
-        voice,
-        input: script,
-        instructions: TTS_SYSTEM_PROMPT,
-        response_format: "wav",
-      }),
-      signal: controller.signal,
-    });
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`OpenAI request timed out after ${timeoutMs} ms`);
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini-tts",
+          voice,
+          input: script,
+          instructions: TTS_SYSTEM_PROMPT,
+          response_format: "wav",
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (shouldRetryStatus(response.status) && attempt < maxRetries) {
+          const retryAfter = Number.parseInt(response.headers.get("retry-after") ?? "", 10);
+          const delayMs = Number.isFinite(retryAfter)
+            ? retryAfter * 1000
+            : 500 * (attempt + 1);
+          await sleep(delayMs);
+          continue;
+        }
+        throw new Error(`OpenAI TTS failed: ${response.status} ${errorText}`);
+      }
+
+      return Buffer.from(await response.arrayBuffer());
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        lastError = new Error(`OpenAI request timed out after ${timeoutMs} ms`);
+      } else if (error instanceof Error) {
+        lastError = error;
+      } else {
+        lastError = new Error("OpenAI request failed.");
+      }
+
+      if (attempt < maxRetries) {
+        await sleep(500 * (attempt + 1));
+        continue;
+      }
+
+      throw lastError;
+    } finally {
+      clearTimeout(timeoutId);
     }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
   }
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OpenAI TTS failed: ${response.status} ${errorText}`);
-  }
-
-  return Buffer.from(await response.arrayBuffer());
+  throw lastError ?? new Error("OpenAI request failed.");
 };
 
 const prepareTtsRequest = (request: TtsRequest) => {
