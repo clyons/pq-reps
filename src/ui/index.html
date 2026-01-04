@@ -541,6 +541,15 @@
             : {}),
           ...(debugEnabled ? { debugTtsPrompt: true } : {}),
         };
+
+        const buildTtsPayload = (script) => ({
+          script,
+          language,
+          voice: voiceStyle,
+          ttsNewlinePauseSeconds: isDevMode
+            ? Number(formData.get("ttsNewlinePauseSeconds")) || 0
+            : undefined,
+        });
         submitButton.disabled = true;
         statusPanel.hidden = false;
         spinner.hidden = false;
@@ -636,15 +645,15 @@
           return finalPayload;
         };
 
-        const requestAudio = async (onStreamStart) => {
-          const response = await fetch("/api/generate", {
+        const requestAudio = async (script, onStreamStart) => {
+          const response = await fetch("/api/tts", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Accept: "audio/mpeg",
               "x-tts-streaming": "1",
             },
-            body: JSON.stringify({ ...basePayload, outputMode: "audio" }),
+            body: JSON.stringify(buildTtsPayload(script)),
           });
 
           if (!response.ok) {
@@ -737,8 +746,10 @@
           let streamUrl = null;
 
           if (streamAudioEnabled) {
-            const [streamResponse, jsonResponse] = await Promise.all([
-              requestAudio((mediaUrl, streamContentType) => {
+            const jsonResponse = await requestJson("text");
+            script = jsonResponse?.script || "";
+            ttsPrompt = jsonResponse?.ttsPrompt || null;
+            const streamResponse = await requestAudio(script, (mediaUrl, streamContentType) => {
               streamUrl = mediaUrl;
       audioPlayer.src = mediaUrl;
       audioPlayer.play().catch(() => {});

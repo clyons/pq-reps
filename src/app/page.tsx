@@ -282,6 +282,13 @@ export default function HomePage() {
       debugTtsPrompt: formState.debugTtsPrompt,
     };
 
+    const ttsPayload = (script: string) => ({
+      script,
+      language: formState.language,
+      voice: voiceStyle,
+      ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
+    });
+
     const requestJson = async (outputMode: "text" | "text-audio") => {
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -301,16 +308,17 @@ export default function HomePage() {
     };
 
     const requestAudio = async (
+      script: string,
       onStreamStart?: (mediaUrl: string, contentType: string) => void,
     ) => {
-      const response = await fetch("/api/generate", {
+      const response = await fetch("/api/tts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "audio/mpeg",
           "x-tts-streaming": "1",
         },
-        body: JSON.stringify({ ...basePayload, outputMode: "audio" }),
+        body: JSON.stringify(ttsPayload(script)),
       });
 
       if (!response.ok) {
@@ -409,8 +417,14 @@ export default function HomePage() {
           ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
         }
       } else if (effectiveOutputMode === "audio") {
-        const [{ blob, mediaUrl, contentType }, jsonResult] = await Promise.all([
-          requestAudio((streamUrl, streamContentType) => {
+        const jsonResult = await requestJson("text");
+        script = jsonResult.script;
+        if (jsonResult.ttsPrompt) {
+          ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
+        }
+        const { blob, mediaUrl, contentType } = await requestAudio(
+          script,
+          (streamUrl, streamContentType) => {
             const downloadFilename = buildDownloadFilename({
               voice: voiceStyle,
               durationMinutes: formState.durationMinutes,

@@ -24,6 +24,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [ ] Add user-facing AI-generated voice disclosure in the UI.
 - [ ] Add tests for prompt outline (API validation coverage exists in `tests/generate-api.test.ts`).
 - [ ] Reduce latency by using the Speech API to support realtime audio streaming via chunked transfer encoding.
+- [ ] Consider routing all audio (streamed and downloaded) through `/api/tts`.
 - [ ] Replace drop-downs with pills or other friendlier UI elements
 - [ ] Add common scenarios for PQ Reps which have their own settings / prompts
 - [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog"
