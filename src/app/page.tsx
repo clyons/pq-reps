@@ -8,6 +8,8 @@ type GenerationResult = {
   script?: string;
   ttsPrompt?: string;
   downloadFilename?: string;
+  scriptDownloadUrl?: string;
+  scriptDownloadFilename?: string;
 };
 
 type FormState = {
@@ -81,6 +83,18 @@ const buildDownloadFilename = ({
   focus: string;
   now?: Date;
 }) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.wav`;
+
+const buildScriptDownloadFilename = ({
+  voice,
+  durationMinutes,
+  focus,
+  now = new Date(),
+}: {
+  voice: string;
+  durationMinutes: number;
+  focus: string;
+  now?: Date;
+}) => buildDownloadFilename({ voice, durationMinutes, focus, now }).replace(/\.wav$/, ".txt");
 
 const derivePracticeConfig = (
   practiceType: FormState["practiceType"],
@@ -195,6 +209,9 @@ export default function HomePage() {
       }
       if (result?.downloadUrl) {
         URL.revokeObjectURL(result.downloadUrl);
+      }
+      if (result?.scriptDownloadUrl) {
+        URL.revokeObjectURL(result.scriptDownloadUrl);
       }
     };
   }, [result]);
@@ -382,12 +399,17 @@ export default function HomePage() {
             if (prev?.downloadUrl) {
               URL.revokeObjectURL(prev.downloadUrl);
             }
+            if (prev?.scriptDownloadUrl) {
+              URL.revokeObjectURL(prev.scriptDownloadUrl);
+            }
             return {
               audioUrl: streamUrl,
               downloadUrl: undefined,
               script: "",
               ttsPrompt: undefined,
               downloadFilename,
+              scriptDownloadFilename: undefined,
+              scriptDownloadUrl: undefined,
             };
           });
         });
@@ -433,6 +455,16 @@ export default function HomePage() {
             focus: primarySense,
           })
         : undefined;
+      const scriptDownloadFilename = cleanedScript
+        ? buildScriptDownloadFilename({
+            voice: voiceStyle,
+            durationMinutes: formState.durationMinutes,
+            focus: primarySense,
+          })
+        : undefined;
+      const scriptDownloadUrl = cleanedScript
+        ? URL.createObjectURL(new Blob([cleanedScript], { type: "text/plain" }))
+        : undefined;
 
       setResult((prev) => {
         if (prev?.audioUrl) {
@@ -441,12 +473,17 @@ export default function HomePage() {
         if (prev?.downloadUrl) {
           URL.revokeObjectURL(prev.downloadUrl);
         }
+        if (prev?.scriptDownloadUrl) {
+          URL.revokeObjectURL(prev.scriptDownloadUrl);
+        }
         return {
           audioUrl,
           downloadUrl: downloadUrl ?? audioUrl,
           script: cleanedScript,
           ttsPrompt,
           downloadFilename,
+          scriptDownloadFilename,
+          scriptDownloadUrl,
         };
       });
 
@@ -676,7 +713,18 @@ export default function HomePage() {
             </>
           )}
           {result.script && (
-            <p style={{ marginTop: "1rem", whiteSpace: "pre-line" }}>{result.script}</p>
+            <>
+              {result.scriptDownloadUrl && (
+                <a
+                  href={result.scriptDownloadUrl}
+                  download={result.scriptDownloadFilename ?? "pq-reps.txt"}
+                  style={{ fontWeight: 600, display: "inline-block", marginTop: "1rem" }}
+                >
+                  Download the script
+                </a>
+              )}
+              <p style={{ marginTop: "1rem", whiteSpace: "pre-line" }}>{result.script}</p>
+            </>
           )}
           {result.ttsPrompt && (
             <div style={{ marginTop: "1.5rem" }}>

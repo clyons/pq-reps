@@ -260,6 +260,9 @@
         <a id="download-link" class="download-link" download="pq-reps.wav" hidden>
           Download the WAV
         </a>
+        <a id="script-download-link" class="download-link" download="pq-reps.txt" hidden>
+          Download the script
+        </a>
         <p id="script-output" style="margin-top: 1rem; white-space: pre-line;" hidden></p>
         <div id="debug-section" hidden>
           <h3>TTS prompt (debug)</h3>
@@ -286,6 +289,7 @@
       const result = document.getElementById("result");
       const audioPlayer = document.getElementById("audio-player");
       const downloadLink = document.getElementById("download-link");
+      const scriptDownloadLink = document.getElementById("script-download-link");
       const scriptOutput = document.getElementById("script-output");
       const submitButton = document.getElementById("submit-button");
       const debugInput = form.querySelector("input[name='debugTtsPrompt']");
@@ -297,6 +301,7 @@
       const devControls = document.getElementById("dev-controls");
       let currentUrl = null;
       let downloadUrl = null;
+      let scriptDownloadUrl = null;
       const storageKey = "pq-reps-form";
       const femaleVoiceByLanguage = { es: "nova", fr: "nova" };
       const maleVoiceByLanguage = { es: "onyx", fr: "onyx" };
@@ -380,6 +385,8 @@
 
       const buildDownloadFilename = ({ voice, durationMinutes, focus, now = new Date() }) =>
         `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.wav`;
+      const buildScriptDownloadFilename = ({ voice, durationMinutes, focus, now = new Date() }) =>
+        buildDownloadFilename({ voice, durationMinutes, focus, now }).replace(/\.wav$/, ".txt");
 
       const derivePrimarySense = (focus, eyeState) => {
         if (focus === "sight" && eyeState === "closed") {
@@ -475,6 +482,7 @@
         scriptOutput.textContent = "";
         debugOutput.textContent = "";
         debugSection.hidden = true;
+        scriptDownloadLink.hidden = true;
 
         if (currentUrl) {
           URL.revokeObjectURL(currentUrl);
@@ -483,6 +491,10 @@
         if (downloadUrl) {
           URL.revokeObjectURL(downloadUrl);
           downloadUrl = null;
+        }
+        if (scriptDownloadUrl) {
+          URL.revokeObjectURL(scriptDownloadUrl);
+          scriptDownloadUrl = null;
         }
 
         const formData = new FormData(form);
@@ -768,8 +780,20 @@
           if (cleanedScript) {
             scriptOutput.textContent = cleanedScript;
             scriptOutput.hidden = false;
+            if (scriptDownloadUrl) {
+              URL.revokeObjectURL(scriptDownloadUrl);
+            }
+            scriptDownloadUrl = URL.createObjectURL(new Blob([cleanedScript], { type: "text/plain" }));
+            scriptDownloadLink.href = scriptDownloadUrl;
+            scriptDownloadLink.download = buildScriptDownloadFilename({
+              voice: voiceStyle,
+              durationMinutes,
+              focus: primarySense,
+            });
+            scriptDownloadLink.hidden = false;
           } else {
             scriptOutput.hidden = true;
+            scriptDownloadLink.hidden = true;
           }
 
           if (ttsPrompt) {
