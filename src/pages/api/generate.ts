@@ -221,7 +221,9 @@ export default async function handler(
       sendEventStreamHeaders(res);
       sendEvent(res, "status", "generating script…");
     }
+    const scriptStart = Date.now();
     const { script } = await generateScript({ prompt });
+    console.info(`Script generation took ${Date.now() - scriptStart}ms.`);
     if (outputMode === "text") {
       const response = {
         script,
@@ -258,6 +260,7 @@ export default async function handler(
       sendEvent(res, "status", "synthesizing audio…");
     }
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
+    const ttsStart = Date.now();
     const ttsResult = wantsAudioStream && outputMode === "audio"
       ? await synthesizeSpeechStream({
           script,
@@ -271,6 +274,7 @@ export default async function handler(
           voice: config.voiceStyle,
           newlinePauseSeconds: config.ttsNewlinePauseSeconds,
         });
+    console.info(`Audio synthesis took ${Date.now() - ttsStart}ms.`);
     const ttsPrompt = debugTtsPrompt
       ? {
           model: "gpt-4o-mini-tts",
