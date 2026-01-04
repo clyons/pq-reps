@@ -246,10 +246,18 @@ const sleep = (ms: number) =>
 const shouldRetryStatus = (status: number) =>
   status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
 
-const synthesizeWavSegment = async (
+type TtsResponseFormat = "wav" | "mp3";
+
+const RESPONSE_FORMAT_TO_CONTENT_TYPE: Record<TtsResponseFormat, string> = {
+  wav: "audio/wav",
+  mp3: "audio/mpeg",
+};
+
+const synthesizeTtsSegment = async (
   apiKey: string,
   voice: string,
   script: string,
+  responseFormat: TtsResponseFormat,
 ): Promise<Buffer> => {
   const timeoutValue = Number.parseInt(process.env.OPENAI_TIMEOUT_MS ?? "", 10);
   const timeoutMs = Number.isFinite(timeoutValue) && timeoutValue > 0 ? timeoutValue : 60000;
@@ -272,7 +280,7 @@ const synthesizeWavSegment = async (
           voice,
           input: script,
           instructions: TTS_SYSTEM_PROMPT,
-          response_format: "wav",
+          response_format: responseFormat,
         }),
         signal: controller.signal,
       });
@@ -380,7 +388,7 @@ export async function synthesizeSpeech(
       continue;
     }
 
-    const wavBuffer = await synthesizeWavSegment(apiKey, voice, token.value);
+    const wavBuffer = await synthesizeTtsSegment(apiKey, voice, token.value, "wav");
     const wavData = parseWav(wavBuffer);
 
     if (!format) {
@@ -412,7 +420,7 @@ export async function synthesizeSpeech(
 
   return {
     audio: combinedAudio,
-    contentType: "audio/wav",
+    contentType: RESPONSE_FORMAT_TO_CONTENT_TYPE.wav,
     provider: "openai",
     voice,
     inputScript,
@@ -425,58 +433,75 @@ export async function synthesizeSpeechStream(
 ): Promise<TtsStreamResponse> {
   const { apiKey, voice, inputScript, tokens } = prepareTtsRequest(request);
   const chunkSize = options?.chunkSize;
+  const responseFormat: TtsResponseFormat = "mp3";
 
   const stream = (async function* () {
     let format: Omit<WavFormat, "audioData"> | null = null;
     let pendingPauseSeconds = 0;
     let headerSent = false;
+    let hasAudio = false;
+    let skippedPauses = false;
 
     for (const token of tokens) {
       if (token.type === "pause") {
-        if (format) {
-          yield* chunkBuffer(createSilenceBuffer(token.value, format), chunkSize);
+        if (responseFormat === "wav") {
+          if (format) {
+            yield* chunkBuffer(createSilenceBuffer(token.value, format), chunkSize);
+          } else {
+            pendingPauseSeconds += token.value;
+          }
         } else {
-          pendingPauseSeconds += token.value;
+          skippedPauses = true;
         }
         continue;
       }
 
-      const wavBuffer = await synthesizeWavSegment(apiKey, voice, token.value);
-      const wavData = parseWav(wavBuffer);
+      const audioBuffer = await synthesizeTtsSegment(apiKey, voice, token.value, responseFormat);
+      hasAudio = true;
 
-      if (!format) {
-        format = {
-          sampleRate: wavData.sampleRate,
-          channels: wavData.channels,
-          bitsPerSample: wavData.bitsPerSample,
-        };
-        if (!headerSent) {
-          headerSent = true;
-          yield* chunkBuffer(buildStreamingWavHeader(format), chunkSize);
+      if (responseFormat === "wav") {
+        const wavData = parseWav(audioBuffer);
+
+        if (!format) {
+          format = {
+            sampleRate: wavData.sampleRate,
+            channels: wavData.channels,
+            bitsPerSample: wavData.bitsPerSample,
+          };
+          if (!headerSent) {
+            headerSent = true;
+            yield* chunkBuffer(buildStreamingWavHeader(format), chunkSize);
+          }
+          if (pendingPauseSeconds > 0) {
+            yield* chunkBuffer(createSilenceBuffer(pendingPauseSeconds, format), chunkSize);
+            pendingPauseSeconds = 0;
+          }
+        } else if (
+          wavData.sampleRate !== format.sampleRate ||
+          wavData.channels !== format.channels ||
+          wavData.bitsPerSample !== format.bitsPerSample
+        ) {
+          throw new Error("TTS returned inconsistent WAV formats for segments.");
         }
-        if (pendingPauseSeconds > 0) {
-          yield* chunkBuffer(createSilenceBuffer(pendingPauseSeconds, format), chunkSize);
-          pendingPauseSeconds = 0;
-        }
-      } else if (
-        wavData.sampleRate !== format.sampleRate ||
-        wavData.channels !== format.channels ||
-        wavData.bitsPerSample !== format.bitsPerSample
-      ) {
-        throw new Error("TTS returned inconsistent WAV formats for segments.");
+
+        yield* chunkBuffer(wavData.audioData, chunkSize);
+      } else {
+        yield* chunkBuffer(audioBuffer, chunkSize);
       }
-
-      yield* chunkBuffer(wavData.audioData, chunkSize);
     }
 
-    if (!format) {
+    if (!hasAudio || (responseFormat === "wav" && !format)) {
       throw new Error("No spoken audio segments were generated.");
+    }
+
+    if (skippedPauses) {
+      console.info("Streaming MP3 output skipped pause markers to allow progressive playback.");
     }
   })();
 
   return {
     stream,
-    contentType: "audio/wav",
+    contentType: RESPONSE_FORMAT_TO_CONTENT_TYPE[responseFormat],
     provider: "openai",
     voice,
     inputScript,

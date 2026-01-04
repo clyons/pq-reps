@@ -77,12 +77,17 @@ const buildDownloadFilename = ({
   durationMinutes,
   focus,
   now = new Date(),
+  extension = "wav",
 }: {
   voice: string;
   durationMinutes: number;
   focus: string;
   now?: Date;
-}) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.wav`;
+  extension?: string;
+}) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.${extension}`;
+
+const resolveAudioExtension = (contentType?: string) =>
+  contentType?.includes("mpeg") ? "mp3" : "wav";
 
 const buildScriptDownloadFilename = ({
   voice,
@@ -94,7 +99,7 @@ const buildScriptDownloadFilename = ({
   durationMinutes: number;
   focus: string;
   now?: Date;
-}) => buildDownloadFilename({ voice, durationMinutes, focus, now }).replace(/\.wav$/, ".txt");
+}) => buildDownloadFilename({ voice, durationMinutes, focus, now }).replace(/\.[^.]+$/, ".txt");
 
 const derivePracticeConfig = (
   practiceType: FormState["practiceType"],
@@ -295,12 +300,14 @@ export default function HomePage() {
       return (await response.json()) as { script: string; ttsPrompt?: Record<string, unknown> };
     };
 
-    const requestAudio = async (onStreamStart?: (mediaUrl: string) => void) => {
+    const requestAudio = async (
+      onStreamStart?: (mediaUrl: string, contentType: string) => void,
+    ) => {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "audio/wav",
+          Accept: "audio/mpeg",
           "x-tts-streaming": "1",
         },
         body: JSON.stringify(payload),
@@ -315,10 +322,10 @@ export default function HomePage() {
         throw new Error(`The generator failed to respond. (${response.status})`);
       }
 
-      const contentType = response.headers.get("content-type") ?? "audio/wav";
+      const contentType = response.headers.get("content-type") ?? "audio/mpeg";
       if (!response.body) {
         const audioBuffer = await response.arrayBuffer();
-        return { blob: new Blob([audioBuffer], { type: contentType }) };
+        return { blob: new Blob([audioBuffer], { type: contentType }), contentType };
       }
 
       const reader = response.body.getReader();
@@ -336,12 +343,12 @@ export default function HomePage() {
             chunks.push(value);
           }
         }
-        return { blob: new Blob(chunks, { type: contentType }) };
+        return { blob: new Blob(chunks, { type: contentType }), contentType };
       }
 
       const mediaSource = new MediaSource();
       const mediaUrl = URL.createObjectURL(mediaSource);
-      onStreamStart?.(mediaUrl);
+      onStreamStart?.(mediaUrl, contentType);
 
       await new Promise<void>((resolve, reject) => {
         const handleError = () => reject(new Error("Audio stream failed."));
@@ -385,7 +392,7 @@ export default function HomePage() {
       });
 
       const downloadBlob = new Blob(chunks, { type: contentType });
-      return { blob: downloadBlob, mediaUrl };
+      return { blob: downloadBlob, mediaUrl, contentType };
     };
 
     try {
@@ -393,6 +400,7 @@ export default function HomePage() {
       let audioUrl: string | undefined;
       let downloadUrl: string | undefined;
       let ttsPrompt: string | undefined;
+      let audioContentType: string | undefined;
 
       if (effectiveOutputMode === "text") {
         const jsonResult = await requestJson();
@@ -401,39 +409,76 @@ export default function HomePage() {
           ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
         }
       } else if (effectiveOutputMode === "audio") {
-        const { blob, mediaUrl } = await requestAudio((streamUrl) => {
-          const downloadFilename = buildDownloadFilename({
-            voice: voiceStyle,
-            durationMinutes: formState.durationMinutes,
-            focus: primarySense,
-          });
-          setResult((prev) => {
-            if (prev?.audioUrl) {
-              URL.revokeObjectURL(prev.audioUrl);
-            }
-            if (prev?.downloadUrl) {
-              URL.revokeObjectURL(prev.downloadUrl);
-            }
-            if (prev?.scriptDownloadUrl) {
-              URL.revokeObjectURL(prev.scriptDownloadUrl);
-            }
-            return {
-              audioUrl: streamUrl,
-              downloadUrl: undefined,
-              script: "",
-              ttsPrompt: undefined,
-              downloadFilename,
-              scriptDownloadFilename: undefined,
-              scriptDownloadUrl: undefined,
-            };
-          });
-        });
+        const { blob, mediaUrl, contentType } = await requestAudio(
+          (streamUrl, streamContentType) => {
+            const downloadFilename = buildDownloadFilename({
+              voice: voiceStyle,
+              durationMinutes: formState.durationMinutes,
+              focus: primarySense,
+              extension: resolveAudioExtension(streamContentType),
+            });
+            setStatus("success");
+            setResult((prev) => {
+              if (prev?.audioUrl && prev.audioUrl !== streamUrl) {
+                URL.revokeObjectURL(prev.audioUrl);
+              }
+              if (prev?.downloadUrl) {
+                URL.revokeObjectURL(prev.downloadUrl);
+              }
+              if (prev?.scriptDownloadUrl) {
+                URL.revokeObjectURL(prev.scriptDownloadUrl);
+              }
+              return {
+                audioUrl: streamUrl,
+                downloadUrl: undefined,
+                script: "",
+                ttsPrompt: undefined,
+                downloadFilename,
+                scriptDownloadFilename: undefined,
+                scriptDownloadUrl: undefined,
+              };
+            });
+          },
+        );
         if (mediaUrl) {
           audioUrl = mediaUrl;
         } else {
           audioUrl = URL.createObjectURL(blob);
         }
         downloadUrl = URL.createObjectURL(blob);
+        audioContentType = contentType ?? blob.type;
+        const extension = resolveAudioExtension(audioContentType);
+        const downloadFilename = buildDownloadFilename({
+          voice: voiceStyle,
+          durationMinutes: formState.durationMinutes,
+          focus: primarySense,
+          extension,
+        });
+        const scriptDownloadFilename = buildScriptDownloadFilename({
+          voice: voiceStyle,
+          durationMinutes: formState.durationMinutes,
+          focus: primarySense,
+        });
+        setResult((prev) => {
+          if (prev?.audioUrl && prev.audioUrl !== audioUrl) {
+            URL.revokeObjectURL(prev.audioUrl);
+          }
+          if (prev?.downloadUrl) {
+            URL.revokeObjectURL(prev.downloadUrl);
+          }
+          if (prev?.scriptDownloadUrl) {
+            URL.revokeObjectURL(prev.scriptDownloadUrl);
+          }
+          return {
+            audioUrl,
+            downloadUrl,
+            script: "",
+            ttsPrompt,
+            downloadFilename,
+            scriptDownloadFilename,
+            scriptDownloadUrl: undefined,
+          };
+        });
       } else {
         const jsonResult = (await requestJson()) as {
           script: string;
@@ -454,6 +499,7 @@ export default function HomePage() {
           const audioBlob = new Blob([bytes], {
             type: jsonResult.audioContentType ?? "audio/mpeg",
           });
+          audioContentType = jsonResult.audioContentType ?? "audio/mpeg";
           audioUrl = URL.createObjectURL(audioBlob);
           downloadUrl = URL.createObjectURL(audioBlob);
         }
@@ -468,6 +514,7 @@ export default function HomePage() {
             voice: voiceStyle,
             durationMinutes: formState.durationMinutes,
             focus: primarySense,
+            extension: resolveAudioExtension(audioContentType),
           })
         : undefined;
       const scriptDownloadFilename = cleanedScript
@@ -482,7 +529,7 @@ export default function HomePage() {
         : undefined;
 
       setResult((prev) => {
-        if (prev?.audioUrl) {
+        if (prev?.audioUrl && prev.audioUrl !== audioUrl) {
           URL.revokeObjectURL(prev.audioUrl);
         }
         if (prev?.downloadUrl) {

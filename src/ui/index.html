@@ -383,10 +383,18 @@
         return `${year}${month}${day}-${hour}${minute}`;
       };
 
-      const buildDownloadFilename = ({ voice, durationMinutes, focus, now = new Date() }) =>
-        `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.wav`;
+      const buildDownloadFilename = ({
+        voice,
+        durationMinutes,
+        focus,
+        now = new Date(),
+        extension = "wav",
+      }) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.${extension}`;
+
+      const resolveAudioExtension = (contentType) =>
+        contentType && contentType.includes("mpeg") ? "mp3" : "wav";
       const buildScriptDownloadFilename = ({ voice, durationMinutes, focus, now = new Date() }) =>
-        buildDownloadFilename({ voice, durationMinutes, focus, now }).replace(/\.wav$/, ".txt");
+        buildDownloadFilename({ voice, durationMinutes, focus, now }).replace(/\.[^.]+$/, ".txt");
 
       const derivePrimarySense = (focus, eyeState) => {
         if (focus === "sight" && eyeState === "closed") {
@@ -634,7 +642,7 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Accept: "audio/wav",
+              Accept: "audio/mpeg",
               "x-tts-streaming": "1",
             },
             body: JSON.stringify(payload),
@@ -649,10 +657,10 @@
             throw new Error(`The generator failed to respond. (${response.status})`);
           }
 
-          const contentType = response.headers.get("content-type") || "audio/wav";
+          const contentType = response.headers.get("content-type") || "audio/mpeg";
           if (!response.body) {
             const audioBuffer = await response.arrayBuffer();
-            return { blob: new Blob([audioBuffer], { type: contentType }) };
+            return { blob: new Blob([audioBuffer], { type: contentType }), contentType };
           }
 
           const reader = response.body.getReader();
@@ -670,13 +678,13 @@
                 chunks.push(value);
               }
             }
-            return { blob: new Blob(chunks, { type: contentType }) };
+            return { blob: new Blob(chunks, { type: contentType }), contentType };
           }
 
           const mediaSource = new MediaSource();
           const mediaUrl = URL.createObjectURL(mediaSource);
           if (typeof onStreamStart === "function") {
-            onStreamStart(mediaUrl);
+            onStreamStart(mediaUrl, contentType);
           }
 
           await new Promise((resolve, reject) => {
@@ -720,7 +728,7 @@
             );
           });
 
-          return { blob: new Blob(chunks, { type: contentType }), mediaUrl };
+          return { blob: new Blob(chunks, { type: contentType }), mediaUrl, contentType };
         };
 
         try {
@@ -730,15 +738,19 @@
           let streamUrl = null;
 
           if (streamAudioEnabled) {
-            const streamResponse = await requestAudio((mediaUrl) => {
+            const streamResponse = await requestAudio((mediaUrl, streamContentType) => {
               streamUrl = mediaUrl;
       audioPlayer.src = mediaUrl;
       audioPlayer.play().catch(() => {});
               audioPlayer.hidden = false;
+              status.textContent = "";
+              statusPanel.hidden = true;
+              spinner.hidden = true;
               const downloadFilename = buildDownloadFilename({
                 voice: voiceStyle,
                 durationMinutes,
                 focus: primarySense,
+                extension: resolveAudioExtension(streamContentType),
               });
               downloadLink.download = downloadFilename;
               downloadLink.hidden = true;
@@ -748,6 +760,13 @@
             if (streamResponse?.mediaUrl) {
               streamUrl = streamResponse.mediaUrl;
             }
+            const extension = resolveAudioExtension(streamResponse?.contentType);
+            downloadLink.download = buildDownloadFilename({
+              voice: voiceStyle,
+              durationMinutes,
+              focus: primarySense,
+              extension,
+            });
           } else {
             const jsonResponse = await requestJson();
             script = jsonResponse?.script || "";
@@ -773,13 +792,16 @@
             }
             downloadUrl = URL.createObjectURL(audioBlob);
             currentUrl = streamUrl || downloadUrl;
-            audioPlayer.src = currentUrl;
+            if (audioPlayer.src !== currentUrl) {
+              audioPlayer.src = currentUrl;
+            }
             audioPlayer.hidden = false;
             downloadLink.href = downloadUrl;
             downloadLink.download = buildDownloadFilename({
               voice: voiceStyle,
               durationMinutes,
               focus: primarySense,
+              extension: resolveAudioExtension(audioBlob.type),
             });
             downloadLink.hidden = false;
           } else {
