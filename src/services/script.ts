@@ -46,6 +46,8 @@ export const SCRIPT_SYSTEM_PROMPT = [
   "- Include explicit silence cues (e.g., “I’ll be quiet for a little while now”)",
   "- Immediately after a silence cue, insert a pause marker in the form [pause:10] where the number is seconds",
   "- Do not mention exact rep counts unless duration is at least 5 minutes",
+  "- For 1-minute sessions: use 2-3 short instruction beats, keep cues compact, and avoid long silences (pause cues should be 3-5 seconds max)",
+  "- For 12-minute sessions: establish a clear pacing arc with checkpoints or gentle resets every 2-3 minutes; include occasional extended silences (15-30 seconds) with brief reminders between",
   "Eyes Instruction:",
   "- If eyes are closed, instruct gently and early",
   "- If eyes are open, avoid inner imagery and emphasize external sensing",

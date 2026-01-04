@@ -120,9 +120,16 @@ const derivePracticeConfig = (
 };
 
 const deriveDurationConfig = (durationMinutes: FormState["durationMinutes"]) => {
-  if (durationMinutes === 1 || durationMinutes === 2) {
+  if (durationMinutes === 1) {
     return {
       silenceProfile: "none" as const,
+      normalizationFrequency: "once" as const,
+      closingStyle: "minimal" as const,
+    };
+  }
+  if (durationMinutes === 2) {
+    return {
+      silenceProfile: "short_pauses" as const,
       normalizationFrequency: "once" as const,
       closingStyle: "minimal" as const,
     };
@@ -136,7 +143,7 @@ const deriveDurationConfig = (durationMinutes: FormState["durationMinutes"]) => 
   }
   return {
     silenceProfile: "extended_silence" as const,
-    normalizationFrequency: "repeated" as const,
+    normalizationFrequency: "periodic" as const,
     closingStyle: "pq_framed_with_progression" as const,
   };
 };
