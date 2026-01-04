@@ -212,6 +212,19 @@
           <span class="option-hint">Choose the voice you prefer for guidance.</span>
         </label>
 
+        <label>
+          Audio delivery
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" name="streamAudio" id="stream-audio" />
+            <label for="stream-audio" class="option-hint" style="margin: 0;">
+              Stream audio as it is generated
+            </label>
+          </div>
+          <span class="option-hint">
+            Streaming starts playback sooner but skips the script output.
+          </span>
+        </label>
+
         <div id="dev-controls" hidden>
           <label>
             TTS newline pause (seconds)
@@ -276,12 +289,14 @@
       const scriptOutput = document.getElementById("script-output");
       const submitButton = document.getElementById("submit-button");
       const debugInput = form.querySelector("input[name='debugTtsPrompt']");
+      const streamAudioInput = form.querySelector("input[name='streamAudio']");
       const appVersion = document.getElementById("app-version");
       const resetButton = document.getElementById("reset-button");
       const debugSection = document.getElementById("debug-section");
       const debugOutput = document.getElementById("debug-output");
       const devControls = document.getElementById("dev-controls");
       let currentUrl = null;
+      let downloadUrl = null;
       const storageKey = "pq-reps-form";
       const femaleVoiceByLanguage = { es: "nova", fr: "nova" };
       const maleVoiceByLanguage = { es: "onyx", fr: "onyx" };
@@ -465,11 +480,16 @@
           URL.revokeObjectURL(currentUrl);
           currentUrl = null;
         }
+        if (downloadUrl) {
+          URL.revokeObjectURL(downloadUrl);
+          downloadUrl = null;
+        }
 
         const formData = new FormData(form);
         localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(formData.entries())));
         const debugEnabled = isDevMode && debugInput?.checked;
-        const effectiveOutputMode = "text-audio";
+        const streamAudioEnabled = streamAudioInput?.checked ?? false;
+        const effectiveOutputMode = streamAudioEnabled ? "audio" : "text-audio";
         const language = formData.get("language");
         const voiceGender = formData.get("voiceGender");
         const voiceStyle =
@@ -502,7 +522,7 @@
           outputMode: effectiveOutputMode,
           ...(debugEnabled ? { debugTtsPrompt: true } : {}),
         };
-        const streamingEnabled = true;
+        const streamingEnabled = streamAudioEnabled;
 
         submitButton.disabled = true;
         statusPanel.hidden = false;
@@ -599,12 +619,13 @@
           return finalPayload;
         };
 
-        const requestAudio = async () => {
+        const requestAudio = async (onStreamStart) => {
           const response = await fetch("/api/generate", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Accept: "audio/wav",
+              "x-tts-streaming": "1",
             },
             body: JSON.stringify(payload),
           });
@@ -618,15 +639,70 @@
             throw new Error(`The generator failed to respond. (${response.status})`);
           }
 
-          const audioBuffer = await response.arrayBuffer();
           const contentType = response.headers.get("content-type") || "audio/wav";
-          return new Blob([audioBuffer], { type: contentType });
+          if (!response.body) {
+            const audioBuffer = await response.arrayBuffer();
+            return { blob: new Blob([audioBuffer], { type: contentType }) };
+          }
+
+          const mediaSource = new MediaSource();
+          const mediaUrl = URL.createObjectURL(mediaSource);
+          if (typeof onStreamStart === "function") {
+            onStreamStart(mediaUrl);
+          }
+
+          const reader = response.body.getReader();
+          const chunks = [];
+
+          await new Promise((resolve, reject) => {
+            const handleError = () => reject(new Error("Audio stream failed."));
+
+            mediaSource.addEventListener("error", handleError, { once: true });
+            mediaSource.addEventListener(
+              "sourceopen",
+              async () => {
+                try {
+                  const sourceBuffer = mediaSource.addSourceBuffer(contentType);
+                  const appendChunk = (chunk) =>
+                    new Promise((appendResolve, appendReject) => {
+                      const onError = () => appendReject(new Error("Failed to append audio chunk."));
+                      const onUpdateEnd = () => appendResolve();
+                      sourceBuffer.addEventListener("error", onError, { once: true });
+                      sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
+                      sourceBuffer.appendBuffer(chunk);
+                    });
+
+                  while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                      break;
+                    }
+                    if (value) {
+                      chunks.push(value);
+                      await appendChunk(value);
+                    }
+                  }
+
+                  if (mediaSource.readyState === "open") {
+                    mediaSource.endOfStream();
+                  }
+                  resolve();
+                } catch (streamError) {
+                  reject(streamError);
+                }
+              },
+              { once: true },
+            );
+          });
+
+          return { blob: new Blob(chunks, { type: contentType }), mediaUrl };
         };
 
         try {
           let script = "";
           let audioBlob = null;
           let ttsPrompt = null;
+          let streamUrl = null;
 
           if (streamingEnabled) {
             const streamedResponse = await requestStreamed();
@@ -643,7 +719,23 @@
               });
             }
           } else if (effectiveOutputMode === "audio") {
-            audioBlob = await requestAudio();
+            const streamResponse = await requestAudio((mediaUrl) => {
+              streamUrl = mediaUrl;
+              audioPlayer.src = mediaUrl;
+              audioPlayer.hidden = false;
+              const downloadFilename = buildDownloadFilename({
+                voice: voiceStyle,
+                durationMinutes,
+                focus: primarySense,
+              });
+              downloadLink.download = downloadFilename;
+              downloadLink.hidden = true;
+              result.hidden = false;
+            });
+            audioBlob = streamResponse?.blob || null;
+            if (streamResponse?.mediaUrl) {
+              streamUrl = streamResponse.mediaUrl;
+            }
           } else {
             const jsonResponse = await requestJson();
             script = jsonResponse?.script || "";
@@ -661,10 +753,17 @@
           }
 
           if (audioBlob) {
-            currentUrl = URL.createObjectURL(audioBlob);
+            if (currentUrl) {
+              URL.revokeObjectURL(currentUrl);
+            }
+            if (downloadUrl) {
+              URL.revokeObjectURL(downloadUrl);
+            }
+            downloadUrl = URL.createObjectURL(audioBlob);
+            currentUrl = streamUrl || downloadUrl;
             audioPlayer.src = currentUrl;
             audioPlayer.hidden = false;
-            downloadLink.href = currentUrl;
+            downloadLink.href = downloadUrl;
             downloadLink.download = buildDownloadFilename({
               voice: voiceStyle,
               durationMinutes,
