@@ -51,6 +51,27 @@ type SuccessResponse = {
 
 type StreamEvent = "status" | "done" | "error";
 
+const formatTimestamp = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${year}${month}${day}-${hour}${minute}`;
+};
+
+const buildDownloadFilename = ({
+  voice,
+  durationMinutes,
+  focus,
+  now = new Date(),
+}: {
+  voice: string;
+  durationMinutes: number;
+  focus: string;
+  now?: Date;
+}) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.wav`;
+
 function sendJson(res: ServerResponse, status: number, payload: unknown) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");
@@ -311,7 +332,12 @@ export default async function handler(
 
     res.statusCode = 200;
     res.setHeader("Content-Type", ttsResult.contentType);
-    res.setHeader("Content-Disposition", "attachment; filename=\"pq-reps.wav\"");
+    const downloadFilename = buildDownloadFilename({
+      voice: ttsResult.voice,
+      durationMinutes: config.durationMinutes,
+      focus: config.primarySense,
+    });
+    res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
     res.end(ttsResult.audio);
   } catch (error) {
     if (wantsStream) {
