@@ -246,11 +246,10 @@ const sleep = (ms: number) =>
 const shouldRetryStatus = (status: number) =>
   status === 408 || status === 409 || status === 425 || status === 429 || status >= 500;
 
-type TtsResponseFormat = "wav" | "mp3";
+type TtsResponseFormat = "wav";
 
 const RESPONSE_FORMAT_TO_CONTENT_TYPE: Record<TtsResponseFormat, string> = {
   wav: "audio/wav",
-  mp3: "audio/mpeg",
 };
 
 const synthesizeTtsSegment = async (
@@ -433,25 +432,20 @@ export async function synthesizeSpeechStream(
 ): Promise<TtsStreamResponse> {
   const { apiKey, voice, inputScript, tokens } = prepareTtsRequest(request);
   const chunkSize = options?.chunkSize;
-  const responseFormat: TtsResponseFormat = "mp3";
+  const responseFormat: TtsResponseFormat = "wav";
 
   const stream = (async function* () {
     let format: Omit<WavFormat, "audioData"> | null = null;
     let pendingPauseSeconds = 0;
     let headerSent = false;
     let hasAudio = false;
-    let skippedPauses = false;
 
     for (const token of tokens) {
       if (token.type === "pause") {
-        if (responseFormat === "wav") {
-          if (format) {
-            yield* chunkBuffer(createSilenceBuffer(token.value, format), chunkSize);
-          } else {
-            pendingPauseSeconds += token.value;
-          }
+        if (format) {
+          yield* chunkBuffer(createSilenceBuffer(token.value, format), chunkSize);
         } else {
-          skippedPauses = true;
+          pendingPauseSeconds += token.value;
         }
         continue;
       }
@@ -459,43 +453,35 @@ export async function synthesizeSpeechStream(
       const audioBuffer = await synthesizeTtsSegment(apiKey, voice, token.value, responseFormat);
       hasAudio = true;
 
-      if (responseFormat === "wav") {
-        const wavData = parseWav(audioBuffer);
+      const wavData = parseWav(audioBuffer);
 
-        if (!format) {
-          format = {
-            sampleRate: wavData.sampleRate,
-            channels: wavData.channels,
-            bitsPerSample: wavData.bitsPerSample,
-          };
-          if (!headerSent) {
-            headerSent = true;
-            yield* chunkBuffer(buildStreamingWavHeader(format), chunkSize);
-          }
-          if (pendingPauseSeconds > 0) {
-            yield* chunkBuffer(createSilenceBuffer(pendingPauseSeconds, format), chunkSize);
-            pendingPauseSeconds = 0;
-          }
-        } else if (
-          wavData.sampleRate !== format.sampleRate ||
-          wavData.channels !== format.channels ||
-          wavData.bitsPerSample !== format.bitsPerSample
-        ) {
-          throw new Error("TTS returned inconsistent WAV formats for segments.");
+      if (!format) {
+        format = {
+          sampleRate: wavData.sampleRate,
+          channels: wavData.channels,
+          bitsPerSample: wavData.bitsPerSample,
+        };
+        if (!headerSent) {
+          headerSent = true;
+          yield* chunkBuffer(buildStreamingWavHeader(format), chunkSize);
         }
-
-        yield* chunkBuffer(wavData.audioData, chunkSize);
-      } else {
-        yield* chunkBuffer(audioBuffer, chunkSize);
+        if (pendingPauseSeconds > 0) {
+          yield* chunkBuffer(createSilenceBuffer(pendingPauseSeconds, format), chunkSize);
+          pendingPauseSeconds = 0;
+        }
+      } else if (
+        wavData.sampleRate !== format.sampleRate ||
+        wavData.channels !== format.channels ||
+        wavData.bitsPerSample !== format.bitsPerSample
+      ) {
+        throw new Error("TTS returned inconsistent WAV formats for segments.");
       }
+
+      yield* chunkBuffer(wavData.audioData, chunkSize);
     }
 
-    if (!hasAudio || (responseFormat === "wav" && !format)) {
+    if (!hasAudio || !format) {
       throw new Error("No spoken audio segments were generated.");
-    }
-
-    if (skippedPauses) {
-      console.info("Streaming MP3 output skipped pause markers to allow progressive playback.");
     }
   })();
 

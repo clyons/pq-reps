@@ -650,7 +650,7 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Accept: "audio/mpeg",
+              Accept: "audio/wav",
               "x-tts-streaming": "1",
             },
             body: JSON.stringify(buildTtsPayload(script)),
@@ -665,7 +665,7 @@
             throw new Error(`The generator failed to respond. (${response.status})`);
           }
 
-          const contentType = response.headers.get("content-type") || "audio/mpeg";
+          const contentType = response.headers.get("content-type") || "audio/wav";
           if (!response.body) {
             const audioBuffer = await response.arrayBuffer();
             return { blob: new Blob([audioBuffer], { type: contentType }), contentType };

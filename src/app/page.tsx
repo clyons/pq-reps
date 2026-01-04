@@ -315,7 +315,7 @@ export default function HomePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "audio/mpeg",
+          Accept: "audio/wav",
           "x-tts-streaming": "1",
         },
         body: JSON.stringify(ttsPayload(script)),
@@ -330,7 +330,7 @@ export default function HomePage() {
         throw new Error(`The generator failed to respond. (${response.status})`);
       }
 
-      const contentType = response.headers.get("content-type") ?? "audio/mpeg";
+      const contentType = response.headers.get("content-type") ?? "audio/wav";
       if (!response.body) {
         const audioBuffer = await response.arrayBuffer();
         return { blob: new Blob([audioBuffer], { type: contentType }), contentType };
@@ -516,9 +516,9 @@ export default function HomePage() {
             bytes[index] = binary.charCodeAt(index);
           }
           const audioBlob = new Blob([bytes], {
-            type: jsonResult.audioContentType ?? "audio/mpeg",
+            type: jsonResult.audioContentType ?? "audio/wav",
           });
-          audioContentType = jsonResult.audioContentType ?? "audio/mpeg";
+          audioContentType = jsonResult.audioContentType ?? "audio/wav";
           audioUrl = URL.createObjectURL(audioBlob);
           downloadUrl = URL.createObjectURL(audioBlob);
         }
