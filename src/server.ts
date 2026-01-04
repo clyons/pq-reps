@@ -3,7 +3,8 @@ import { readFile } from "fs/promises";
 import http from "http";
 import path from "path";
 import { URL, fileURLToPath } from "url";
-import handler from "./pages/api/generate";
+import generateHandler from "./pages/api/generate";
+import ttsHandler from "./pages/api/tts";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -18,7 +19,12 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
 
   if (url.pathname === "/api/generate") {
-    await handler(req, res);
+    await generateHandler(req, res);
+    return;
+  }
+
+  if (url.pathname === "/api/tts") {
+    await ttsHandler(req, res);
     return;
   }
 
