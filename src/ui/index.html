@@ -717,7 +717,8 @@
           if (streamAudioEnabled) {
             const streamResponse = await requestAudio((mediaUrl) => {
               streamUrl = mediaUrl;
-              audioPlayer.src = mediaUrl;
+      audioPlayer.src = mediaUrl;
+      audioPlayer.play().catch(() => {});
               audioPlayer.hidden = false;
               const downloadFilename = buildDownloadFilename({
                 voice: voiceStyle,
