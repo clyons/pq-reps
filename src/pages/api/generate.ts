@@ -70,12 +70,17 @@ const buildDownloadFilename = ({
   durationMinutes,
   focus,
   now = new Date(),
+  extension = "wav",
 }: {
   voice: string;
   durationMinutes: number;
   focus: string;
   now?: Date;
-}) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.wav`;
+  extension?: string;
+}) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.${extension}`;
+
+const resolveAudioExtension = (contentType: string) =>
+  contentType.includes("mpeg") ? "mp3" : "wav";
 
 function sendJson(res: ServerResponse, status: number, payload: unknown) {
   res.statusCode = status;
@@ -360,6 +365,7 @@ export default async function handler(
         voice: ttsResult.voice,
         durationMinutes: config.durationMinutes,
         focus: config.primarySense,
+        extension: resolveAudioExtension(ttsResult.contentType),
       });
       res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
       for await (const chunk of ttsResult.stream) {
@@ -375,6 +381,7 @@ export default async function handler(
       voice: ttsResult.voice,
       durationMinutes: config.durationMinutes,
       focus: config.primarySense,
+      extension: resolveAudioExtension(ttsResult.contentType),
     });
     res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
     res.end(ttsResult.audio);
