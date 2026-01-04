@@ -10,6 +10,34 @@ const outlineToText = (outline: ReturnType<typeof buildPromptOutline>) =>
   outline.sections.flatMap((section) => section.lines).join(" ");
 
 describe("buildPromptOutline", () => {
+  it("returns the expected section structure and lines", () => {
+    const outline = buildPromptOutline({
+      sense: "sight",
+      eyes: "soft",
+      duration: { mode: "timed", seconds: 120, pauseSeconds: 8 },
+      language: "en",
+    });
+
+    expect(outline.sections).toHaveLength(3);
+    expect(outline.sections.map((section) => section.title)).toEqual([
+      "Setup",
+      "Practice",
+      "Closing",
+    ]);
+
+    const [setup, practice, closing] = outline.sections;
+    expect(setup.lines).toEqual([
+      "Keep a soft gaze with your eyes.",
+      "Focus on sight.",
+    ]);
+    expect(practice.lines).toEqual([
+      "Continue for 120 seconds. Pause for 8 seconds between rounds.",
+    ]);
+    expect(closing.lines).toEqual([
+      "Notice how your body feels before ending the practice.",
+    ]);
+  });
+
   it("includes duration details for repetition mode", () => {
     const outline = buildPromptOutline({
       sense: "sound",
@@ -31,6 +59,29 @@ describe("buildPromptOutline", () => {
     });
 
     expect(outlineToText(outline)).toContain("Continue for 90 seconds.");
+  });
+
+  it("uses localized section titles and phrasing for Spanish", () => {
+    const outline = buildPromptOutline({
+      sense: "smell",
+      eyes: "closed",
+      duration: { mode: "repetitions", count: 4, pauseSeconds: 6 },
+      language: "es",
+    });
+
+    expect(outline.sections.map((section) => section.title)).toEqual([
+      "Preparación",
+      "Práctica",
+      "Cierre",
+    ]);
+
+    const text = outlineToText(outline);
+    expect(text).toContain("Cierra los ojos suavemente.");
+    expect(text).toContain("Enfoca tu atención en el olfato.");
+    expect(text).toContain("Repite esto 4 veces. Pausa 6 segundos");
+    expect(text).toContain(
+      "Nota cómo se siente tu cuerpo antes de terminar la práctica.",
+    );
   });
 
   senses.forEach((sense) => {
