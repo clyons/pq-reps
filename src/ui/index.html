@@ -766,7 +766,9 @@
               downloadLink.download = downloadFilename;
               downloadLink.hidden = true;
               result.hidden = false;
-            });
+              }),
+              requestJson("text"),
+            ]);
             audioBlob = streamResponse?.blob || null;
             if (streamResponse?.mediaUrl) {
               streamUrl = streamResponse.mediaUrl;
@@ -778,6 +780,8 @@
               focus: primarySense,
               extension,
             });
+            script = jsonResponse?.script || "";
+            ttsPrompt = jsonResponse?.ttsPrompt || null;
           } else {
             const jsonResponse = await requestJson(effectiveOutputMode);
             script = jsonResponse?.script || "";

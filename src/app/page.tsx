@@ -452,8 +452,9 @@ export default function HomePage() {
                 scriptDownloadUrl: undefined,
               };
             });
-          },
-        );
+          }),
+          requestJson("text"),
+        ]);
         if (mediaUrl) {
           audioUrl = mediaUrl;
         } else {
@@ -462,6 +463,10 @@ export default function HomePage() {
         downloadUrl = URL.createObjectURL(blob);
         audioContentType = contentType ?? blob.type;
         const extension = resolveAudioExtension(audioContentType);
+        script = jsonResult.script;
+        if (jsonResult.ttsPrompt) {
+          ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
+        }
         const downloadFilename = buildDownloadFilename({
           voice: voiceStyle,
           durationMinutes: formState.durationMinutes,
