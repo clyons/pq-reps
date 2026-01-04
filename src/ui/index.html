@@ -221,7 +221,7 @@
             </label>
           </div>
           <span class="option-hint">
-            Streaming starts playback sooner but skips the script output.
+            Streaming starts playback sooner and fetches the script in a separate request.
           </span>
         </label>
 
@@ -523,7 +523,7 @@
         const durationConfig = deriveDurationConfig(durationMinutes);
         const primarySense = derivePrimarySense(focus, practiceConfig.eyeState);
         const senseRotation = deriveSenseRotation(practiceType, durationMinutes);
-        const payload = {
+        const basePayload = {
           practiceMode: practiceConfig.practiceMode,
           bodyState: practiceConfig.bodyState,
           eyeState: practiceConfig.eyeState,
@@ -539,7 +539,6 @@
           ...(isDevMode
             ? { ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0 }
             : {}),
-          outputMode: effectiveOutputMode,
           ...(debugEnabled ? { debugTtsPrompt: true } : {}),
         };
         submitButton.disabled = true;
@@ -547,14 +546,14 @@
         spinner.hidden = false;
         status.textContent = "Generating audio. This can take a few seconds.";
 
-        const requestJson = async () => {
+        const requestJson = async (outputMode) => {
           const response = await fetch("/api/generate", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Accept: "application/json",
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...basePayload, outputMode }),
           });
 
           if (!response.ok) {
@@ -572,7 +571,7 @@
               "Content-Type": "application/json",
               Accept: "text/event-stream",
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...basePayload, outputMode: effectiveOutputMode }),
           });
 
           if (!response.ok) {
@@ -645,7 +644,7 @@
               Accept: "audio/mpeg",
               "x-tts-streaming": "1",
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...basePayload, outputMode: "audio" }),
           });
 
           if (!response.ok) {
@@ -738,7 +737,8 @@
           let streamUrl = null;
 
           if (streamAudioEnabled) {
-            const streamResponse = await requestAudio((mediaUrl, streamContentType) => {
+            const [streamResponse, jsonResponse] = await Promise.all([
+              requestAudio((mediaUrl, streamContentType) => {
               streamUrl = mediaUrl;
       audioPlayer.src = mediaUrl;
       audioPlayer.play().catch(() => {});
@@ -755,7 +755,9 @@
               downloadLink.download = downloadFilename;
               downloadLink.hidden = true;
               result.hidden = false;
-            });
+              }),
+              requestJson("text"),
+            ]);
             audioBlob = streamResponse?.blob || null;
             if (streamResponse?.mediaUrl) {
               streamUrl = streamResponse.mediaUrl;
@@ -767,8 +769,10 @@
               focus: primarySense,
               extension,
             });
+            script = jsonResponse?.script || "";
+            ttsPrompt = jsonResponse?.ttsPrompt || null;
           } else {
-            const jsonResponse = await requestJson();
+            const jsonResponse = await requestJson(effectiveOutputMode);
             script = jsonResponse?.script || "";
             ttsPrompt = jsonResponse?.ttsPrompt || null;
             if (effectiveOutputMode === "text-audio" && jsonResponse?.audioBase64) {
@@ -809,11 +813,7 @@
             downloadLink.hidden = true;
           }
 
-          const shouldShowScript =
-            effectiveOutputMode === "text" || effectiveOutputMode === "text-audio";
-          const cleanedScript = shouldShowScript
-            ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
-            : "";
+          const cleanedScript = script ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim() : "";
 
           if (cleanedScript) {
             scriptOutput.textContent = cleanedScript;
