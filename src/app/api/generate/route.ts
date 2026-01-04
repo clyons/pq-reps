@@ -34,12 +34,17 @@ const buildDownloadFilename = ({
   durationMinutes,
   focus,
   now = new Date(),
+  extension = "wav",
 }: {
   voice: string;
   durationMinutes: number;
   focus: string;
   now?: Date;
-}) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.wav`;
+  extension?: string;
+}) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.${extension}`;
+
+const resolveAudioExtension = (contentType: string) =>
+  contentType.includes("mpeg") ? "mp3" : "wav";
 
 type SuccessResponse = {
   script: string;
@@ -184,6 +189,7 @@ export async function POST(request: Request) {
       voice: ttsResult.voice,
       durationMinutes: config.durationMinutes,
       focus: config.primarySense,
+      extension: resolveAudioExtension(ttsResult.contentType),
     });
     const ttsPrompt = debugTtsPrompt
       ? {
