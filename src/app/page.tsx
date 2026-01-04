@@ -321,12 +321,27 @@ export default function HomePage() {
         return { blob: new Blob([audioBuffer], { type: contentType }) };
       }
 
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      const canStream =
+        typeof MediaSource !== "undefined" && MediaSource.isTypeSupported(contentType);
+
+      if (!canStream) {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) {
+            break;
+          }
+          if (value) {
+            chunks.push(value);
+          }
+        }
+        return { blob: new Blob(chunks, { type: contentType }) };
+      }
+
       const mediaSource = new MediaSource();
       const mediaUrl = URL.createObjectURL(mediaSource);
       onStreamStart?.(mediaUrl);
-
-      const reader = response.body.getReader();
-      const chunks: Uint8Array[] = [];
 
       await new Promise<void>((resolve, reject) => {
         const handleError = () => reject(new Error("Audio stream failed."));
