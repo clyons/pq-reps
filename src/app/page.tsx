@@ -419,7 +419,7 @@ export default function HomePage() {
             });
             setStatus("success");
             setResult((prev) => {
-              if (prev?.audioUrl) {
+              if (prev?.audioUrl && prev.audioUrl !== streamUrl) {
                 URL.revokeObjectURL(prev.audioUrl);
               }
               if (prev?.downloadUrl) {
@@ -460,7 +460,7 @@ export default function HomePage() {
           focus: primarySense,
         });
         setResult((prev) => {
-          if (prev?.audioUrl) {
+          if (prev?.audioUrl && prev.audioUrl !== audioUrl) {
             URL.revokeObjectURL(prev.audioUrl);
           }
           if (prev?.downloadUrl) {
@@ -529,7 +529,7 @@ export default function HomePage() {
         : undefined;
 
       setResult((prev) => {
-        if (prev?.audioUrl) {
+        if (prev?.audioUrl && prev.audioUrl !== audioUrl) {
           URL.revokeObjectURL(prev.audioUrl);
         }
         if (prev?.downloadUrl) {

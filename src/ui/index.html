@@ -792,7 +792,9 @@
             }
             downloadUrl = URL.createObjectURL(audioBlob);
             currentUrl = streamUrl || downloadUrl;
-            audioPlayer.src = currentUrl;
+            if (audioPlayer.src !== currentUrl) {
+              audioPlayer.src = currentUrl;
+            }
             audioPlayer.hidden = false;
             downloadLink.href = downloadUrl;
             downloadLink.download = buildDownloadFilename({
