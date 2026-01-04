@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type GenerationResult = {
   audioUrl?: string;
+  downloadUrl?: string;
   script?: string;
   ttsPrompt?: string;
   downloadFilename?: string;
@@ -17,6 +18,7 @@ type FormState = {
   voiceGender: "female" | "male";
   ttsNewlinePauseSeconds: number;
   debugTtsPrompt: boolean;
+  streamAudio: boolean;
 };
 
 const DEFAULT_STATE: FormState = {
@@ -27,6 +29,7 @@ const DEFAULT_STATE: FormState = {
   voiceGender: "female",
   ttsNewlinePauseSeconds: 1,
   debugTtsPrompt: false,
+  streamAudio: false,
 };
 
 const LANGUAGE_OPTIONS = [
@@ -166,6 +169,7 @@ export default function HomePage() {
 
   const isDevMode = process.env.NODE_ENV !== "production";
   const isLoading = status === "loading";
+  const shouldShowResult = Boolean(result?.audioUrl || result?.script || result?.ttsPrompt);
 
   const practiceConfig = useMemo(
     () => derivePracticeConfig(formState.practiceType, formState.durationMinutes),
@@ -188,6 +192,9 @@ export default function HomePage() {
     return () => {
       if (result?.audioUrl) {
         URL.revokeObjectURL(result.audioUrl);
+      }
+      if (result?.downloadUrl) {
+        URL.revokeObjectURL(result.downloadUrl);
       }
     };
   }, [result]);
@@ -226,7 +233,7 @@ export default function HomePage() {
 
     setStatus("loading");
 
-    const effectiveOutputMode = "text-audio";
+    const effectiveOutputMode = formState.streamAudio ? "audio" : "text-audio";
     const primarySense = focusOptions.includes(formState.focus)
       ? formState.focus
       : "touch";
@@ -271,12 +278,13 @@ export default function HomePage() {
       return (await response.json()) as { script: string; ttsPrompt?: Record<string, unknown> };
     };
 
-    const requestAudio = async () => {
+    const requestAudio = async (onStreamStart?: (mediaUrl: string) => void) => {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "audio/wav",
+          "x-tts-streaming": "1",
         },
         body: JSON.stringify(payload),
       });
@@ -290,14 +298,68 @@ export default function HomePage() {
         throw new Error(`The generator failed to respond. (${response.status})`);
       }
 
-      const audioBuffer = await response.arrayBuffer();
       const contentType = response.headers.get("content-type") ?? "audio/wav";
-      return new Blob([audioBuffer], { type: contentType });
+      if (!response.body) {
+        const audioBuffer = await response.arrayBuffer();
+        return { blob: new Blob([audioBuffer], { type: contentType }) };
+      }
+
+      const mediaSource = new MediaSource();
+      const mediaUrl = URL.createObjectURL(mediaSource);
+      onStreamStart?.(mediaUrl);
+
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+
+      await new Promise<void>((resolve, reject) => {
+        const handleError = () => reject(new Error("Audio stream failed."));
+
+        mediaSource.addEventListener("error", handleError, { once: true });
+        mediaSource.addEventListener(
+          "sourceopen",
+          async () => {
+            try {
+              const sourceBuffer = mediaSource.addSourceBuffer(contentType);
+              const appendChunk = (chunk: Uint8Array) =>
+                new Promise<void>((appendResolve, appendReject) => {
+                  const onError = () => appendReject(new Error("Failed to append audio chunk."));
+                  const onUpdateEnd = () => appendResolve();
+                  sourceBuffer.addEventListener("error", onError, { once: true });
+                  sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
+                  sourceBuffer.appendBuffer(chunk);
+                });
+
+              while (true) {
+                const { value, done } = await reader.read();
+                if (done) {
+                  break;
+                }
+                if (value) {
+                  chunks.push(value);
+                  await appendChunk(value);
+                }
+              }
+
+              if (mediaSource.readyState === "open") {
+                mediaSource.endOfStream();
+              }
+              resolve();
+            } catch (streamError) {
+              reject(streamError);
+            }
+          },
+          { once: true },
+        );
+      });
+
+      const downloadBlob = new Blob(chunks, { type: contentType });
+      return { blob: downloadBlob, mediaUrl };
     };
 
     try {
       let script: string | undefined;
       let audioUrl: string | undefined;
+      let downloadUrl: string | undefined;
       let ttsPrompt: string | undefined;
 
       if (effectiveOutputMode === "text") {
@@ -307,8 +369,34 @@ export default function HomePage() {
           ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
         }
       } else if (effectiveOutputMode === "audio") {
-        const audioBlob = await requestAudio();
-        audioUrl = URL.createObjectURL(audioBlob);
+        const { blob, mediaUrl } = await requestAudio((streamUrl) => {
+          const downloadFilename = buildDownloadFilename({
+            voice: voiceStyle,
+            durationMinutes: formState.durationMinutes,
+            focus: primarySense,
+          });
+          setResult((prev) => {
+            if (prev?.audioUrl) {
+              URL.revokeObjectURL(prev.audioUrl);
+            }
+            if (prev?.downloadUrl) {
+              URL.revokeObjectURL(prev.downloadUrl);
+            }
+            return {
+              audioUrl: streamUrl,
+              downloadUrl: undefined,
+              script: "",
+              ttsPrompt: undefined,
+              downloadFilename,
+            };
+          });
+        });
+        if (mediaUrl) {
+          audioUrl = mediaUrl;
+        } else {
+          audioUrl = URL.createObjectURL(blob);
+        }
+        downloadUrl = URL.createObjectURL(blob);
       } else {
         const jsonResult = (await requestJson()) as {
           script: string;
@@ -330,6 +418,7 @@ export default function HomePage() {
             type: jsonResult.audioContentType ?? "audio/mpeg",
           });
           audioUrl = URL.createObjectURL(audioBlob);
+          downloadUrl = URL.createObjectURL(audioBlob);
         }
       }
 
@@ -349,7 +438,16 @@ export default function HomePage() {
         if (prev?.audioUrl) {
           URL.revokeObjectURL(prev.audioUrl);
         }
-        return { audioUrl, script: cleanedScript, ttsPrompt, downloadFilename };
+        if (prev?.downloadUrl) {
+          URL.revokeObjectURL(prev.downloadUrl);
+        }
+        return {
+          audioUrl,
+          downloadUrl: downloadUrl ?? audioUrl,
+          script: cleanedScript,
+          ttsPrompt,
+          downloadFilename,
+        };
       });
 
       setStatus("success");
@@ -471,6 +569,22 @@ export default function HomePage() {
           </select>
         </label>
 
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Audio delivery</span>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <input
+              type="checkbox"
+              id="stream-audio"
+              checked={formState.streamAudio}
+              onChange={(event) => updateFormState({ streamAudio: event.target.checked })}
+            />
+            <label htmlFor="stream-audio">Stream audio as it is generated</label>
+          </div>
+          <span style={{ color: "#555", fontSize: "0.9rem" }}>
+            Streaming starts playback sooner but skips the script output.
+          </span>
+        </label>
+
         {isDevMode && (
           <>
             <label style={{ display: "grid", gap: "0.5rem" }}>
@@ -541,9 +655,11 @@ export default function HomePage() {
         </p>
       )}
 
-      {status === "success" && result && (
+      {shouldShowResult && result && (
         <section style={{ marginTop: "2rem", padding: "1.5rem", borderRadius: 12, background: "#f7f7f7" }}>
-          <h2 style={{ marginTop: 0 }}>Your session is ready</h2>
+          <h2 style={{ marginTop: 0 }}>
+            {isLoading ? "Streaming audio…" : "Your session is ready"}
+          </h2>
           {result.audioUrl && (
             <>
               <audio controls style={{ width: "100%", marginBottom: "1rem" }}>
@@ -551,7 +667,7 @@ export default function HomePage() {
                 Your browser does not support the audio element.
               </audio>
               <a
-                href={result.audioUrl}
+                href={result.downloadUrl ?? result.audioUrl}
                 download={result.downloadFilename ?? "pq-reps.wav"}
                 style={{ fontWeight: 600 }}
               >
