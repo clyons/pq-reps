@@ -14,7 +14,7 @@ import {
 } from "../../../lib/promptBuilder";
 import { OutputMode, validateGenerateConfig } from "../../../lib/generateValidation";
 import { generateScript, SCRIPT_SYSTEM_PROMPT } from "../../../services/script";
-import { synthesizeSpeech, TTS_SYSTEM_PROMPT } from "../../../services/tts";
+import { synthesizeSpeech, synthesizeSpeechStream, TTS_SYSTEM_PROMPT } from "../../../services/tts";
 
 export const runtime = "nodejs";
 
@@ -77,6 +77,23 @@ type SuccessResponse = {
 const stripPauseMarkers = (script: string) =>
   script.replace(PAUSE_MARKER_REGEX, "").replace(/\s{2,}/g, " ").trim();
 
+const createReadableStreamFromGenerator = (
+  generator: AsyncGenerator<Buffer>,
+): ReadableStream<Uint8Array> =>
+  new ReadableStream({
+    async pull(controller) {
+      const { value, done } = await generator.next();
+      if (done) {
+        controller.close();
+        return;
+      }
+      controller.enqueue(value);
+    },
+    async cancel() {
+      await generator.return?.();
+    },
+  });
+
 export async function POST(request: Request) {
   let payload: unknown;
   try {
@@ -102,6 +119,7 @@ export async function POST(request: Request) {
   const { config, outputMode: requestedMode, debugTtsPrompt } = validation.value;
   const prompt = buildPrompt(config);
   const acceptHeader = request.headers.get("accept") ?? "";
+  const wantsAudioStream = request.headers.get("x-tts-streaming") === "1";
   const outputMode =
     requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
 
@@ -145,12 +163,19 @@ export async function POST(request: Request) {
     }
 
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
-    const ttsResult = await synthesizeSpeech({
-      script,
-      language: config.languages[0],
-      voice: config.voiceStyle,
-      newlinePauseSeconds: config.ttsNewlinePauseSeconds,
-    });
+    const ttsResult = wantsAudioStream && outputMode === "audio"
+      ? await synthesizeSpeechStream({
+          script,
+          language: config.languages[0],
+          voice: config.voiceStyle,
+          newlinePauseSeconds: config.ttsNewlinePauseSeconds,
+        })
+      : await synthesizeSpeech({
+          script,
+          language: config.languages[0],
+          voice: config.voiceStyle,
+          newlinePauseSeconds: config.ttsNewlinePauseSeconds,
+        });
     const downloadFilename = buildDownloadFilename({
       voice: ttsResult.voice,
       durationMinutes: config.durationMinutes,
@@ -190,11 +215,23 @@ export async function POST(request: Request) {
           voice: ttsResult.voice,
         },
         ttsPrompt,
-        audioBase64: ttsResult.audio.toString("base64"),
+        audioBase64:
+          "audio" in ttsResult ? ttsResult.audio.toString("base64") : undefined,
         audioContentType: ttsResult.contentType,
       };
 
       return NextResponse.json(response);
+    }
+
+    if ("stream" in ttsResult) {
+      return new Response(createReadableStreamFromGenerator(ttsResult.stream), {
+        status: 200,
+        headers: {
+          "Content-Type": ttsResult.contentType,
+          "Content-Disposition": `attachment; filename="${downloadFilename}"`,
+          "Transfer-Encoding": "chunked",
+        },
+      });
     }
 
     return new Response(ttsResult.audio, {
