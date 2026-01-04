@@ -340,6 +340,18 @@
         return "none";
       };
 
+      const formatTimestamp = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hour = String(date.getHours()).padStart(2, "0");
+        const minute = String(date.getMinutes()).padStart(2, "0");
+        return `${year}${month}${day}-${hour}${minute}`;
+      };
+
+      const buildDownloadFilename = ({ voice, durationMinutes, focus, now = new Date() }) =>
+        `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.wav`;
+
       const derivePrimarySense = (focus, eyeState) => {
         if (focus === "sight" && eyeState === "closed") {
           return "touch";
@@ -639,6 +651,11 @@
             audioPlayer.src = currentUrl;
             audioPlayer.hidden = false;
             downloadLink.href = currentUrl;
+            downloadLink.download = buildDownloadFilename({
+              voice: voiceStyle,
+              durationMinutes,
+              focus: primarySense,
+            });
             downloadLink.hidden = false;
           } else {
             audioPlayer.hidden = true;

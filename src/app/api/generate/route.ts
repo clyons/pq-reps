@@ -20,6 +20,27 @@ export const runtime = "nodejs";
 
 const PAUSE_MARKER_REGEX = /\[pause:(\d+(?:\.\d+)?)\]/gi;
 
+const formatTimestamp = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${year}${month}${day}-${hour}${minute}`;
+};
+
+const buildDownloadFilename = ({
+  voice,
+  durationMinutes,
+  focus,
+  now = new Date(),
+}: {
+  voice: string;
+  durationMinutes: number;
+  focus: string;
+  now?: Date;
+}) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.wav`;
+
 type SuccessResponse = {
   script: string;
   metadata: {
@@ -130,6 +151,11 @@ export async function POST(request: Request) {
       voice: config.voiceStyle,
       newlinePauseSeconds: config.ttsNewlinePauseSeconds,
     });
+    const downloadFilename = buildDownloadFilename({
+      voice: ttsResult.voice,
+      durationMinutes: config.durationMinutes,
+      focus: config.primarySense,
+    });
     const ttsPrompt = debugTtsPrompt
       ? {
           model: "gpt-4o-mini-tts",
@@ -175,7 +201,7 @@ export async function POST(request: Request) {
       status: 200,
       headers: {
         "Content-Type": ttsResult.contentType,
-        "Content-Disposition": "attachment; filename=\"pq-reps.wav\"",
+        "Content-Disposition": `attachment; filename="${downloadFilename}"`,
       },
     });
   } catch (error) {

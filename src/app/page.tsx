@@ -6,6 +6,7 @@ type GenerationResult = {
   audioUrl?: string;
   script?: string;
   ttsPrompt?: string;
+  downloadFilename?: string;
 };
 
 type FormState = {
@@ -56,6 +57,27 @@ const resolveVoiceForGender = (gender: FormState["voiceGender"], language: strin
   }
   return FEMALE_VOICES_BY_LANGUAGE[language] ?? "alloy";
 };
+
+const formatTimestamp = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${year}${month}${day}-${hour}${minute}`;
+};
+
+const buildDownloadFilename = ({
+  voice,
+  durationMinutes,
+  focus,
+  now = new Date(),
+}: {
+  voice: string;
+  durationMinutes: number;
+  focus: string;
+  now?: Date;
+}) => `pq-reps_${voice}_${durationMinutes}_${focus}_${formatTimestamp(now)}.wav`;
 
 const derivePracticeConfig = (
   practiceType: FormState["practiceType"],
@@ -201,6 +223,7 @@ export default function HomePage() {
     const primarySense = focusOptions.includes(formState.focus)
       ? formState.focus
       : "touch";
+    const voiceStyle = resolveVoiceForGender(formState.voiceGender, formState.language);
     const senseRotation = deriveSenseRotation(
       formState.practiceType,
       formState.durationMinutes,
@@ -217,7 +240,7 @@ export default function HomePage() {
       closingStyle: durationConfig.closingStyle,
       senseRotation,
       languages: [formState.language],
-      voiceStyle: resolveVoiceForGender(formState.voiceGender, formState.language),
+      voiceStyle,
       ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
       outputMode: effectiveOutputMode,
       debugTtsPrompt: formState.debugTtsPrompt,
@@ -307,12 +330,19 @@ export default function HomePage() {
         effectiveOutputMode === "text" || effectiveOutputMode === "text-audio"
           ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
           : "";
+      const downloadFilename = audioUrl
+        ? buildDownloadFilename({
+            voice: voiceStyle,
+            durationMinutes: formState.durationMinutes,
+            focus: primarySense,
+          })
+        : undefined;
 
       setResult((prev) => {
         if (prev?.audioUrl) {
           URL.revokeObjectURL(prev.audioUrl);
         }
-        return { audioUrl, script: cleanedScript, ttsPrompt };
+        return { audioUrl, script: cleanedScript, ttsPrompt, downloadFilename };
       });
 
       setStatus("success");
@@ -513,7 +543,11 @@ export default function HomePage() {
                 <source src={result.audioUrl} />
                 Your browser does not support the audio element.
               </audio>
-              <a href={result.audioUrl} download="pq-reps.wav" style={{ fontWeight: 600 }}>
+              <a
+                href={result.audioUrl}
+                download={result.downloadFilename ?? "pq-reps.wav"}
+                style={{ fontWeight: 600 }}
+              >
                 Download the WAV
               </a>
             </>
