@@ -332,6 +332,7 @@ export default function HomePage() {
       <p style={{ marginBottom: "2rem", color: "#555" }}>
         Choose the type of PQ Reps you'd like to practice.
       </p>
+      <p style={{ marginBottom: "2rem", color: "#555" }}>Audio is AI-generated.</p>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
         <label style={{ display: "grid", gap: "0.5rem" }}>
