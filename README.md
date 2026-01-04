@@ -1,11 +1,14 @@
 # PQ Reps Guided Audio Generator
 
+**Version:** 0.2.0
+
 Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sense, eye position, duration, and language.
 
 ## What’s included
 - Prompt builder utilities and templates in `src/lib/`
 - A minimal HTTP API server exposing `POST /api/generate`
 - OpenAI TTS integration that returns audio bytes directly
+- Server-sent events for generation status updates via `Accept: text/event-stream`
 
 ## Spec task list
 - [x] Define core prompt builder types and templates.
@@ -17,6 +20,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Ensure text + audio uses a single generation pass to keep script/audio in sync.
 - [x] Improve the tone and pacing of PQ Reps scripts.
 - [x] Add console disclosure when running against the OpenAI TTS API.
+- [x] Stream status updates with SSE for `/api/generate`.
 - [ ] Add user-facing AI-generated voice disclosure in the UI.
 - [ ] Add tests for prompt outline (API validation coverage exists in `tests/generate-api.test.ts`).
 - [ ] Reduce latency by using the Speech API to support realtime audio streaming via chunked transfer encoding.
@@ -25,6 +29,11 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog"
 - [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min)
 - [ ] Update the WAV filenames to include "metadata" -- speaker, duration, focus, datetime
+
+## WIP: Streaming audio
+- Investigate OpenAI Speech API chunked streaming support for TTS audio bytes.
+- Prototype server-side chunked transfer encoding for `/api/generate`.
+- Add client playback buffering indicators for partial audio responses.
 
 ## Local setup (macOS)
 
