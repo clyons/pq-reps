@@ -751,8 +751,8 @@
             ttsPrompt = jsonResponse?.ttsPrompt || null;
             const streamResponse = await requestAudio(script, (mediaUrl, streamContentType) => {
               streamUrl = mediaUrl;
-      audioPlayer.src = mediaUrl;
-      audioPlayer.play().catch(() => {});
+              audioPlayer.src = mediaUrl;
+              audioPlayer.play().catch(() => {});
               audioPlayer.hidden = false;
               status.textContent = "";
               statusPanel.hidden = true;
@@ -766,9 +766,7 @@
               downloadLink.download = downloadFilename;
               downloadLink.hidden = true;
               result.hidden = false;
-              }),
-              requestJson("text"),
-            ]);
+            });
             audioBlob = streamResponse?.blob || null;
             if (streamResponse?.mediaUrl) {
               streamUrl = streamResponse.mediaUrl;
