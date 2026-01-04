@@ -87,6 +87,12 @@ export function buildPrompt(config: GenerateConfig): string {
     durationSeconds >= 300
       ? "You may mention exact rep counts if it helps pacing."
       : "Do not mention exact rep counts because the duration is under 5 minutes.";
+  const durationPacing =
+    durationMinutes === 1
+      ? "Pacing for 1 minute: use 2-3 short instruction beats, keep sentences compact, and avoid long silences (pause cues should be 3-5 seconds max)."
+      : durationMinutes === 12
+        ? "Pacing for 12 minutes: build a clear arc with checkpoints or gentle resets every 2-3 minutes, and include occasional extended silences (15-30 seconds) with brief reminders between."
+        : null;
 
   return [
     `Practice mode: ${practiceMode}.`,
@@ -104,6 +110,8 @@ export function buildPrompt(config: GenerateConfig): string {
     voiceStyle
       ? `Voice style preference: ${voiceStyle}. Use only if it does not conflict with tone rules.`
       : "No additional voice style preference provided.",
+    durationRule,
+    durationPacing ? durationPacing : "Use steady pacing appropriate to the duration.",
     "Use these inputs exactly. Do not invent additional modes, senses, or counts.",
   ].join("\n");
 }
