@@ -743,6 +743,9 @@
       audioPlayer.src = mediaUrl;
       audioPlayer.play().catch(() => {});
               audioPlayer.hidden = false;
+              status.textContent = "";
+              statusPanel.hidden = true;
+              spinner.hidden = true;
               const downloadFilename = buildDownloadFilename({
                 voice: voiceStyle,
                 durationMinutes,

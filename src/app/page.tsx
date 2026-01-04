@@ -417,6 +417,7 @@ export default function HomePage() {
               focus: primarySense,
               extension: resolveAudioExtension(streamContentType),
             });
+            setStatus("success");
             setResult((prev) => {
               if (prev?.audioUrl) {
                 URL.revokeObjectURL(prev.audioUrl);
