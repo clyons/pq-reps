@@ -14,7 +14,12 @@ import {
 } from "../../lib/promptBuilder";
 import { OutputMode, validateGenerateConfig } from "../../lib/generateValidation";
 import { generateScript, SCRIPT_SYSTEM_PROMPT } from "../../services/script";
-import { synthesizeSpeech, TtsScriptTooLargeError, TTS_SYSTEM_PROMPT } from "../../services/tts";
+import {
+  synthesizeSpeech,
+  synthesizeSpeechStream,
+  TtsScriptTooLargeError,
+  TTS_SYSTEM_PROMPT,
+} from "../../services/tts";
 
 type SuccessResponse = {
   script: string;
@@ -197,6 +202,7 @@ export default async function handler(
   const prompt = buildPrompt(config);
   const acceptHeader = req.headers.accept ?? "";
   const wantsStream = acceptHeader.includes("text/event-stream");
+  const wantsAudioStream = req.headers["x-tts-streaming"] === "1";
   const outputMode =
     requestedMode ?? (acceptHeader.includes("application/json") ? "text" : "audio");
 
@@ -252,12 +258,19 @@ export default async function handler(
       sendEvent(res, "status", "synthesizing audio…");
     }
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
-    const ttsResult = await synthesizeSpeech({
-      script,
-      language: config.languages[0],
-      voice: config.voiceStyle,
-      newlinePauseSeconds: config.ttsNewlinePauseSeconds,
-    });
+    const ttsResult = wantsAudioStream && outputMode === "audio"
+      ? await synthesizeSpeechStream({
+          script,
+          language: config.languages[0],
+          voice: config.voiceStyle,
+          newlinePauseSeconds: config.ttsNewlinePauseSeconds,
+        })
+      : await synthesizeSpeech({
+          script,
+          language: config.languages[0],
+          voice: config.voiceStyle,
+          newlinePauseSeconds: config.ttsNewlinePauseSeconds,
+        });
     const ttsPrompt = debugTtsPrompt
       ? {
           model: "gpt-4o-mini-tts",
@@ -294,7 +307,9 @@ export default async function handler(
     };
 
     if (wantsStream) {
-      response.audioBase64 = ttsResult.audio.toString("base64");
+      if ("audio" in ttsResult) {
+        response.audioBase64 = ttsResult.audio.toString("base64");
+      }
       response.audioContentType = ttsResult.contentType;
       sendEvent(res, "done", JSON.stringify({
         script,
@@ -316,7 +331,8 @@ export default async function handler(
           voice: ttsResult.voice,
         },
         ttsPrompt,
-        audioBase64: ttsResult.audio.toString("base64"),
+        audioBase64:
+          "audio" in ttsResult ? ttsResult.audio.toString("base64") : undefined,
         audioContentType: ttsResult.contentType,
       } satisfies SuccessResponse));
       res.end();
@@ -324,9 +340,28 @@ export default async function handler(
     }
 
     if (outputMode === "text-audio") {
-      response.audioBase64 = ttsResult.audio.toString("base64");
+      if ("audio" in ttsResult) {
+        response.audioBase64 = ttsResult.audio.toString("base64");
+      }
       response.audioContentType = ttsResult.contentType;
       sendJson(res, 200, response);
+      return;
+    }
+
+    if ("stream" in ttsResult) {
+      res.statusCode = 200;
+      res.setHeader("Content-Type", ttsResult.contentType);
+      res.setHeader("Transfer-Encoding", "chunked");
+      const downloadFilename = buildDownloadFilename({
+        voice: ttsResult.voice,
+        durationMinutes: config.durationMinutes,
+        focus: config.primarySense,
+      });
+      res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
+      for await (const chunk of ttsResult.stream) {
+        res.write(chunk);
+      }
+      res.end();
       return;
     }
 

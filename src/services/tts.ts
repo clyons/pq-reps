@@ -15,6 +15,14 @@ export type TtsResponse = {
   inputScript: string;
 };
 
+export type TtsStreamResponse = {
+  stream: AsyncGenerator<Buffer>;
+  contentType: string;
+  provider: string;
+  voice: string;
+  inputScript: string;
+};
+
 export const MAX_TTS_SEGMENTS = 32;
 export const MAX_TTS_CHARS = 4000;
 export const TTS_SYSTEM_PROMPT = [
@@ -185,6 +193,18 @@ const buildWav = (format: Omit<WavFormat, "audioData">, audioData: Buffer): Buff
   return Buffer.concat([header, audioData]);
 };
 
+const chunkBuffer = async function* (
+  buffer: Buffer,
+  chunkSize = 64 * 1024,
+): AsyncGenerator<Buffer> {
+  let offset = 0;
+  while (offset < buffer.length) {
+    const end = Math.min(offset + chunkSize, buffer.length);
+    yield buffer.subarray(offset, end);
+    offset = end;
+  }
+};
+
 const createSilenceBuffer = (
   seconds: number,
   format: Omit<WavFormat, "audioData">,
@@ -330,5 +350,19 @@ export async function synthesizeSpeech(
     provider: "openai",
     voice,
     inputScript,
+  };
+}
+
+export async function synthesizeSpeechStream(
+  request: TtsRequest,
+  options?: { chunkSize?: number },
+): Promise<TtsStreamResponse> {
+  const response = await synthesizeSpeech(request);
+  return {
+    stream: chunkBuffer(response.audio, options?.chunkSize),
+    contentType: response.contentType,
+    provider: response.provider,
+    voice: response.voice,
+    inputScript: response.inputScript,
   };
 }

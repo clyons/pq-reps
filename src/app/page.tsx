@@ -277,6 +277,7 @@ export default function HomePage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "audio/wav",
+          "x-tts-streaming": "1",
         },
         body: JSON.stringify(payload),
       });
@@ -290,9 +291,24 @@ export default function HomePage() {
         throw new Error(`The generator failed to respond. (${response.status})`);
       }
 
-      const audioBuffer = await response.arrayBuffer();
       const contentType = response.headers.get("content-type") ?? "audio/wav";
-      return new Blob([audioBuffer], { type: contentType });
+      if (!response.body) {
+        const audioBuffer = await response.arrayBuffer();
+        return new Blob([audioBuffer], { type: contentType });
+      }
+
+      const reader = response.body.getReader();
+      const chunks: Uint8Array[] = [];
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          break;
+        }
+        if (value) {
+          chunks.push(value);
+        }
+      }
+      return new Blob(chunks, { type: contentType });
     };
 
     try {
