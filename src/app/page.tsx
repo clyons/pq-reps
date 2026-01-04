@@ -255,7 +255,8 @@ export default function HomePage() {
 
     setStatus("loading");
 
-    const effectiveOutputMode = formState.streamAudio ? "audio" : "text-audio";
+    const isStreamingAudio = formState.streamAudio;
+    const effectiveOutputMode = isStreamingAudio ? "audio" : "text-audio";
     const primarySense = focusOptions.includes(formState.focus)
       ? formState.focus
       : "touch";
@@ -264,7 +265,7 @@ export default function HomePage() {
       formState.practiceType,
       formState.durationMinutes,
     );
-    const payload = {
+    const basePayload = {
       practiceMode: practiceConfig.practiceMode,
       bodyState: practiceConfig.bodyState,
       eyeState: practiceConfig.eyeState,
@@ -278,18 +279,24 @@ export default function HomePage() {
       languages: [formState.language],
       voiceStyle,
       ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
-      outputMode: effectiveOutputMode,
       debugTtsPrompt: formState.debugTtsPrompt,
     };
 
-    const requestJson = async () => {
+    const ttsPayload = (script: string) => ({
+      script,
+      language: formState.language,
+      voice: voiceStyle,
+      ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
+    });
+
+    const requestJson = async (outputMode: "text" | "text-audio") => {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...basePayload, outputMode }),
       });
 
       if (!response.ok) {
@@ -301,16 +308,17 @@ export default function HomePage() {
     };
 
     const requestAudio = async (
+      script: string,
       onStreamStart?: (mediaUrl: string, contentType: string) => void,
     ) => {
-      const response = await fetch("/api/generate", {
+      const response = await fetch("/api/tts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "audio/mpeg",
           "x-tts-streaming": "1",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(ttsPayload(script)),
       });
 
       if (!response.ok) {
@@ -403,13 +411,19 @@ export default function HomePage() {
       let audioContentType: string | undefined;
 
       if (effectiveOutputMode === "text") {
-        const jsonResult = await requestJson();
+        const jsonResult = await requestJson("text");
         script = jsonResult.script;
         if (jsonResult.ttsPrompt) {
           ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
         }
       } else if (effectiveOutputMode === "audio") {
+        const jsonResult = await requestJson("text");
+        script = jsonResult.script;
+        if (jsonResult.ttsPrompt) {
+          ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
+        }
         const { blob, mediaUrl, contentType } = await requestAudio(
+          script,
           (streamUrl, streamContentType) => {
             const downloadFilename = buildDownloadFilename({
               voice: voiceStyle,
@@ -480,7 +494,7 @@ export default function HomePage() {
           };
         });
       } else {
-        const jsonResult = (await requestJson()) as {
+        const jsonResult = (await requestJson("text-audio")) as {
           script: string;
           audioBase64?: string;
           audioContentType?: string;
@@ -505,10 +519,9 @@ export default function HomePage() {
         }
       }
 
-      const cleanedScript =
-        effectiveOutputMode === "text" || effectiveOutputMode === "text-audio"
-          ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
-          : "";
+      const cleanedScript = script
+        ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
+        : "";
       const downloadFilename = audioUrl
         ? buildDownloadFilename({
             voice: voiceStyle,
@@ -680,7 +693,7 @@ export default function HomePage() {
             <label htmlFor="stream-audio">Stream audio as it is generated</label>
           </div>
           <span style={{ color: "#555", fontSize: "0.9rem" }}>
-            Streaming starts playback sooner but skips the script output.
+            Streaming starts playback sooner and fetches the script in a separate request.
           </span>
         </label>
 

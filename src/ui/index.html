@@ -221,7 +221,7 @@
             </label>
           </div>
           <span class="option-hint">
-            Streaming starts playback sooner but skips the script output.
+            Streaming starts playback sooner and fetches the script in a separate request.
           </span>
         </label>
 
@@ -523,7 +523,7 @@
         const durationConfig = deriveDurationConfig(durationMinutes);
         const primarySense = derivePrimarySense(focus, practiceConfig.eyeState);
         const senseRotation = deriveSenseRotation(practiceType, durationMinutes);
-        const payload = {
+        const basePayload = {
           practiceMode: practiceConfig.practiceMode,
           bodyState: practiceConfig.bodyState,
           eyeState: practiceConfig.eyeState,
@@ -539,22 +539,30 @@
           ...(isDevMode
             ? { ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0 }
             : {}),
-          outputMode: effectiveOutputMode,
           ...(debugEnabled ? { debugTtsPrompt: true } : {}),
         };
+
+        const buildTtsPayload = (script) => ({
+          script,
+          language,
+          voice: voiceStyle,
+          ttsNewlinePauseSeconds: isDevMode
+            ? Number(formData.get("ttsNewlinePauseSeconds")) || 0
+            : undefined,
+        });
         submitButton.disabled = true;
         statusPanel.hidden = false;
         spinner.hidden = false;
         status.textContent = "Generating audio. This can take a few seconds.";
 
-        const requestJson = async () => {
+        const requestJson = async (outputMode) => {
           const response = await fetch("/api/generate", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Accept: "application/json",
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...basePayload, outputMode }),
           });
 
           if (!response.ok) {
@@ -572,7 +580,7 @@
               "Content-Type": "application/json",
               Accept: "text/event-stream",
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ...basePayload, outputMode: effectiveOutputMode }),
           });
 
           if (!response.ok) {
@@ -637,15 +645,15 @@
           return finalPayload;
         };
 
-        const requestAudio = async (onStreamStart) => {
-          const response = await fetch("/api/generate", {
+        const requestAudio = async (script, onStreamStart) => {
+          const response = await fetch("/api/tts", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Accept: "audio/mpeg",
               "x-tts-streaming": "1",
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify(buildTtsPayload(script)),
           });
 
           if (!response.ok) {
@@ -738,7 +746,10 @@
           let streamUrl = null;
 
           if (streamAudioEnabled) {
-            const streamResponse = await requestAudio((mediaUrl, streamContentType) => {
+            const jsonResponse = await requestJson("text");
+            script = jsonResponse?.script || "";
+            ttsPrompt = jsonResponse?.ttsPrompt || null;
+            const streamResponse = await requestAudio(script, (mediaUrl, streamContentType) => {
               streamUrl = mediaUrl;
       audioPlayer.src = mediaUrl;
       audioPlayer.play().catch(() => {});
@@ -768,7 +779,7 @@
               extension,
             });
           } else {
-            const jsonResponse = await requestJson();
+            const jsonResponse = await requestJson(effectiveOutputMode);
             script = jsonResponse?.script || "";
             ttsPrompt = jsonResponse?.ttsPrompt || null;
             if (effectiveOutputMode === "text-audio" && jsonResponse?.audioBase64) {
@@ -809,11 +820,7 @@
             downloadLink.hidden = true;
           }
 
-          const shouldShowScript =
-            effectiveOutputMode === "text" || effectiveOutputMode === "text-audio";
-          const cleanedScript = shouldShowScript
-            ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
-            : "";
+          const cleanedScript = script ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim() : "";
 
           if (cleanedScript) {
             scriptOutput.textContent = cleanedScript;
