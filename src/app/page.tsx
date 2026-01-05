@@ -347,8 +347,17 @@ export default function HomePage() {
       if (canAttemptStream) {
         const mediaSource = new MediaSource();
         const mediaUrl = URL.createObjectURL(mediaSource);
+        let streamStartNotified = false;
+        const notifyStreamStart = () => {
+          if (streamStartNotified) {
+            return;
+          }
+          streamStartNotified = true;
+          onStreamStart?.(mediaUrl, contentType);
+        };
 
         try {
+          notifyStreamStart();
           await new Promise<void>((resolve, reject) => {
             const handleError = () => reject(new Error("Audio stream failed."));
 
@@ -373,7 +382,7 @@ export default function HomePage() {
                   }
                   chunks.push(firstRead.value);
                   await appendChunk(firstRead.value);
-                  onStreamStart?.(mediaUrl, contentType);
+                  notifyStreamStart();
 
                   while (true) {
                     const { value, done } = await reader.read();
