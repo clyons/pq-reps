@@ -92,6 +92,182 @@ const resolveAudioExtension = (contentType?: string) =>
 const resolveStreamingMimeType = (contentType: string) =>
   contentType.includes("audio/wav") ? 'audio/wav; codecs="1"' : contentType;
 
+const parseWavHeader = (header: Uint8Array) => {
+  const readString = (offset: number, length: number) =>
+    String.fromCharCode(...header.slice(offset, offset + length));
+  if (readString(0, 4) !== "RIFF" || readString(8, 4) !== "WAVE") {
+    throw new Error("Invalid WAV header.");
+  }
+  let offset = 12;
+  let fmt: {
+    audioFormat: number;
+    channels: number;
+    sampleRate: number;
+    bitsPerSample: number;
+  } | null = null;
+  let dataOffset: number | null = null;
+  while (offset + 8 <= header.length) {
+    const chunkId = readString(offset, 4);
+    const chunkSize =
+      header[offset + 4] |
+      (header[offset + 5] << 8) |
+      (header[offset + 6] << 16) |
+      (header[offset + 7] << 24);
+    const chunkStart = offset + 8;
+    if (chunkId === "fmt ") {
+      const audioFormat = header[chunkStart] | (header[chunkStart + 1] << 8);
+      const channels = header[chunkStart + 2] | (header[chunkStart + 3] << 8);
+      const sampleRate =
+        header[chunkStart + 4] |
+        (header[chunkStart + 5] << 8) |
+        (header[chunkStart + 6] << 16) |
+        (header[chunkStart + 7] << 24);
+      const bitsPerSample = header[chunkStart + 14] | (header[chunkStart + 15] << 8);
+      fmt = { audioFormat, channels, sampleRate, bitsPerSample };
+    } else if (chunkId === "data") {
+      dataOffset = chunkStart;
+      break;
+    }
+    offset = chunkStart + chunkSize + (chunkSize % 2);
+  }
+  if (!fmt || dataOffset === null) {
+    throw new Error("Unsupported WAV header.");
+  }
+  if (fmt.audioFormat !== 1) {
+    throw new Error("Only PCM WAV is supported for streaming.");
+  }
+  return { ...fmt, dataOffset };
+};
+
+const streamWavViaWebAudio = async ({
+  reader,
+  onStreamStart,
+  onChunk,
+}: {
+  reader: ReadableStreamDefaultReader<Uint8Array>;
+  onStreamStart?: () => void;
+  onChunk?: (chunk: Uint8Array) => void;
+}) => {
+  const bufferSize = 4096;
+  let audioContext: AudioContext | null = null;
+  let activeProcessor: ScriptProcessorNode | null = null;
+  const sampleQueue: Float32Array[] = [];
+  let sampleOffset = 0;
+  let wavInfo:
+    | {
+        channels: number;
+        bitsPerSample: number;
+        dataOffset: number;
+        sampleRate: number;
+      }
+    | null = null;
+  let headerBytes = new Uint8Array(0);
+  let playbackStarted = false;
+  let streamingEnabled = true;
+
+  const readSample = () => {
+    while (sampleQueue.length > 0 && sampleOffset >= sampleQueue[0].length) {
+      sampleQueue.shift();
+      sampleOffset = 0;
+    }
+    if (sampleQueue.length === 0) {
+      return null;
+    }
+    const value = sampleQueue[0][sampleOffset];
+    sampleOffset += 1;
+    return value;
+  };
+
+  const handleAudioProcess = (event: AudioProcessingEvent) => {
+    if (!wavInfo) {
+      return;
+    }
+    const channelCount = wavInfo.channels;
+    const outputs = Array.from({ length: channelCount }, (_, idx) =>
+      event.outputBuffer.getChannelData(idx),
+    );
+    for (let i = 0; i < outputs[0].length; i += 1) {
+      for (let channel = 0; channel < channelCount; channel += 1) {
+        const sample = readSample();
+        outputs[channel][i] = sample === null ? 0 : sample;
+      }
+    }
+  };
+
+  const enqueuePcm = (pcmBytes: Uint8Array) => {
+    if (!wavInfo || wavInfo.bitsPerSample !== 16) {
+      return;
+    }
+    const samples = new Float32Array(pcmBytes.length / 2);
+    for (let i = 0; i < pcmBytes.length; i += 2) {
+      const int16 = pcmBytes[i] | (pcmBytes[i + 1] << 8);
+      const signed = int16 >= 0x8000 ? int16 - 0x10000 : int16;
+      samples[i / 2] = signed / 32768;
+    }
+    sampleQueue.push(samples);
+  };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) {
+      break;
+    }
+    if (!value) {
+      continue;
+    }
+    onChunk?.(value);
+
+    if (!wavInfo && streamingEnabled) {
+      const combined = new Uint8Array(headerBytes.length + value.length);
+      combined.set(headerBytes);
+      combined.set(value, headerBytes.length);
+      headerBytes = combined;
+      if (headerBytes.length >= 44) {
+        try {
+          wavInfo = parseWavHeader(headerBytes);
+          if (wavInfo.bitsPerSample !== 16) {
+            throw new Error("Only 16-bit PCM WAV streaming is supported.");
+          }
+          audioContext = new AudioContext({ sampleRate: wavInfo.sampleRate });
+          await audioContext.resume();
+          activeProcessor = audioContext.createScriptProcessor(
+            bufferSize,
+            0,
+            wavInfo.channels,
+          );
+          activeProcessor.onaudioprocess = handleAudioProcess;
+          activeProcessor.connect(audioContext.destination);
+          if (!playbackStarted) {
+            playbackStarted = true;
+            onStreamStart?.();
+          }
+          const pcmStart = headerBytes.slice(wavInfo.dataOffset);
+          enqueuePcm(pcmStart);
+          headerBytes = new Uint8Array(0);
+        } catch {
+          streamingEnabled = false;
+        }
+      }
+      continue;
+    }
+
+    if (streamingEnabled && !playbackStarted) {
+      playbackStarted = true;
+      onStreamStart?.();
+    }
+    if (streamingEnabled) {
+      enqueuePcm(value);
+    }
+  }
+
+  if (activeProcessor) {
+    activeProcessor.disconnect();
+  }
+  if (audioContext) {
+    audioContext.close().catch(() => {});
+  }
+};
+
 const buildScriptDownloadFilename = ({
   voice,
   durationMinutes,
@@ -312,7 +488,7 @@ export default function HomePage() {
 
     const requestAudio = async (
       script: string,
-      onStreamStart?: (mediaUrl: string, contentType: string) => void,
+      onStreamStart?: (mediaUrl: string | null, contentType: string) => void,
     ) => {
       const response = await fetch("/api/tts", {
         method: "POST",
@@ -343,12 +519,32 @@ export default function HomePage() {
       const chunks: Uint8Array[] = [];
       const streamingMimeType = resolveStreamingMimeType(contentType);
       const canAttemptStream = typeof MediaSource !== "undefined";
+      const canWebAudioStream =
+        contentType.includes("audio/wav") && typeof AudioContext !== "undefined";
+
+      if (canWebAudioStream) {
+        await streamWavViaWebAudio({
+          reader,
+          onStreamStart: () => onStreamStart?.(null, contentType),
+          onChunk: (chunk) => chunks.push(chunk),
+        });
+        return { blob: new Blob(chunks, { type: contentType }), contentType };
+      }
 
       if (canAttemptStream) {
         const mediaSource = new MediaSource();
         const mediaUrl = URL.createObjectURL(mediaSource);
+        let streamStartNotified = false;
+        const notifyStreamStart = () => {
+          if (streamStartNotified) {
+            return;
+          }
+          streamStartNotified = true;
+                  onStreamStart?.(mediaUrl, contentType);
+        };
 
         try {
+          notifyStreamStart();
           await new Promise<void>((resolve, reject) => {
             const handleError = () => reject(new Error("Audio stream failed."));
 
@@ -373,7 +569,7 @@ export default function HomePage() {
                   }
                   chunks.push(firstRead.value);
                   await appendChunk(firstRead.value);
-                  onStreamStart?.(mediaUrl, contentType);
+                  notifyStreamStart();
 
                   while (true) {
                     const { value, done } = await reader.read();
@@ -457,7 +653,7 @@ export default function HomePage() {
                 URL.revokeObjectURL(prev.scriptDownloadUrl);
               }
               return {
-                audioUrl: streamUrl,
+                audioUrl: streamUrl ?? undefined,
                 downloadUrl: undefined,
                 script: "",
                 ttsPrompt: undefined,
