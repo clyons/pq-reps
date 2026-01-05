@@ -89,6 +89,9 @@ const buildDownloadFilename = ({
 const resolveAudioExtension = (contentType?: string) =>
   contentType?.includes("mpeg") ? "mp3" : "wav";
 
+const resolveStreamingMimeType = (contentType: string) =>
+  contentType.includes("audio/wav") ? 'audio/wav; codecs="1"' : contentType;
+
 const buildScriptDownloadFilename = ({
   voice,
   durationMinutes,
@@ -315,7 +318,7 @@ export default function HomePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "audio/mpeg",
+          Accept: "audio/wav",
           "x-tts-streaming": "1",
         },
         body: JSON.stringify(ttsPayload(script)),
@@ -330,7 +333,7 @@ export default function HomePage() {
         throw new Error(`The generator failed to respond. (${response.status})`);
       }
 
-      const contentType = response.headers.get("content-type") ?? "audio/mpeg";
+      const contentType = response.headers.get("content-type") ?? "audio/wav";
       if (!response.body) {
         const audioBuffer = await response.arrayBuffer();
         return { blob: new Blob([audioBuffer], { type: contentType }), contentType };
@@ -338,69 +341,73 @@ export default function HomePage() {
 
       const reader = response.body.getReader();
       const chunks: Uint8Array[] = [];
-      const canStream =
-        typeof MediaSource !== "undefined" && MediaSource.isTypeSupported(contentType);
+      const streamingMimeType = resolveStreamingMimeType(contentType);
+      const canAttemptStream = typeof MediaSource !== "undefined";
 
-      if (!canStream) {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) {
-            break;
-          }
-          if (value) {
-            chunks.push(value);
-          }
+      if (canAttemptStream) {
+        const mediaSource = new MediaSource();
+        const mediaUrl = URL.createObjectURL(mediaSource);
+        onStreamStart?.(mediaUrl, contentType);
+
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const handleError = () => reject(new Error("Audio stream failed."));
+
+            mediaSource.addEventListener("error", handleError, { once: true });
+            mediaSource.addEventListener(
+              "sourceopen",
+              async () => {
+                try {
+                  const sourceBuffer = mediaSource.addSourceBuffer(streamingMimeType);
+                  const appendChunk = (chunk: Uint8Array) =>
+                    new Promise<void>((appendResolve, appendReject) => {
+                      const onError = () => appendReject(new Error("Failed to append audio chunk."));
+                      const onUpdateEnd = () => appendResolve();
+                      sourceBuffer.addEventListener("error", onError, { once: true });
+                      sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
+                      sourceBuffer.appendBuffer(chunk);
+                    });
+
+                  while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                      break;
+                    }
+                    if (value) {
+                      chunks.push(value);
+                      await appendChunk(value);
+                    }
+                  }
+
+                  if (mediaSource.readyState === "open") {
+                    mediaSource.endOfStream();
+                  }
+                  resolve();
+                } catch (streamError) {
+                  reject(streamError);
+                }
+              },
+              { once: true },
+            );
+          });
+
+          const downloadBlob = new Blob(chunks, { type: contentType });
+          return { blob: downloadBlob, mediaUrl, contentType };
+        } catch (streamError) {
+          console.warn("Falling back to buffered WAV playback.", streamError);
         }
-        return { blob: new Blob(chunks, { type: contentType }), contentType };
       }
 
-      const mediaSource = new MediaSource();
-      const mediaUrl = URL.createObjectURL(mediaSource);
-      onStreamStart?.(mediaUrl, contentType);
-
-      await new Promise<void>((resolve, reject) => {
-        const handleError = () => reject(new Error("Audio stream failed."));
-
-        mediaSource.addEventListener("error", handleError, { once: true });
-        mediaSource.addEventListener(
-          "sourceopen",
-          async () => {
-            try {
-              const sourceBuffer = mediaSource.addSourceBuffer(contentType);
-              const appendChunk = (chunk: Uint8Array) =>
-                new Promise<void>((appendResolve, appendReject) => {
-                  const onError = () => appendReject(new Error("Failed to append audio chunk."));
-                  const onUpdateEnd = () => appendResolve();
-                  sourceBuffer.addEventListener("error", onError, { once: true });
-                  sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
-                  sourceBuffer.appendBuffer(chunk);
-                });
-
-              while (true) {
-                const { value, done } = await reader.read();
-                if (done) {
-                  break;
-                }
-                if (value) {
-                  chunks.push(value);
-                  await appendChunk(value);
-                }
-              }
-
-              if (mediaSource.readyState === "open") {
-                mediaSource.endOfStream();
-              }
-              resolve();
-            } catch (streamError) {
-              reject(streamError);
-            }
-          },
-          { once: true },
-        );
-      });
-
-      const downloadBlob = new Blob(chunks, { type: contentType });
-      return { blob: downloadBlob, mediaUrl, contentType };
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          break;
+        }
+        if (value) {
+          chunks.push(value);
+        }
+      }
+      return { blob: new Blob(chunks, { type: contentType }), contentType };
     };
 
     try {
@@ -516,9 +523,9 @@ export default function HomePage() {
             bytes[index] = binary.charCodeAt(index);
           }
           const audioBlob = new Blob([bytes], {
-            type: jsonResult.audioContentType ?? "audio/mpeg",
+            type: jsonResult.audioContentType ?? "audio/wav",
           });
-          audioContentType = jsonResult.audioContentType ?? "audio/mpeg";
+          audioContentType = jsonResult.audioContentType ?? "audio/wav";
           audioUrl = URL.createObjectURL(audioBlob);
           downloadUrl = URL.createObjectURL(audioBlob);
         }
