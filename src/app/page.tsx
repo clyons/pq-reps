@@ -466,9 +466,8 @@ export default function HomePage() {
                 scriptDownloadUrl: undefined,
               };
             });
-          }),
-          requestJson("text"),
-        ]);
+          },
+        );
         if (mediaUrl) {
           audioUrl = mediaUrl;
         } else {
