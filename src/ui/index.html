@@ -683,8 +683,19 @@
           if (canStream) {
             const mediaSource = new MediaSource();
             const mediaUrl = URL.createObjectURL(mediaSource);
+            let streamStartNotified = false;
+            const notifyStreamStart = () => {
+              if (streamStartNotified) {
+                return;
+              }
+              streamStartNotified = true;
+              if (typeof onStreamStart === "function") {
+                onStreamStart(mediaUrl, contentType);
+              }
+            };
 
             try {
+              notifyStreamStart();
               await new Promise((resolve, reject) => {
                 const handleError = () => reject(new Error("Audio stream failed."));
 
@@ -710,9 +721,7 @@
                       }
                       chunks.push(firstRead.value);
                       await appendChunk(firstRead.value);
-                      if (typeof onStreamStart === "function") {
-                        onStreamStart(mediaUrl, contentType);
-                      }
+                      notifyStreamStart();
 
                       while (true) {
                         const { value, done } = await reader.read();
@@ -786,6 +795,9 @@
             audioBlob = streamResponse?.blob || null;
             if (streamResponse?.mediaUrl) {
               streamUrl = streamResponse.mediaUrl;
+            } else if (streamUrl) {
+              URL.revokeObjectURL(streamUrl);
+              streamUrl = null;
             }
             const extension = resolveAudioExtension(streamResponse?.contentType);
             downloadLink.download = buildDownloadFilename({
