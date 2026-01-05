@@ -678,71 +678,74 @@
           const reader = response.body.getReader();
           const chunks = [];
           const streamingMimeType = resolveStreamingMimeType(contentType);
-          const canStream =
-            typeof MediaSource !== "undefined" &&
-            MediaSource.isTypeSupported(streamingMimeType);
+          const canStream = typeof MediaSource !== "undefined";
 
-          if (!canStream) {
-            while (true) {
-              const { value, done } = await reader.read();
-              if (done) {
-                break;
-              }
-              if (value) {
-                chunks.push(value);
-              }
+          if (canStream) {
+            const mediaSource = new MediaSource();
+            const mediaUrl = URL.createObjectURL(mediaSource);
+            if (typeof onStreamStart === "function") {
+              onStreamStart(mediaUrl, contentType);
             }
-            return { blob: new Blob(chunks, { type: contentType }), contentType };
+
+            try {
+              await new Promise((resolve, reject) => {
+                const handleError = () => reject(new Error("Audio stream failed."));
+
+                mediaSource.addEventListener("error", handleError, { once: true });
+                mediaSource.addEventListener(
+                  "sourceopen",
+                  async () => {
+                    try {
+                      const sourceBuffer = mediaSource.addSourceBuffer(streamingMimeType);
+                      const appendChunk = (chunk) =>
+                        new Promise((appendResolve, appendReject) => {
+                          const onError = () =>
+                            appendReject(new Error("Failed to append audio chunk."));
+                          const onUpdateEnd = () => appendResolve();
+                          sourceBuffer.addEventListener("error", onError, { once: true });
+                          sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
+                          sourceBuffer.appendBuffer(chunk);
+                        });
+
+                      while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) {
+                          break;
+                        }
+                        if (value) {
+                          chunks.push(value);
+                          await appendChunk(value);
+                        }
+                      }
+
+                      if (mediaSource.readyState === "open") {
+                        mediaSource.endOfStream();
+                      }
+                      resolve();
+                    } catch (streamError) {
+                      reject(streamError);
+                    }
+                  },
+                  { once: true },
+                );
+              });
+
+              return { blob: new Blob(chunks, { type: contentType }), mediaUrl, contentType };
+            } catch (streamError) {
+              console.warn("Falling back to buffered WAV playback.", streamError);
+            }
           }
 
-          const mediaSource = new MediaSource();
-          const mediaUrl = URL.createObjectURL(mediaSource);
-          if (typeof onStreamStart === "function") {
-            onStreamStart(mediaUrl, contentType);
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) {
+              break;
+            }
+            if (value) {
+              chunks.push(value);
+            }
           }
-
-          await new Promise((resolve, reject) => {
-            const handleError = () => reject(new Error("Audio stream failed."));
-
-            mediaSource.addEventListener("error", handleError, { once: true });
-            mediaSource.addEventListener(
-              "sourceopen",
-              async () => {
-                try {
-                  const sourceBuffer = mediaSource.addSourceBuffer(streamingMimeType);
-                  const appendChunk = (chunk) =>
-                    new Promise((appendResolve, appendReject) => {
-                      const onError = () => appendReject(new Error("Failed to append audio chunk."));
-                      const onUpdateEnd = () => appendResolve();
-                      sourceBuffer.addEventListener("error", onError, { once: true });
-                      sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
-                      sourceBuffer.appendBuffer(chunk);
-                    });
-
-                  while (true) {
-                    const { value, done } = await reader.read();
-                    if (done) {
-                      break;
-                    }
-                    if (value) {
-                      chunks.push(value);
-                      await appendChunk(value);
-                    }
-                  }
-
-                  if (mediaSource.readyState === "open") {
-                    mediaSource.endOfStream();
-                  }
-                  resolve();
-                } catch (streamError) {
-                  reject(streamError);
-                }
-              },
-              { once: true },
-            );
-          });
-
-          return { blob: new Blob(chunks, { type: contentType }), mediaUrl, contentType };
+          return { blob: new Blob(chunks, { type: contentType }), contentType };
         };
 
         try {

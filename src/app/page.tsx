@@ -342,70 +342,72 @@ export default function HomePage() {
       const reader = response.body.getReader();
       const chunks: Uint8Array[] = [];
       const streamingMimeType = resolveStreamingMimeType(contentType);
-      const canStream =
-        typeof MediaSource !== "undefined" &&
-        MediaSource.isTypeSupported(streamingMimeType);
+      const canAttemptStream = typeof MediaSource !== "undefined";
 
-      if (!canStream) {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) {
-            break;
-          }
-          if (value) {
-            chunks.push(value);
-          }
+      if (canAttemptStream) {
+        const mediaSource = new MediaSource();
+        const mediaUrl = URL.createObjectURL(mediaSource);
+        onStreamStart?.(mediaUrl, contentType);
+
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const handleError = () => reject(new Error("Audio stream failed."));
+
+            mediaSource.addEventListener("error", handleError, { once: true });
+            mediaSource.addEventListener(
+              "sourceopen",
+              async () => {
+                try {
+                  const sourceBuffer = mediaSource.addSourceBuffer(streamingMimeType);
+                  const appendChunk = (chunk: Uint8Array) =>
+                    new Promise<void>((appendResolve, appendReject) => {
+                      const onError = () => appendReject(new Error("Failed to append audio chunk."));
+                      const onUpdateEnd = () => appendResolve();
+                      sourceBuffer.addEventListener("error", onError, { once: true });
+                      sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
+                      sourceBuffer.appendBuffer(chunk);
+                    });
+
+                  while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                      break;
+                    }
+                    if (value) {
+                      chunks.push(value);
+                      await appendChunk(value);
+                    }
+                  }
+
+                  if (mediaSource.readyState === "open") {
+                    mediaSource.endOfStream();
+                  }
+                  resolve();
+                } catch (streamError) {
+                  reject(streamError);
+                }
+              },
+              { once: true },
+            );
+          });
+
+          const downloadBlob = new Blob(chunks, { type: contentType });
+          return { blob: downloadBlob, mediaUrl, contentType };
+        } catch (streamError) {
+          console.warn("Falling back to buffered WAV playback.", streamError);
         }
-        return { blob: new Blob(chunks, { type: contentType }), contentType };
       }
 
-      const mediaSource = new MediaSource();
-      const mediaUrl = URL.createObjectURL(mediaSource);
-      onStreamStart?.(mediaUrl, contentType);
-
-      await new Promise<void>((resolve, reject) => {
-        const handleError = () => reject(new Error("Audio stream failed."));
-
-        mediaSource.addEventListener("error", handleError, { once: true });
-        mediaSource.addEventListener(
-          "sourceopen",
-          async () => {
-            try {
-              const sourceBuffer = mediaSource.addSourceBuffer(streamingMimeType);
-              const appendChunk = (chunk: Uint8Array) =>
-                new Promise<void>((appendResolve, appendReject) => {
-                  const onError = () => appendReject(new Error("Failed to append audio chunk."));
-                  const onUpdateEnd = () => appendResolve();
-                  sourceBuffer.addEventListener("error", onError, { once: true });
-                  sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
-                  sourceBuffer.appendBuffer(chunk);
-                });
-
-              while (true) {
-                const { value, done } = await reader.read();
-                if (done) {
-                  break;
-                }
-                if (value) {
-                  chunks.push(value);
-                  await appendChunk(value);
-                }
-              }
-
-              if (mediaSource.readyState === "open") {
-                mediaSource.endOfStream();
-              }
-              resolve();
-            } catch (streamError) {
-              reject(streamError);
-            }
-          },
-          { once: true },
-        );
-      });
-
-      const downloadBlob = new Blob(chunks, { type: contentType });
-      return { blob: downloadBlob, mediaUrl, contentType };
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          break;
+        }
+        if (value) {
+          chunks.push(value);
+        }
+      }
+      return { blob: new Blob(chunks, { type: contentType }), contentType };
     };
 
     try {
