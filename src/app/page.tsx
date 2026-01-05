@@ -89,6 +89,9 @@ const buildDownloadFilename = ({
 const resolveAudioExtension = (contentType?: string) =>
   contentType?.includes("mpeg") ? "mp3" : "wav";
 
+const resolveStreamingMimeType = (contentType: string) =>
+  contentType.includes("audio/wav") ? 'audio/wav; codecs="1"' : contentType;
+
 const buildScriptDownloadFilename = ({
   voice,
   durationMinutes,
@@ -338,8 +341,10 @@ export default function HomePage() {
 
       const reader = response.body.getReader();
       const chunks: Uint8Array[] = [];
+      const streamingMimeType = resolveStreamingMimeType(contentType);
       const canStream =
-        typeof MediaSource !== "undefined" && MediaSource.isTypeSupported(contentType);
+        typeof MediaSource !== "undefined" &&
+        MediaSource.isTypeSupported(streamingMimeType);
 
       if (!canStream) {
         while (true) {
@@ -366,7 +371,7 @@ export default function HomePage() {
           "sourceopen",
           async () => {
             try {
-              const sourceBuffer = mediaSource.addSourceBuffer(contentType);
+              const sourceBuffer = mediaSource.addSourceBuffer(streamingMimeType);
               const appendChunk = (chunk: Uint8Array) =>
                 new Promise<void>((appendResolve, appendReject) => {
                   const onError = () => appendReject(new Error("Failed to append audio chunk."));
