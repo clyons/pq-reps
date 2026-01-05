@@ -347,7 +347,6 @@ export default function HomePage() {
       if (canAttemptStream) {
         const mediaSource = new MediaSource();
         const mediaUrl = URL.createObjectURL(mediaSource);
-        onStreamStart?.(mediaUrl, contentType);
 
         try {
           await new Promise<void>((resolve, reject) => {
@@ -367,6 +366,14 @@ export default function HomePage() {
                       sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
                       sourceBuffer.appendBuffer(chunk);
                     });
+
+                  const firstRead = await reader.read();
+                  if (firstRead.done || !firstRead.value) {
+                    throw new Error("Audio stream ended before data arrived.");
+                  }
+                  chunks.push(firstRead.value);
+                  await appendChunk(firstRead.value);
+                  onStreamStart?.(mediaUrl, contentType);
 
                   while (true) {
                     const { value, done } = await reader.read();
