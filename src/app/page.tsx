@@ -89,6 +89,9 @@ const buildDownloadFilename = ({
 const resolveAudioExtension = (contentType?: string) =>
   contentType?.includes("mpeg") ? "mp3" : "wav";
 
+const resolveStreamingMimeType = (contentType: string) =>
+  contentType.includes("audio/wav") ? 'audio/wav; codecs="1"' : contentType;
+
 const buildScriptDownloadFilename = ({
   voice,
   durationMinutes,
@@ -315,7 +318,7 @@ export default function HomePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "audio/mpeg",
+          Accept: "audio/wav",
           "x-tts-streaming": "1",
         },
         body: JSON.stringify(ttsPayload(script)),
@@ -330,7 +333,7 @@ export default function HomePage() {
         throw new Error(`The generator failed to respond. (${response.status})`);
       }
 
-      const contentType = response.headers.get("content-type") ?? "audio/mpeg";
+      const contentType = response.headers.get("content-type") ?? "audio/wav";
       if (!response.body) {
         const audioBuffer = await response.arrayBuffer();
         return { blob: new Blob([audioBuffer], { type: contentType }), contentType };
@@ -338,8 +341,10 @@ export default function HomePage() {
 
       const reader = response.body.getReader();
       const chunks: Uint8Array[] = [];
+      const streamingMimeType = resolveStreamingMimeType(contentType);
       const canStream =
-        typeof MediaSource !== "undefined" && MediaSource.isTypeSupported(contentType);
+        typeof MediaSource !== "undefined" &&
+        MediaSource.isTypeSupported(streamingMimeType);
 
       if (!canStream) {
         while (true) {
@@ -366,7 +371,7 @@ export default function HomePage() {
           "sourceopen",
           async () => {
             try {
-              const sourceBuffer = mediaSource.addSourceBuffer(contentType);
+              const sourceBuffer = mediaSource.addSourceBuffer(streamingMimeType);
               const appendChunk = (chunk: Uint8Array) =>
                 new Promise<void>((appendResolve, appendReject) => {
                   const onError = () => appendReject(new Error("Failed to append audio chunk."));
@@ -516,9 +521,9 @@ export default function HomePage() {
             bytes[index] = binary.charCodeAt(index);
           }
           const audioBlob = new Blob([bytes], {
-            type: jsonResult.audioContentType ?? "audio/mpeg",
+            type: jsonResult.audioContentType ?? "audio/wav",
           });
-          audioContentType = jsonResult.audioContentType ?? "audio/mpeg";
+          audioContentType = jsonResult.audioContentType ?? "audio/wav";
           audioUrl = URL.createObjectURL(audioBlob);
           downloadUrl = URL.createObjectURL(audioBlob);
         }

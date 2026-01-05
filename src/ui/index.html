@@ -393,6 +393,10 @@
 
       const resolveAudioExtension = (contentType) =>
         contentType && contentType.includes("mpeg") ? "mp3" : "wav";
+      const resolveStreamingMimeType = (contentType) =>
+        contentType && contentType.includes("audio/wav")
+          ? 'audio/wav; codecs="1"'
+          : contentType;
       const buildScriptDownloadFilename = ({ voice, durationMinutes, focus, now = new Date() }) =>
         buildDownloadFilename({ voice, durationMinutes, focus, now }).replace(/\.[^.]+$/, ".txt");
 
@@ -650,7 +654,7 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Accept: "audio/mpeg",
+              Accept: "audio/wav",
               "x-tts-streaming": "1",
             },
             body: JSON.stringify(buildTtsPayload(script)),
@@ -665,7 +669,7 @@
             throw new Error(`The generator failed to respond. (${response.status})`);
           }
 
-          const contentType = response.headers.get("content-type") || "audio/mpeg";
+          const contentType = response.headers.get("content-type") || "audio/wav";
           if (!response.body) {
             const audioBuffer = await response.arrayBuffer();
             return { blob: new Blob([audioBuffer], { type: contentType }), contentType };
@@ -673,8 +677,10 @@
 
           const reader = response.body.getReader();
           const chunks = [];
+          const streamingMimeType = resolveStreamingMimeType(contentType);
           const canStream =
-            typeof MediaSource !== "undefined" && MediaSource.isTypeSupported(contentType);
+            typeof MediaSource !== "undefined" &&
+            MediaSource.isTypeSupported(streamingMimeType);
 
           if (!canStream) {
             while (true) {
@@ -703,7 +709,7 @@
               "sourceopen",
               async () => {
                 try {
-                  const sourceBuffer = mediaSource.addSourceBuffer(contentType);
+                  const sourceBuffer = mediaSource.addSourceBuffer(streamingMimeType);
                   const appendChunk = (chunk) =>
                     new Promise((appendResolve, appendReject) => {
                       const onError = () => appendReject(new Error("Failed to append audio chunk."));
