@@ -795,6 +795,9 @@
             audioBlob = streamResponse?.blob || null;
             if (streamResponse?.mediaUrl) {
               streamUrl = streamResponse.mediaUrl;
+            } else if (streamUrl) {
+              URL.revokeObjectURL(streamUrl);
+              streamUrl = null;
             }
             const extension = resolveAudioExtension(streamResponse?.contentType);
             downloadLink.download = buildDownloadFilename({
