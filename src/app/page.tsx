@@ -491,10 +491,8 @@ const infoTooltipStyle: React.CSSProperties = {
 const getPillStyle = (checked: boolean, disabled?: boolean): React.CSSProperties => ({
   padding: "0.5rem 0.9rem",
   borderRadius: 999,
-  border: `1px solid ${
-    checked ? BRAND_COLORS.green.dark : BRAND_COLORS.neutral.black30
-  }`,
-  background: checked ? BRAND_COLORS.green.dark : BRAND_COLORS.neutral.grayBase,
+  border: `1px solid ${checked ? BRAND_COLORS.orange.dark : BRAND_COLORS.orange.base}`,
+  background: checked ? BRAND_COLORS.orange.dark : BRAND_COLORS.orange.base,
   color: BRAND_COLORS.neutral.black,
   fontWeight: 600,
   cursor: disabled ? "not-allowed" : "pointer",
@@ -1336,14 +1334,14 @@ export default function HomePage() {
           disabled={isLoading}
           style={{
             padding: "1.1rem 2.25rem",
-            background: isLoading ? BRAND_COLORS.green.light : BRAND_COLORS.green.dark,
-            color: BRAND_COLORS.neutral.black,
+            background: isLoading ? BRAND_COLORS.neutral.grayMid : BRAND_COLORS.neutral.black,
+            color: BRAND_COLORS.neutral.grayBase,
             borderRadius: 999,
             border: "none",
             cursor: isLoading ? "not-allowed" : "pointer",
             fontWeight: 700,
             fontSize: "1.05rem",
-            boxShadow: `0 10px 20px ${BRAND_COLORS.green.light}`,
+            boxShadow: `0 10px 20px ${BRAND_COLORS.neutral.black30}`,
           }}
         >
           {isLoading ? "Preparing PQ Reps…" : "Prepare PQ Reps"}
