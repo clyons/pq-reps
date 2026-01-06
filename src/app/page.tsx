@@ -1367,37 +1367,53 @@ export default function HomePage() {
             {isLoading ? "Streaming audio…" : "Your session is ready"}
           </h2>
           {(result.audioStream || result.audioUrl) && (
-            <>
-              <audio
-                ref={audioRef}
-                controls
-                src={result.audioUrl}
-                style={{ width: "100%", marginBottom: "1rem" }}
-              >
-                Your browser does not support the audio element.
-              </audio>
-              {result.downloadUrl && (
-                <a
-                  href={result.downloadUrl}
-                  download={result.downloadFilename ?? "pq-reps.wav"}
-                  style={{ fontWeight: 600 }}
-                >
-                  Download the WAV
-                </a>
-              )}
-            </>
+            <audio
+              ref={audioRef}
+              controls
+              src={result.audioUrl}
+              style={{ width: "100%", marginBottom: "1rem" }}
+            >
+              Your browser does not support the audio element.
+            </audio>
           )}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "1rem" }}>
+            <a
+              href={result.downloadUrl}
+              download={result.downloadFilename ?? "pq-reps.wav"}
+              aria-disabled={!result.downloadUrl}
+              style={{
+                fontWeight: 600,
+                color: result.downloadUrl
+                  ? BRAND_COLORS.neutral.black
+                  : BRAND_COLORS.neutral.black30,
+                pointerEvents: result.downloadUrl ? "auto" : "none",
+                textDecoration: "none",
+              }}
+            >
+              Download the audio
+            </a>
+            <span style={{ color: BRAND_COLORS.neutral.black }} aria-hidden="true">
+              {" "}
+              |{" "}
+            </span>
+            <a
+              href={result.scriptDownloadUrl}
+              download={result.scriptDownloadFilename ?? "pq-reps.txt"}
+              aria-disabled={!result.scriptDownloadUrl}
+              style={{
+                fontWeight: 600,
+                color: result.scriptDownloadUrl
+                  ? BRAND_COLORS.neutral.black
+                  : BRAND_COLORS.neutral.black30,
+                pointerEvents: result.scriptDownloadUrl ? "auto" : "none",
+                textDecoration: "none",
+              }}
+            >
+              Download the text
+            </a>
+          </div>
           {result.script && (
             <>
-              {result.scriptDownloadUrl && (
-                <a
-                  href={result.scriptDownloadUrl}
-                  download={result.scriptDownloadFilename ?? "pq-reps.txt"}
-                  style={{ fontWeight: 600, display: "inline-block", marginTop: "1rem" }}
-                >
-                  Download the script
-                </a>
-              )}
               <p style={{ marginTop: "1rem", whiteSpace: "pre-line" }}>{result.script}</p>
             </>
           )}
