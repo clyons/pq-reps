@@ -495,8 +495,9 @@ export default function HomePage() {
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [previewMessage, setPreviewMessage] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
@@ -1011,10 +1012,19 @@ export default function HomePage() {
     if (!previewAudio) {
       return;
     }
+    if (previewLoading) {
+      return;
+    }
+    if (previewPlaying) {
+      previewAudio.pause();
+      previewAudio.currentTime = 0;
+      setPreviewPlaying(false);
+      return;
+    }
     const language = formState.language;
     const voice = resolveVoiceForGender(formState.voiceGender, language);
     setPreviewLoading(true);
-    setPreviewMessage("Loading preview...");
+    setPreviewError(null);
     try {
       const response = await fetch("/api/voice-preview", {
         method: "POST",
@@ -1040,17 +1050,23 @@ export default function HomePage() {
       setPreviewUrl(nextUrl);
       previewAudio.src = nextUrl;
       previewAudio.hidden = false;
-      setPreviewMessage("Playing preview...");
       previewAudio.onended = () => {
-        setPreviewMessage(null);
+        setPreviewPlaying(false);
+      };
+      previewAudio.onpause = () => {
+        setPreviewPlaying(false);
       };
       await previewAudio.play();
+      setPreviewPlaying(true);
     } catch (error) {
-      setPreviewMessage(error instanceof Error ? error.message : "Preview failed.");
+      setPreviewError(error instanceof Error ? error.message : "Preview failed.");
+      setPreviewPlaying(false);
     } finally {
       setPreviewLoading(false);
     }
   };
+
+  const previewIcon = previewLoading ? "⏳" : previewPlaying ? "■" : "▶";
 
   return (
     <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 720, margin: "0 auto" }}>
@@ -1137,6 +1153,9 @@ export default function HomePage() {
             disabled={previewLoading}
             style={{
               justifySelf: "start",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.4rem",
               padding: "0.4rem 0.9rem",
               borderRadius: 999,
               border: "1px solid #ccc",
@@ -1146,11 +1165,12 @@ export default function HomePage() {
               cursor: previewLoading ? "not-allowed" : "pointer",
             }}
           >
-            Preview &gt;
+            <span>Preview</span>
+            <span aria-hidden="true">{previewIcon}</span>
           </button>
           <audio ref={previewAudioRef} hidden />
-          {previewMessage && (
-            <span style={{ fontSize: "0.9rem", color: "#555" }}>{previewMessage}</span>
+          {previewError && (
+            <span style={{ fontSize: "0.9rem", color: "#b00020" }}>{previewError}</span>
           )}
         </label>
 
