@@ -176,6 +176,19 @@
         color: #555;
         font-size: 0.9rem;
       }
+      .info-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        border: 1px solid #b5b5b5;
+        color: #555;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: help;
+      }
       .voice-preview {
         display: flex;
         flex-wrap: wrap;
@@ -329,16 +342,28 @@
         </label>
 
         <label>
-          Audio delivery
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <input type="checkbox" name="streamAudio" id="stream-audio" />
-            <label for="stream-audio" class="option-hint" style="margin: 0;">
-              Stream audio as it is generated
-            </label>
-          </div>
-          <span class="option-hint">
-            Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.
+          <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+            Audio delivery
+            <span
+              class="info-icon"
+              title="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+              aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+            >
+              i
+            </span>
           </span>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <div class="pill-group" role="radiogroup" aria-label="Audio delivery">
+              <label class="pill-option">
+                <input type="radio" name="audioDelivery" value="generate" checked />
+                <span class="pill">Generate</span>
+              </label>
+              <label class="pill-option">
+                <input type="radio" name="audioDelivery" value="stream" />
+                <span class="pill">Stream</span>
+              </label>
+            </div>
+          </div>
         </label>
 
         <div id="dev-controls" hidden>
@@ -410,7 +435,6 @@
       const scriptOutput = document.getElementById("script-output");
       const submitButton = document.getElementById("submit-button");
       const debugInput = form.querySelector("input[name='debugTtsPrompt']");
-      const streamAudioInput = form.querySelector("input[name='streamAudio']");
       const appVersion = document.getElementById("app-version");
       const resetButton = document.getElementById("reset-button");
       const debugSection = document.getElementById("debug-section");
@@ -952,7 +976,8 @@
         const formData = new FormData(form);
         localStorage.setItem(storageKey, JSON.stringify(Object.fromEntries(formData.entries())));
         const debugEnabled = isDevMode && debugInput?.checked;
-        const streamAudioEnabled = streamAudioInput?.checked ?? false;
+        const audioDelivery = getSelectedValue("audioDelivery") || "generate";
+        const streamAudioEnabled = audioDelivery === "stream";
         const effectiveOutputMode = streamAudioEnabled ? "audio" : "text-audio";
         const language = formData.get("language");
         const voiceGender = formData.get("voiceGender");
