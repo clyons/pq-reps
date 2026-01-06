@@ -30,7 +30,7 @@ const DEFAULT_STATE: FormState = {
   durationMinutes: 2,
   language: "en",
   voiceGender: "female",
-  ttsNewlinePauseSeconds: 2,
+  ttsNewlinePauseSeconds: 1.5,
   debugTtsPrompt: false,
   streamAudio: false,
 };
@@ -1005,7 +1005,7 @@ export default function HomePage() {
             <label htmlFor="stream-audio">Stream audio as it is generated</label>
           </div>
           <span style={{ color: "#555", fontSize: "0.9rem" }}>
-            Streaming starts playback sooner and fetches the script in a separate request.
+            Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.
           </span>
         </label>
 
