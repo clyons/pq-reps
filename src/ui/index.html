@@ -319,10 +319,12 @@
           </div>
           <div class="voice-preview">
             <span class="option-hint">Choose the voice you prefer for guidance.</span>
-            <button type="button" id="voice-preview-button">Preview ></button>
+            <button type="button" id="voice-preview-button">
+              Preview <span id="voice-preview-icon" aria-hidden="true">▶</span>
+            </button>
           </div>
           <audio id="voice-preview-audio" hidden></audio>
-          <span id="voice-preview-status" class="option-hint" hidden>Loading preview...</span>
+          <span id="voice-preview-status" class="option-hint" hidden></span>
         </label>
 
         <label>
@@ -422,6 +424,8 @@
       const previewButton = document.getElementById("voice-preview-button");
       const previewAudio = document.getElementById("voice-preview-audio");
       const previewStatus = document.getElementById("voice-preview-status");
+      const previewIcon = document.getElementById("voice-preview-icon");
+      let previewPlaying = false;
       const isDevMode = new URLSearchParams(window.location.search).get("dev") === "1";
 
       if (devControls) {
@@ -792,8 +796,48 @@
         input.addEventListener("change", updateVoiceLabels);
       });
 
+      const setPreviewIcon = (state) => {
+        if (!previewIcon) {
+          return;
+        }
+        if (state === "loading") {
+          previewIcon.textContent = "⏳";
+        } else if (state === "playing") {
+          previewIcon.textContent = "■";
+        } else {
+          previewIcon.textContent = "▶";
+        }
+      };
+
+      const setPreviewError = (message) => {
+        if (!previewStatus) {
+          return;
+        }
+        if (message) {
+          previewStatus.hidden = false;
+          previewStatus.textContent = message;
+        } else {
+          previewStatus.hidden = true;
+          previewStatus.textContent = "";
+        }
+      };
+
+      const stopPreview = () => {
+        if (!previewAudio) {
+          return;
+        }
+        previewAudio.pause();
+        previewAudio.currentTime = 0;
+        previewPlaying = false;
+        setPreviewIcon("idle");
+      };
+
       const playPreview = async () => {
         if (!previewAudio || !previewStatus || !previewButton) {
+          return;
+        }
+        if (previewPlaying) {
+          stopPreview();
           return;
         }
         const language = getSelectedValue("language") || "en";
@@ -802,8 +846,8 @@
           voiceGender === "male"
             ? maleVoiceByLanguage[language] || "ash"
             : femaleVoiceByLanguage[language] || "alloy";
-        previewStatus.hidden = false;
-        previewStatus.textContent = "Loading preview...";
+        setPreviewError("");
+        setPreviewIcon("loading");
         previewButton.disabled = true;
         try {
           const response = await fetch("/api/voice-preview", {
@@ -829,10 +873,20 @@
           previewAudio.src = URL.createObjectURL(audioBlob);
           previewAudio.hidden = false;
           await previewAudio.play();
-          previewStatus.textContent = "Playing preview...";
+          previewPlaying = true;
+          setPreviewIcon("playing");
+          previewAudio.onended = () => {
+            previewPlaying = false;
+            setPreviewIcon("idle");
+          };
+          previewAudio.onpause = () => {
+            previewPlaying = false;
+            setPreviewIcon("idle");
+          };
         } catch (error) {
-          previewStatus.textContent =
-            error instanceof Error ? error.message : "Preview failed.";
+          previewPlaying = false;
+          setPreviewIcon("idle");
+          setPreviewError(error instanceof Error ? error.message : "Preview failed.");
         } finally {
           previewButton.disabled = false;
         }
