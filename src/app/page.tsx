@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 type GenerationResult = {
+  audioStream?: MediaStream;
   audioUrl?: string;
   downloadUrl?: string;
   script?: string;
@@ -32,6 +33,32 @@ const DEFAULT_STATE: FormState = {
   ttsNewlinePauseSeconds: 1,
   debugTtsPrompt: false,
   streamAudio: false,
+};
+
+const useAudioSync = (
+  audioRef: RefObject<HTMLAudioElement>,
+  audioStream?: MediaStream,
+  audioUrl?: string,
+) => {
+  useEffect(() => {
+    const audioElement = audioRef.current;
+    if (!audioElement) {
+      return;
+    }
+    if (audioStream) {
+      if (audioElement.srcObject !== audioStream) {
+        audioElement.srcObject = audioStream;
+      }
+      audioElement.play().catch(() => {});
+      return;
+    }
+    if (audioElement.srcObject) {
+      audioElement.srcObject = null;
+    }
+    if (audioUrl && audioElement.src !== audioUrl) {
+      audioElement.src = audioUrl;
+    }
+  }, [audioRef, audioStream, audioUrl]);
 };
 
 const LANGUAGE_OPTIONS = [
@@ -145,12 +172,13 @@ const streamWavViaWebAudio = async ({
   onChunk,
 }: {
   reader: ReadableStreamDefaultReader<Uint8Array>;
-  onStreamStart?: () => void;
+  onStreamStart?: (mediaStream: MediaStream) => void;
   onChunk?: (chunk: Uint8Array) => void;
 }) => {
   const bufferSize = 4096;
   let audioContext: AudioContext | null = null;
   let activeProcessor: ScriptProcessorNode | null = null;
+  let streamDestination: MediaStreamAudioDestinationNode | null = null;
   const sampleQueue: Float32Array[] = [];
   let sampleOffset = 0;
   let wavInfo:
@@ -242,16 +270,17 @@ const streamWavViaWebAudio = async ({
           }
           audioContext = new AudioContext({ sampleRate: wavInfo.sampleRate });
           await audioContext.resume();
+          streamDestination = audioContext.createMediaStreamDestination();
           activeProcessor = audioContext.createScriptProcessor(
             bufferSize,
             0,
             wavInfo.channels,
           );
           activeProcessor.onaudioprocess = handleAudioProcess;
-          activeProcessor.connect(audioContext.destination);
+          activeProcessor.connect(streamDestination);
           if (!playbackStarted) {
             playbackStarted = true;
-            onStreamStart?.();
+            onStreamStart?.(streamDestination.stream);
           }
           const pcmStart = headerBytes.slice(wavInfo.dataOffset);
           enqueuePcm(pcmStart);
@@ -263,9 +292,9 @@ const streamWavViaWebAudio = async ({
       continue;
     }
 
-    if (streamingEnabled && !playbackStarted) {
+    if (streamingEnabled && !playbackStarted && streamDestination) {
       playbackStarted = true;
-      onStreamStart?.();
+      onStreamStart?.(streamDestination.stream);
     }
     if (streamingEnabled) {
       enqueuePcm(value);
@@ -379,10 +408,16 @@ export default function HomePage() {
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const isDevMode = process.env.NODE_ENV !== "production";
   const isLoading = status === "loading";
-  const shouldShowResult = Boolean(result?.audioUrl || result?.script || result?.ttsPrompt);
+
+  useAudioSync(audioRef, result?.audioStream, result?.audioUrl);
+
+  const shouldShowResult = Boolean(
+    result?.audioStream || result?.audioUrl || result?.script || result?.ttsPrompt,
+  );
 
   const practiceConfig = useMemo(
     () => derivePracticeConfig(formState.practiceType, formState.durationMinutes),
@@ -408,6 +443,9 @@ export default function HomePage() {
       }
       if (result?.downloadUrl) {
         URL.revokeObjectURL(result.downloadUrl);
+      }
+      if (result?.audioStream) {
+        result.audioStream.getTracks().forEach((track) => track.stop());
       }
       if (result?.scriptDownloadUrl) {
         URL.revokeObjectURL(result.scriptDownloadUrl);
@@ -503,7 +541,11 @@ export default function HomePage() {
 
     const requestAudio = async (
       script: string,
-      onStreamStart?: (mediaUrl: string | null, contentType: string) => void,
+      onStreamStart?: (args: {
+        mediaUrl?: string;
+        mediaStream?: MediaStream;
+        contentType: string;
+      }) => void,
     ) => {
       const response = await fetch("/api/tts", {
         method: "POST",
@@ -540,7 +582,8 @@ export default function HomePage() {
       if (canWebAudioStream) {
         await streamWavViaWebAudio({
           reader,
-          onStreamStart: () => onStreamStart?.(null, contentType),
+          onStreamStart: (mediaStream) =>
+            onStreamStart?.({ mediaStream, contentType }),
           onChunk: (chunk) => chunks.push(chunk),
         });
         return { blob: new Blob(chunks, { type: contentType }), contentType };
@@ -555,7 +598,7 @@ export default function HomePage() {
             return;
           }
           streamStartNotified = true;
-                  onStreamStart?.(mediaUrl, contentType);
+                  onStreamStart?.({ mediaUrl, contentType });
         };
 
         try {
@@ -664,6 +707,7 @@ export default function HomePage() {
               URL.revokeObjectURL(prev.scriptDownloadUrl);
             }
             return {
+              audioStream: prev?.audioStream,
               audioUrl: prev?.audioUrl,
               downloadUrl: prev?.downloadUrl,
               script: cleanedScript,
@@ -676,7 +720,7 @@ export default function HomePage() {
         }
         const { blob, mediaUrl, contentType } = await requestAudio(
           script,
-          (streamUrl, streamContentType) => {
+          ({ mediaUrl: streamUrl, mediaStream, contentType: streamContentType }) => {
             const downloadFilename = buildDownloadFilename({
               voice: voiceStyle,
               durationMinutes: formState.durationMinutes,
@@ -692,6 +736,7 @@ export default function HomePage() {
                 URL.revokeObjectURL(prev.downloadUrl);
               }
               return {
+                audioStream: mediaStream ?? prev?.audioStream,
                 audioUrl: streamUrl ?? undefined,
                 downloadUrl: undefined,
                 script: prev?.script,
@@ -794,22 +839,23 @@ export default function HomePage() {
         ? URL.createObjectURL(new Blob([cleanedScript], { type: "text/plain" }))
         : undefined;
 
-      setResult((prev) => {
-        if (prev?.audioUrl && prev.audioUrl !== audioUrl) {
-          URL.revokeObjectURL(prev.audioUrl);
-        }
-        if (prev?.downloadUrl) {
-          URL.revokeObjectURL(prev.downloadUrl);
-        }
-        if (prev?.scriptDownloadUrl) {
-          URL.revokeObjectURL(prev.scriptDownloadUrl);
-        }
-        return {
-          audioUrl,
-          downloadUrl: downloadUrl ?? audioUrl,
-          script: cleanedScript,
-          ttsPrompt,
-          downloadFilename,
+        setResult((prev) => {
+          if (prev?.audioUrl && prev.audioUrl !== audioUrl) {
+            URL.revokeObjectURL(prev.audioUrl);
+          }
+          if (prev?.downloadUrl) {
+            URL.revokeObjectURL(prev.downloadUrl);
+          }
+          if (prev?.scriptDownloadUrl) {
+            URL.revokeObjectURL(prev.scriptDownloadUrl);
+          }
+          return {
+            audioStream: undefined,
+            audioUrl,
+            downloadUrl: downloadUrl ?? audioUrl,
+            script: cleanedScript,
+            ttsPrompt,
+            downloadFilename,
           scriptDownloadFilename,
           scriptDownloadUrl,
         };
@@ -1025,19 +1071,25 @@ export default function HomePage() {
           <h2 style={{ marginTop: 0 }}>
             {isLoading ? "Streaming audio…" : "Your session is ready"}
           </h2>
-          {result.audioUrl && (
+          {(result.audioStream || result.audioUrl) && (
             <>
-              <audio controls style={{ width: "100%", marginBottom: "1rem" }}>
-                <source src={result.audioUrl} />
+              <audio
+                ref={audioRef}
+                controls
+                src={result.audioUrl}
+                style={{ width: "100%", marginBottom: "1rem" }}
+              >
                 Your browser does not support the audio element.
               </audio>
-              <a
-                href={result.downloadUrl ?? result.audioUrl}
-                download={result.downloadFilename ?? "pq-reps.wav"}
-                style={{ fontWeight: 600 }}
-              >
-                Download the WAV
-              </a>
+              {result.downloadUrl && (
+                <a
+                  href={result.downloadUrl}
+                  download={result.downloadFilename ?? "pq-reps.wav"}
+                  style={{ fontWeight: 600 }}
+                >
+                  Download the WAV
+                </a>
+              )}
             </>
           )}
           {result.script && (

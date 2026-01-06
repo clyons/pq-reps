@@ -443,6 +443,7 @@
         const bufferSize = 4096;
         let audioContext = null;
         let activeProcessor = null;
+        let streamDestination = null;
         const sampleQueue = [];
         let sampleOffset = 0;
         let wavInfo = null;
@@ -527,16 +528,17 @@
                 }
                 audioContext = new AudioContext({ sampleRate: wavInfo.sampleRate });
                 await audioContext.resume();
+                streamDestination = audioContext.createMediaStreamDestination();
                 activeProcessor = audioContext.createScriptProcessor(
                   bufferSize,
                   0,
                   wavInfo.channels,
                 );
                 activeProcessor.onaudioprocess = handleAudioProcess;
-                activeProcessor.connect(audioContext.destination);
+                activeProcessor.connect(streamDestination);
                 if (!playbackStarted) {
                   playbackStarted = true;
-                  onStreamStart?.();
+                  onStreamStart?.(streamDestination.stream);
                 }
                 const pcmStart = headerBytes.slice(wavInfo.dataOffset);
                 enqueuePcm(pcmStart);
@@ -548,9 +550,9 @@
             continue;
           }
 
-          if (streamingEnabled && !playbackStarted) {
+          if (streamingEnabled && !playbackStarted && streamDestination) {
             playbackStarted = true;
-            onStreamStart?.();
+            onStreamStart?.(streamDestination.stream);
           }
           if (streamingEnabled) {
             enqueuePcm(value);
@@ -855,7 +857,8 @@
           if (canWebAudioStream) {
             await streamWavViaWebAudio({
               reader,
-              onStreamStart: () => onStreamStart?.(null, contentType),
+              onStreamStart: (mediaStream) =>
+                onStreamStart?.({ mediaStream, contentType }),
               onChunk: (chunk) => chunks.push(chunk),
             });
             return { blob: new Blob(chunks, { type: contentType }), contentType };
@@ -871,7 +874,7 @@
               }
               streamStartNotified = true;
               if (typeof onStreamStart === "function") {
-                onStreamStart(mediaUrl, contentType);
+                onStreamStart({ mediaUrl, contentType });
               }
             };
 
@@ -976,14 +979,19 @@
             scriptDownloadLink.hidden = false;
           }
           result.hidden = false;
-          const streamResponse = await requestAudio(script, (mediaUrl, streamContentType) => {
-            streamUrl = mediaUrl;
-            if (mediaUrl) {
-              audioPlayer.src = mediaUrl;
-              audioPlayer.play().catch(() => {});
-              audioPlayer.hidden = false;
-            }
-            status.textContent = "";
+            const streamResponse = await requestAudio(script, ({ mediaUrl, mediaStream, contentType: streamContentType }) => {
+              streamUrl = mediaUrl;
+              if (mediaStream) {
+                audioPlayer.srcObject = mediaStream;
+                audioPlayer.play().catch(() => {});
+                audioPlayer.hidden = false;
+              } else if (mediaUrl) {
+                audioPlayer.srcObject = null;
+                audioPlayer.src = mediaUrl;
+                audioPlayer.play().catch(() => {});
+                audioPlayer.hidden = false;
+              }
+              status.textContent = "";
             statusPanel.hidden = true;
             spinner.hidden = true;
               const downloadFilename = buildDownloadFilename({
@@ -1038,6 +1046,7 @@
             downloadUrl = URL.createObjectURL(audioBlob);
             currentUrl = streamUrl || downloadUrl;
             if (audioPlayer.src !== currentUrl) {
+              audioPlayer.srcObject = null;
               audioPlayer.src = currentUrl;
             }
             audioPlayer.hidden = false;
