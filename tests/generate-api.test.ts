@@ -17,6 +17,7 @@ const validPayload = {
   languages: ["en", "es"],
   audience: "busy professionals",
   voiceStyle: "sage",
+  customScenarioLine: "A short, neutral line for a morning reset.",
 };
 
 function assertConfigMapping(result: ReturnType<typeof validateGenerateConfig>) {
@@ -39,6 +40,7 @@ function assertConfigMapping(result: ReturnType<typeof validateGenerateConfig>) 
   assert.deepEqual(config.languages, validPayload.languages);
   assert.equal(config.audience, validPayload.audience);
   assert.equal(config.voiceStyle, validPayload.voiceStyle);
+  assert.equal(config.customScenarioLine, validPayload.customScenarioLine);
 
   const prompt = buildPrompt(config);
   assert.match(prompt, /Practice mode: sitting\./);
@@ -46,10 +48,23 @@ function assertConfigMapping(result: ReturnType<typeof validateGenerateConfig>) 
   assert.match(prompt, /Eye state: open_focused\./);
   assert.match(prompt, /Primary sense: breath\./);
   assert.match(prompt, /Duration: 5 minutes\./);
+  assert.match(prompt, /Custom scenario line: "A short, neutral line for a morning reset\."/);
   assert.doesNotMatch(prompt, /undefined/);
 }
 
 test("generate validation preserves request fields", () => {
   const result = validateGenerateConfig(validPayload);
   assertConfigMapping(result);
+});
+
+test("generate validation rejects disallowed custom scenario content", () => {
+  const result = validateGenerateConfig({
+    ...validPayload,
+    customScenarioLine: "Visit http://example.com",
+  });
+  assert.equal(result.ok, false);
+  if (result.ok) {
+    throw new Error("Expected invalid validation result.");
+  }
+  assert.equal(result.error.error.code, "custom_scenario_line_disallowed");
 });

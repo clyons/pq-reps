@@ -22,6 +22,7 @@ type FormState = {
   ttsNewlinePauseSeconds: number;
   debugTtsPrompt: boolean;
   audioDelivery: "generate" | "stream";
+  customScenarioLine: string;
 };
 
 const DEFAULT_STATE: FormState = {
@@ -33,6 +34,7 @@ const DEFAULT_STATE: FormState = {
   ttsNewlinePauseSeconds: 1.5,
   debugTtsPrompt: false,
   audioDelivery: "generate",
+  customScenarioLine: "",
 };
 
 const BRAND_COLORS = {
@@ -83,6 +85,7 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const DURATION_OPTIONS: FormState["durationMinutes"][] = [1, 2, 5, 12];
+const CUSTOM_SCENARIO_MAX_LENGTH = 120;
 
 const formatDurationLabel = (minutes: number) =>
   `${minutes} minute${minutes === 1 ? "" : "s"}`;
@@ -696,6 +699,7 @@ export default function HomePage() {
       senseRotation,
       languages: [formState.language],
       voiceStyle,
+      customScenarioLine: formState.customScenarioLine.trim() || undefined,
       ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
       debugTtsPrompt: formState.debugTtsPrompt,
     };
@@ -1240,6 +1244,30 @@ export default function HomePage() {
             value={formState.language}
             onChange={(value) => updateFormState({ language: value })}
           />
+        </label>
+
+        <label style={{ display: "grid", gap: "0.5rem" }}>
+          <span style={{ fontWeight: 600 }}>Custom scenario line (optional)</span>
+          <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
+            Add a short, neutral context line (max {CUSTOM_SCENARIO_MAX_LENGTH} characters).
+            Avoid URLs or sensitive topics.
+          </span>
+          <input
+            type="text"
+            value={formState.customScenarioLine}
+            maxLength={CUSTOM_SCENARIO_MAX_LENGTH}
+            onChange={(event) =>
+              updateFormState({ customScenarioLine: event.target.value })
+            }
+            style={{
+              padding: "0.75rem",
+              borderRadius: 6,
+              border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+            }}
+          />
+          <span style={{ fontSize: "0.85rem", color: BRAND_COLORS.neutral.black30 }}>
+            {formState.customScenarioLine.length}/{CUSTOM_SCENARIO_MAX_LENGTH}
+          </span>
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
