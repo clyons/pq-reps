@@ -113,6 +113,7 @@ export function buildPrompt(config: GenerateConfig): string {
     durationRule,
     durationPacing ? durationPacing : "Use steady pacing appropriate to the duration.",
     "Use these inputs exactly. Do not invent additional modes, senses, or counts.",
+    "Pause markers must use the exact token [pause:10] (with the word “pause” in English). Do not translate it.",
   ].join("\n");
 }
 
