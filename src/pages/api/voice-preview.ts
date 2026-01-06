@@ -4,6 +4,11 @@ import path from "path";
 import type { IncomingMessage, ServerResponse } from "http";
 import { synthesizeSpeech } from "../../services/tts";
 import { getVoicePreviewScript } from "../../services/voicePreview";
+import {
+  DEFAULT_LOCALE,
+  resolveLocaleFromPayload,
+  translate,
+} from "../../lib/i18n";
 
 type VoicePreviewRequest = {
   language?: string;
@@ -39,12 +44,22 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
   if (req.method !== "POST") {
     res.statusCode = 405;
     res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify({ error: { code: "method_not_allowed" } }));
+    res.end(
+      JSON.stringify({
+        error: {
+          code: "method_not_allowed",
+          message: translate(DEFAULT_LOCALE, "errors.method_not_allowed"),
+        },
+      }),
+    );
     return;
   }
 
+  let locale = DEFAULT_LOCALE;
   try {
-    const { language = "en", voice = "alloy" } = await readJsonBody(req);
+    const requestBody = await readJsonBody(req);
+    locale = resolveLocaleFromPayload(requestBody);
+    const { language = "en", voice = "alloy" } = requestBody;
     const script = getVoicePreviewScript(language);
     await fs.mkdir(cacheDirectory, { recursive: true });
     const cachePath = getCachePath(language, voice, script);
@@ -69,7 +84,8 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
       JSON.stringify({
         error: {
           code: "voice_preview_failure",
-          message: error instanceof Error ? error.message : "Unable to generate preview.",
+          message: translate(locale, "errors.voice_preview_failure"),
+          details: { error: error instanceof Error ? error.message : String(error) },
         },
       }),
     );

@@ -11,6 +11,7 @@ import {
   SenseRotation,
   SUPPORTED_LANGUAGES,
 } from "./promptBuilder";
+import { DEFAULT_LOCALE, type Locale, translate } from "./i18n";
 
 export type ErrorResponse = {
   error: {
@@ -97,14 +98,17 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((entry) => typeof entry === "string");
 }
 
-export function validateGenerateConfig(payload: unknown): ValidationResult {
+export function validateGenerateConfig(
+  payload: unknown,
+  locale: Locale = DEFAULT_LOCALE,
+): ValidationResult {
   if (!payload || typeof payload !== "object") {
     return {
       ok: false,
       error: {
         error: {
           code: "invalid_payload",
-          message: "Payload must be a JSON object.",
+          message: translate(locale, "errors.invalid_payload"),
         },
       },
     };
@@ -129,7 +133,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_practice_mode",
-          message: "Practice mode must be one of the supported values.",
+          message: translate(locale, "errors.invalid_practice_mode"),
           details: { allowed: ALLOWED_PRACTICE_MODES },
         },
       },
@@ -142,7 +146,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_body_state",
-          message: "Body state must be one of the supported values.",
+          message: translate(locale, "errors.invalid_body_state"),
           details: { allowed: ALLOWED_BODY_STATES },
         },
       },
@@ -155,7 +159,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_eye_state",
-          message: "Eye state must be one of the supported values.",
+          message: translate(locale, "errors.invalid_eye_state"),
           details: { allowed: ALLOWED_EYE_STATES },
         },
       },
@@ -168,7 +172,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_primary_sense",
-          message: "Primary sense must be one of the supported values.",
+          message: translate(locale, "errors.invalid_primary_sense"),
           details: { allowed: ALLOWED_PRIMARY_SENSES },
         },
       },
@@ -181,7 +185,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_duration",
-          message: "Duration must be one of the supported minute values.",
+          message: translate(locale, "errors.invalid_duration"),
           details: { allowed: ALLOWED_DURATIONS },
         },
       },
@@ -194,7 +198,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_labeling_mode",
-          message: "Labeling mode must be one of the supported values.",
+          message: translate(locale, "errors.invalid_labeling_mode"),
           details: { allowed: ALLOWED_LABELING_MODES },
         },
       },
@@ -207,7 +211,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_silence_profile",
-          message: "Silence profile must be one of the supported values.",
+          message: translate(locale, "errors.invalid_silence_profile"),
           details: { allowed: ALLOWED_SILENCE_PROFILES },
         },
       },
@@ -223,7 +227,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_normalization_frequency",
-          message: "Normalization frequency must be one of the supported values.",
+          message: translate(locale, "errors.invalid_normalization_frequency"),
           details: { allowed: ALLOWED_NORMALIZATION_FREQUENCY },
         },
       },
@@ -236,7 +240,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_closing_style",
-          message: "Closing style must be one of the supported values.",
+          message: translate(locale, "errors.invalid_closing_style"),
           details: { allowed: ALLOWED_CLOSING_STYLES },
         },
       },
@@ -249,7 +253,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_sense_rotation",
-          message: "Sense rotation must be one of the supported values.",
+          message: translate(locale, "errors.invalid_sense_rotation"),
           details: { allowed: ALLOWED_SENSE_ROTATIONS },
         },
       },
@@ -265,7 +269,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_tts_newline_pause",
-          message: "TTS newline pause seconds must be a non-negative number.",
+          message: translate(locale, "errors.invalid_tts_newline_pause"),
         },
       },
     };
@@ -277,7 +281,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_languages",
-          message: "Languages must be a non-empty array of strings.",
+          message: translate(locale, "errors.invalid_languages"),
         },
       },
     };
@@ -293,7 +297,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "unsupported_language",
-          message: "One or more languages are not supported.",
+          message: translate(locale, "errors.unsupported_language"),
           details: { unsupported, supported: SUPPORTED_LANGUAGES },
         },
       },
@@ -305,24 +309,24 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       return {
         ok: false,
         error: {
-          error: {
-            code: "invalid_body_state",
-            message: "Moving practice mode requires a moving body state.",
-          },
+        error: {
+          code: "invalid_body_state",
+          message: translate(locale, "errors.moving_requires_body_state"),
         },
-      };
-    }
-    if (config.eyeState === "closed") {
+      },
+    };
+  }
+  if (config.eyeState === "closed") {
       return {
         ok: false,
         error: {
-          error: {
-            code: "invalid_eye_state",
-            message: "Moving practice mode requires eyes open.",
-          },
+        error: {
+          code: "invalid_eye_state",
+          message: translate(locale, "errors.moving_requires_eyes_open"),
         },
-      };
-    }
+      },
+    };
+  }
   }
 
   if (config.practiceMode === "tactile") {
@@ -330,24 +334,24 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       return {
         ok: false,
         error: {
-          error: {
-            code: "invalid_body_state",
-            message: "Tactile practice mode requires still seated with eyes closed.",
-          },
+        error: {
+          code: "invalid_body_state",
+          message: translate(locale, "errors.tactile_requires_body_state"),
         },
-      };
-    }
-    if (config.eyeState !== "closed") {
+      },
+    };
+  }
+  if (config.eyeState !== "closed") {
       return {
         ok: false,
         error: {
-          error: {
-            code: "invalid_eye_state",
-            message: "Tactile practice mode requires eyes closed.",
-          },
+        error: {
+          code: "invalid_eye_state",
+          message: translate(locale, "errors.tactile_requires_eyes_closed"),
         },
-      };
-    }
+      },
+    };
+  }
   }
 
   if (config.practiceMode === "sitting" && config.eyeState === "closed") {
@@ -356,7 +360,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_eye_state",
-          message: "Sitting practice mode requires eyes open.",
+          message: translate(locale, "errors.sitting_requires_eyes_open"),
         },
       },
     };
@@ -368,7 +372,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_practice_mode",
-          message: "Moving body state requires moving practice mode.",
+          message: translate(locale, "errors.moving_body_requires_moving_practice"),
         },
       },
     };
@@ -383,7 +387,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_labeling_mode",
-          message: "Label with anchor mode requires breath anchor labeling.",
+          message: translate(locale, "errors.label_with_anchor_requires_breath_anchor"),
         },
       },
     };
@@ -398,7 +402,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_labeling_mode",
-          message: "Label while scanning mode requires scan and label.",
+          message: translate(locale, "errors.label_scan_requires_scan_label"),
         },
       },
     };
@@ -414,7 +418,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_labeling_mode",
-          message: "Labeling mode must be none for non-label practice modes.",
+          message: translate(locale, "errors.labeling_mode_must_be_none"),
         },
       },
     };
@@ -429,7 +433,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_silence_profile",
-          message: "Extended silence is only allowed for 5 or 12 minute sessions.",
+          message: translate(locale, "errors.extended_silence_requires_longer"),
         },
       },
     };
@@ -444,7 +448,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_normalization_frequency",
-          message: "Short sessions require normalization frequency of once.",
+          message: translate(locale, "errors.short_sessions_require_once"),
         },
       },
     };
@@ -456,7 +460,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_normalization_frequency",
-          message: "5-minute sessions require periodic normalization.",
+          message: translate(locale, "errors.five_minute_requires_periodic"),
         },
       },
     };
@@ -468,7 +472,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_normalization_frequency",
-          message: "12-minute sessions require repeated normalization.",
+          message: translate(locale, "errors.twelve_minute_requires_repeated"),
         },
       },
     };
@@ -483,7 +487,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_closing_style",
-          message: "2-minute sessions require minimal closing style.",
+          message: translate(locale, "errors.short_sessions_require_minimal_closing"),
         },
       },
     };
@@ -495,7 +499,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_closing_style",
-          message: "5-minute sessions require PQ-framed closing style.",
+          message: translate(locale, "errors.five_minute_requires_pq_framed"),
         },
       },
     };
@@ -510,7 +514,7 @@ export function validateGenerateConfig(payload: unknown): ValidationResult {
       error: {
         error: {
           code: "invalid_closing_style",
-          message: "12-minute sessions require PQ framing with progression.",
+          message: translate(locale, "errors.twelve_minute_requires_progression"),
         },
       },
     };

@@ -277,103 +277,103 @@
   </head>
   <body>
     <main>
-      <h1>PQ Reps Audio Generator</h1>
+      <h1 id="app-title">PQ Reps Audio Generator</h1>
       <p id="app-version" class="version">Version: loading...</p>
-      <p>Choose the type of PQ Reps you'd like to practice.</p>
-      <p>Audio is AI-generated.</p>
+      <p id="app-description">Choose the type of PQ Reps you'd like to practice.</p>
+      <p id="app-ai-notice">Audio is AI-generated.</p>
 
       <form id="generator-form">
         <label>
-          Practice type
-          <div class="pill-group" role="radiogroup" aria-label="Practice type">
+          <span id="label-practice-type">Practice type</span>
+          <div class="pill-group" role="radiogroup" aria-label="Practice type" id="group-practice-type">
             <label class="pill-option">
               <input type="radio" name="practiceType" value="still_eyes_closed" checked required />
-              <span class="pill">Still (Eyes closed)</span>
+              <span class="pill" data-i18n="form.practice_type.still_eyes_closed">Still (Eyes closed)</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="practiceType" value="still_eyes_open" />
-              <span class="pill">Still (Eyes open)</span>
+              <span class="pill" data-i18n="form.practice_type.still_eyes_open">Still (Eyes open)</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="practiceType" value="moving" />
-              <span class="pill">Moving</span>
+              <span class="pill" data-i18n="form.practice_type.moving">Moving</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="practiceType" value="labeling" />
-              <span class="pill">Labeling</span>
+              <span class="pill" data-i18n="form.practice_type.labeling">Labeling</span>
             </label>
           </div>
         </label>
 
         <label>
-          Focus
-          <div class="pill-group" role="radiogroup" aria-label="Focus">
+          <span id="label-focus">Focus</span>
+          <div class="pill-group" role="radiogroup" aria-label="Focus" id="group-focus">
             <label class="pill-option">
               <input type="radio" name="focus" value="touch" checked required />
-              <span class="pill">Touch</span>
+              <span class="pill" data-i18n="form.focus.touch">Touch</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="focus" value="hearing" />
-              <span class="pill">Hearing</span>
+              <span class="pill" data-i18n="form.focus.hearing">Hearing</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="focus" value="sight" />
-              <span class="pill">Sight</span>
+              <span class="pill" data-i18n="form.focus.sight">Sight</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="focus" value="breath" />
-              <span class="pill">Breath</span>
+              <span class="pill" data-i18n="form.focus.breath">Breath</span>
             </label>
           </div>
         </label>
 
         <label>
-          Duration
-          <div class="pill-group" role="radiogroup" aria-label="Duration">
+          <span id="label-duration">Duration</span>
+          <div class="pill-group" role="radiogroup" aria-label="Duration" id="group-duration">
             <label class="pill-option">
               <input type="radio" name="durationMinutes" value="1" checked required />
-              <span class="pill">1 minute</span>
+              <span class="pill" data-duration="1">1 minute</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="durationMinutes" value="2" />
-              <span class="pill">2 minutes</span>
+              <span class="pill" data-duration="2">2 minutes</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="durationMinutes" value="5" />
-              <span class="pill">5 minutes</span>
+              <span class="pill" data-duration="5">5 minutes</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="durationMinutes" value="12" />
-              <span class="pill">12 minutes</span>
+              <span class="pill" data-duration="12">12 minutes</span>
             </label>
           </div>
         </label>
 
         <label>
-          Language
-          <div class="pill-group" role="radiogroup" aria-label="Language">
+          <span id="label-language">Language</span>
+          <div class="pill-group" role="radiogroup" aria-label="Language" id="group-language">
             <label class="pill-option">
               <input type="radio" name="language" value="en" checked required />
-              <span class="pill">English</span>
+              <span class="pill" data-language="en">English</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="language" value="es" />
-              <span class="pill">Spanish</span>
+              <span class="pill" data-language="es">Spanish</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="language" value="fr" />
-              <span class="pill">French</span>
+              <span class="pill" data-language="fr">French</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="language" value="de" />
-              <span class="pill">German</span>
+              <span class="pill" data-language="de">German</span>
             </label>
           </div>
         </label>
 
         <label>
-          Voice
-          <div class="pill-group" role="radiogroup" aria-label="Voice">
+          <span id="label-voice">Voice</span>
+          <div class="pill-group" role="radiogroup" aria-label="Voice" id="group-voice">
             <label class="pill-option">
               <input type="radio" name="voiceGender" value="female" checked />
               <span class="pill" data-voice-label="female">Alloy</span>
@@ -384,9 +384,10 @@
             </label>
           </div>
           <div class="voice-preview">
-            <span class="option-hint">Choose the voice you prefer for guidance.</span>
+            <span class="option-hint" id="voice-help">Choose the voice you prefer for guidance.</span>
             <button type="button" id="voice-preview-button">
-              Preview <span id="voice-preview-icon" aria-hidden="true">▶</span>
+              <span id="voice-preview-text">Preview</span>
+              <span id="voice-preview-icon" aria-hidden="true">▶</span>
             </button>
           </div>
           <audio id="voice-preview-audio" hidden></audio>
@@ -395,9 +396,10 @@
 
         <label>
           <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
-            Audio delivery
+            <span id="label-audio-delivery">Audio delivery</span>
             <span
               class="info-icon"
+              id="audio-delivery-info"
               aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
               data-tooltip="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
               tabindex="0"
@@ -406,14 +408,14 @@
             </span>
           </span>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-            <div class="pill-group" role="radiogroup" aria-label="Audio delivery">
+            <div class="pill-group" role="radiogroup" aria-label="Audio delivery" id="group-audio-delivery">
               <label class="pill-option">
                 <input type="radio" name="audioDelivery" value="generate" checked />
-                <span class="pill">Generate</span>
+                <span class="pill" data-i18n="form.audio_delivery.generate">Generate</span>
               </label>
               <label class="pill-option">
                 <input type="radio" name="audioDelivery" value="stream" />
-                <span class="pill">Stream</span>
+                <span class="pill" data-i18n="form.audio_delivery.stream">Stream</span>
               </label>
             </div>
           </div>
@@ -421,13 +423,13 @@
 
         <div id="dev-controls" hidden>
           <label>
-            TTS newline pause (seconds)
+            <span id="label-tts-newline">TTS newline pause (seconds)</span>
             <input type="number" name="ttsNewlinePauseSeconds" min="0" step="0.5" value="1.5" />
           </label>
 
           <label>
-            <span>Debug TTS prompt</span>
-            <span class="hint">Include the raw TTS payload for OpenAI playground testing.</span>
+            <span id="label-debug-tts">Debug TTS prompt</span>
+            <span class="hint" id="debug-tts-help">Include the raw TTS payload for OpenAI playground testing.</span>
             <input type="checkbox" name="debugTtsPrompt" />
           </label>
         </div>
@@ -451,7 +453,7 @@
       <div id="error" class="error" hidden></div>
 
       <section id="result" class="result" hidden>
-        <h2>Your session is ready</h2>
+        <h2 id="result-title">Your session is ready</h2>
         <audio id="audio-player" controls style="width: 100%;" hidden></audio>
         <a id="download-link" class="download-link" download="pq-reps.wav" hidden>
           Download the audio
@@ -461,12 +463,12 @@
         </a>
         <p id="script-output" style="margin-top: 1rem; white-space: pre-line;" hidden></p>
         <div id="debug-section" hidden>
-          <h3>TTS prompt (debug)</h3>
+          <h3 id="debug-title">TTS prompt (debug)</h3>
           <pre id="debug-output" class="debug-prompt"></pre>
         </div>
       </section>
 
-      <footer class="footer">
+      <footer class="footer" id="footer-text">
         Inspired by publicly available teachings on Positive Intelligence® and PQ Reps® by Shirzad
         Chamine. Not affiliated with or endorsed by Positive Intelligence LLC. For educational
         purposes only.
@@ -490,7 +492,31 @@
       const scriptOutput = document.getElementById("script-output");
       const submitButton = document.getElementById("submit-button");
       const debugInput = form.querySelector("input[name='debugTtsPrompt']");
+      const appTitle = document.getElementById("app-title");
       const appVersion = document.getElementById("app-version");
+      const appDescription = document.getElementById("app-description");
+      const appAiNotice = document.getElementById("app-ai-notice");
+      const labelPracticeType = document.getElementById("label-practice-type");
+      const labelFocus = document.getElementById("label-focus");
+      const labelDuration = document.getElementById("label-duration");
+      const labelLanguage = document.getElementById("label-language");
+      const labelVoice = document.getElementById("label-voice");
+      const voiceHelp = document.getElementById("voice-help");
+      const voicePreviewText = document.getElementById("voice-preview-text");
+      const labelAudioDelivery = document.getElementById("label-audio-delivery");
+      const audioDeliveryInfo = document.getElementById("audio-delivery-info");
+      const labelTtsNewline = document.getElementById("label-tts-newline");
+      const labelDebugTts = document.getElementById("label-debug-tts");
+      const debugTtsHelp = document.getElementById("debug-tts-help");
+      const resultTitle = document.getElementById("result-title");
+      const debugTitle = document.getElementById("debug-title");
+      const footerText = document.getElementById("footer-text");
+      const groupPracticeType = document.getElementById("group-practice-type");
+      const groupFocus = document.getElementById("group-focus");
+      const groupDuration = document.getElementById("group-duration");
+      const groupLanguage = document.getElementById("group-language");
+      const groupVoice = document.getElementById("group-voice");
+      const groupAudioDelivery = document.getElementById("group-audio-delivery");
       const resetButton = document.getElementById("reset-button");
       const debugSection = document.getElementById("debug-section");
       const debugOutput = document.getElementById("debug-output");
@@ -507,6 +533,248 @@
       const previewIcon = document.getElementById("voice-preview-icon");
       let previewPlaying = false;
       const isDevMode = new URLSearchParams(window.location.search).get("dev") === "1";
+      const FALLBACK_LOCALE = "en";
+      let versionState = "loading";
+      let versionValue = "unknown";
+
+      const TRANSLATIONS = {
+        en: {
+          "ui.title": "PQ Reps Audio Generator",
+          "ui.version.loading": "Version: loading...",
+          "ui.version.unavailable": "Version: unavailable",
+          "ui.version.label": "Version: {version}",
+          "ui.description": "Choose the type of PQ Reps you'd like to practice.",
+          "ui.ai_notice": "Audio is AI-generated.",
+          "ui.footer":
+            "Inspired by publicly available teachings on Positive Intelligence® and PQ Reps® by Shirzad Chamine. Not affiliated with or endorsed by Positive Intelligence LLC. For educational purposes only.",
+          "form.practice_type": "Practice type",
+          "form.practice_type.still_eyes_closed": "Still (Eyes closed)",
+          "form.practice_type.still_eyes_open": "Still (Eyes open)",
+          "form.practice_type.moving": "Moving",
+          "form.practice_type.labeling": "Labeling",
+          "form.focus": "Focus",
+          "form.focus.touch": "Touch",
+          "form.focus.hearing": "Hearing",
+          "form.focus.sight": "Sight",
+          "form.focus.breath": "Breath",
+          "form.duration": "Duration",
+          "form.duration.minutes": "{count} minute{suffix}",
+          "form.language": "Language",
+          "form.language.en": "English",
+          "form.language.es": "Spanish",
+          "form.language.fr": "French",
+          "form.language.de": "German",
+          "form.voice": "Voice",
+          "form.voice.help": "Choose the voice you prefer for guidance.",
+          "form.voice.preview": "Preview",
+          "form.audio_delivery": "Audio delivery",
+          "form.audio_delivery.help":
+            "Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.",
+          "form.audio_delivery.generate": "Generate",
+          "form.audio_delivery.stream": "Stream",
+          "form.tts_newline_pause": "TTS newline pause (seconds)",
+          "form.debug_tts_prompt": "Debug TTS prompt",
+          "form.debug_tts_prompt.help":
+            "Include the raw TTS payload for OpenAI playground testing.",
+          "form.submit": "Prepare PQ Reps",
+          "form.reset": "Reset to defaults",
+          "status.preparing": "Preparing PQ Reps audio. This can take a few seconds.",
+          "result.title": "Your session is ready",
+          "result.download_audio": "Download the audio",
+          "result.download_text": "Download the text",
+          "result.debug_title": "TTS prompt (debug)",
+          "errors.unknown": "Something went wrong.",
+          "errors.generator_failed": "The generator failed to respond.",
+          "errors.generator_failed_status": "The generator failed to respond. ({status})",
+          "errors.streaming_unavailable": "Streaming updates are not available.",
+          "errors.stream_ended": "The stream ended before returning a response.",
+          "errors.streaming_failed": "Streaming failed.",
+          "errors.audio_stream_failed": "Audio stream failed.",
+          "errors.append_audio_chunk_failed": "Failed to append audio chunk.",
+          "errors.audio_stream_no_data": "Audio stream ended before data arrived.",
+          "errors.preview_failed": "Preview failed.",
+          "errors.preview_failed_status": "Preview failed ({status}).",
+        },
+        es: {
+          "ui.title": "Generador de audio de PQ Reps",
+          "ui.version.loading": "Versión: cargando...",
+          "ui.version.unavailable": "Versión: no disponible",
+          "ui.version.label": "Versión: {version}",
+          "ui.description": "Elige el tipo de PQ Reps que quieres practicar.",
+          "ui.ai_notice": "El audio está generado por IA.",
+          "ui.footer":
+            "Inspirado en enseñanzas públicas sobre Positive Intelligence® y PQ Reps® de Shirzad Chamine. No afiliado ni avalado por Positive Intelligence LLC. Solo con fines educativos.",
+          "form.practice_type": "Tipo de práctica",
+          "form.practice_type.still_eyes_closed": "Quieto (ojos cerrados)",
+          "form.practice_type.still_eyes_open": "Quieto (ojos abiertos)",
+          "form.practice_type.moving": "En movimiento",
+          "form.practice_type.labeling": "Etiquetado",
+          "form.focus": "Enfoque",
+          "form.focus.touch": "Tacto",
+          "form.focus.hearing": "Oído",
+          "form.focus.sight": "Vista",
+          "form.focus.breath": "Respiración",
+          "form.duration": "Duración",
+          "form.duration.minutes": "{count} minuto{suffix}",
+          "form.language": "Idioma",
+          "form.language.en": "Inglés",
+          "form.language.es": "Español",
+          "form.language.fr": "Francés",
+          "form.language.de": "Alemán",
+          "form.voice": "Voz",
+          "form.voice.help": "Elige la voz que prefieres para la guía.",
+          "form.voice.preview": "Vista previa",
+          "form.audio_delivery": "Entrega de audio",
+          "form.audio_delivery.help":
+            "La transmisión inicia la reproducción antes, pero puede ser menos fiable con conexiones inestables y limitar la búsqueda o la reproducción sin conexión.",
+          "form.audio_delivery.generate": "Generar",
+          "form.audio_delivery.stream": "Transmitir",
+          "form.tts_newline_pause": "Pausa de salto de línea de TTS (segundos)",
+          "form.debug_tts_prompt": "Depurar prompt de TTS",
+          "form.debug_tts_prompt.help":
+            "Incluye la carga útil de TTS sin procesar para pruebas en OpenAI playground.",
+          "form.submit": "Preparar PQ Reps",
+          "form.reset": "Restablecer valores",
+          "status.preparing":
+            "Preparando el audio de PQ Reps. Esto puede tardar unos segundos.",
+          "result.title": "Tu sesión está lista",
+          "result.download_audio": "Descargar el audio",
+          "result.download_text": "Descargar el texto",
+          "result.debug_title": "Prompt de TTS (depuración)",
+          "errors.unknown": "Algo salió mal.",
+          "errors.generator_failed": "El generador no respondió.",
+          "errors.generator_failed_status": "El generador no respondió. ({status})",
+          "errors.streaming_unavailable":
+            "Las actualizaciones en streaming no están disponibles.",
+          "errors.stream_ended": "La transmisión terminó antes de devolver una respuesta.",
+          "errors.streaming_failed": "La transmisión falló.",
+          "errors.audio_stream_failed": "Falló la transmisión de audio.",
+          "errors.append_audio_chunk_failed": "No se pudo añadir el fragmento de audio.",
+          "errors.audio_stream_no_data":
+            "La transmisión de audio terminó antes de que llegaran datos.",
+          "errors.preview_failed": "Falló la vista previa.",
+          "errors.preview_failed_status": "Falló la vista previa ({status}).",
+        },
+        fr: {
+          "ui.title": "Générateur audio PQ Reps",
+          "ui.version.loading": "Version : chargement...",
+          "ui.version.unavailable": "Version : indisponible",
+          "ui.version.label": "Version : {version}",
+          "ui.description": "Choisissez le type de PQ Reps que vous souhaitez pratiquer.",
+          "ui.ai_notice": "L'audio est généré par IA.",
+          "ui.footer":
+            "Inspiré d'enseignements publics sur Positive Intelligence® et PQ Reps® de Shirzad Chamine. Non affilié ni approuvé par Positive Intelligence LLC. À des fins éducatives uniquement.",
+          "form.practice_type": "Type de pratique",
+          "form.practice_type.still_eyes_closed": "Immobile (yeux fermés)",
+          "form.practice_type.still_eyes_open": "Immobile (yeux ouverts)",
+          "form.practice_type.moving": "En mouvement",
+          "form.practice_type.labeling": "Étiquetage",
+          "form.focus": "Focus",
+          "form.focus.touch": "Toucher",
+          "form.focus.hearing": "Ouïe",
+          "form.focus.sight": "Vue",
+          "form.focus.breath": "Respiration",
+          "form.duration": "Durée",
+          "form.duration.minutes": "{count} minute{suffix}",
+          "form.language": "Langue",
+          "form.language.en": "Anglais",
+          "form.language.es": "Espagnol",
+          "form.language.fr": "Français",
+          "form.language.de": "Allemand",
+          "form.voice": "Voix",
+          "form.voice.help": "Choisissez la voix que vous préférez pour la guidance.",
+          "form.voice.preview": "Aperçu",
+          "form.audio_delivery": "Diffusion audio",
+          "form.audio_delivery.help":
+            "La diffusion démarre plus tôt, mais peut être moins fiable sur des connexions instables et limiter la recherche ou l'écoute hors ligne.",
+          "form.audio_delivery.generate": "Générer",
+          "form.audio_delivery.stream": "Diffuser",
+          "form.tts_newline_pause": "Pause de retour à la ligne TTS (secondes)",
+          "form.debug_tts_prompt": "Déboguer le prompt TTS",
+          "form.debug_tts_prompt.help":
+            "Inclure la charge utile TTS brute pour les tests OpenAI playground.",
+          "form.submit": "Préparer PQ Reps",
+          "form.reset": "Réinitialiser",
+          "status.preparing":
+            "Préparation de l'audio PQ Reps. Cela peut prendre quelques secondes.",
+          "result.title": "Votre session est prête",
+          "result.download_audio": "Télécharger l'audio",
+          "result.download_text": "Télécharger le texte",
+          "result.debug_title": "Prompt TTS (debug)",
+          "errors.unknown": "Une erreur est survenue.",
+          "errors.generator_failed": "Le générateur n'a pas répondu.",
+          "errors.generator_failed_status": "Le générateur n'a pas répondu. ({status})",
+          "errors.streaming_unavailable":
+            "Les mises à jour en streaming ne sont pas disponibles.",
+          "errors.stream_ended": "Le flux s'est terminé avant d'envoyer une réponse.",
+          "errors.streaming_failed": "Le streaming a échoué.",
+          "errors.audio_stream_failed": "Le flux audio a échoué.",
+          "errors.append_audio_chunk_failed": "Impossible d'ajouter le fragment audio.",
+          "errors.audio_stream_no_data":
+            "Le flux audio s'est terminé avant l'arrivée des données.",
+          "errors.preview_failed": "L'aperçu a échoué.",
+          "errors.preview_failed_status": "L'aperçu a échoué ({status}).",
+        },
+        de: {
+          "ui.title": "PQ Reps Audio-Generator",
+          "ui.version.loading": "Version: wird geladen...",
+          "ui.version.unavailable": "Version: nicht verfügbar",
+          "ui.version.label": "Version: {version}",
+          "ui.description": "Wähle die Art der PQ Reps, die du üben möchtest.",
+          "ui.ai_notice": "Audio wird von KI erzeugt.",
+          "ui.footer":
+            "Inspiriert von öffentlich verfügbaren Lehren zu Positive Intelligence® und PQ Reps® von Shirzad Chamine. Nicht verbunden oder unterstützt von Positive Intelligence LLC. Nur zu Bildungszwecken.",
+          "form.practice_type": "Praxisart",
+          "form.practice_type.still_eyes_closed": "Still (Augen geschlossen)",
+          "form.practice_type.still_eyes_open": "Still (Augen offen)",
+          "form.practice_type.moving": "In Bewegung",
+          "form.practice_type.labeling": "Benennen",
+          "form.focus": "Fokus",
+          "form.focus.touch": "Berührung",
+          "form.focus.hearing": "Hören",
+          "form.focus.sight": "Sehen",
+          "form.focus.breath": "Atmung",
+          "form.duration": "Dauer",
+          "form.duration.minutes": "{count} Minute{suffix}",
+          "form.language": "Sprache",
+          "form.language.en": "Englisch",
+          "form.language.es": "Spanisch",
+          "form.language.fr": "Französisch",
+          "form.language.de": "Deutsch",
+          "form.voice": "Stimme",
+          "form.voice.help": "Wähle die Stimme, die du für die Anleitung bevorzugst.",
+          "form.voice.preview": "Vorschau",
+          "form.audio_delivery": "Audioübertragung",
+          "form.audio_delivery.help":
+            "Streaming startet die Wiedergabe früher, kann aber bei instabilen Verbindungen unzuverlässiger sein und das Suchen oder Offline-Hören einschränken.",
+          "form.audio_delivery.generate": "Erzeugen",
+          "form.audio_delivery.stream": "Streamen",
+          "form.tts_newline_pause": "TTS-Zeilenumbruchpause (Sekunden)",
+          "form.debug_tts_prompt": "TTS-Prompt debuggen",
+          "form.debug_tts_prompt.help":
+            "Fügt die rohe TTS-Nutzlast für Tests im OpenAI Playground hinzu.",
+          "form.submit": "PQ Reps vorbereiten",
+          "form.reset": "Auf Standard zurücksetzen",
+          "status.preparing":
+            "PQ-Reps-Audio wird vorbereitet. Das kann ein paar Sekunden dauern.",
+          "result.title": "Deine Sitzung ist bereit",
+          "result.download_audio": "Audio herunterladen",
+          "result.download_text": "Text herunterladen",
+          "result.debug_title": "TTS-Prompt (Debug)",
+          "errors.unknown": "Es ist ein Fehler aufgetreten.",
+          "errors.generator_failed": "Der Generator hat nicht geantwortet.",
+          "errors.generator_failed_status": "Der Generator hat nicht geantwortet. ({status})",
+          "errors.streaming_unavailable": "Streaming-Updates sind nicht verfügbar.",
+          "errors.stream_ended": "Der Stream endete, bevor eine Antwort zurückkam.",
+          "errors.streaming_failed": "Streaming fehlgeschlagen.",
+          "errors.audio_stream_failed": "Audio-Stream fehlgeschlagen.",
+          "errors.append_audio_chunk_failed": "Audio-Chunk konnte nicht hinzugefügt werden.",
+          "errors.audio_stream_no_data":
+            "Der Audio-Stream endete, bevor Daten ankamen.",
+          "errors.preview_failed": "Vorschau fehlgeschlagen.",
+          "errors.preview_failed_status": "Vorschau fehlgeschlagen ({status}).",
+        },
+      };
 
       if (devControls) {
         devControls.hidden = !isDevMode;
@@ -573,6 +841,170 @@
           return "guided_rotation";
         }
         return "none";
+      };
+
+      const resolveLocale = (value) => {
+        if (!value) {
+          return FALLBACK_LOCALE;
+        }
+        const normalized = value.toLowerCase();
+        const base = normalized.split("-")[0];
+        return TRANSLATIONS[base] ? base : FALLBACK_LOCALE;
+      };
+
+      const getCurrentLocale = () => resolveLocale(getSelectedValue("language") || FALLBACK_LOCALE);
+
+      const translate = (key, params = {}, locale = getCurrentLocale()) => {
+        const template =
+          TRANSLATIONS[locale]?.[key] ?? TRANSLATIONS[FALLBACK_LOCALE]?.[key] ?? key;
+        return Object.entries(params).reduce(
+          (result, [paramKey, value]) =>
+            result.replaceAll(`{${paramKey}}`, String(value)),
+          template,
+        );
+      };
+
+      const formatDurationLabel = (minutes, locale = getCurrentLocale()) => {
+        let suffix = "s";
+        if (locale === "de") {
+          suffix = minutes === 1 ? "" : "n";
+        } else if (minutes === 1) {
+          suffix = "";
+        }
+        return translate("form.duration.minutes", { count: minutes, suffix }, locale);
+      };
+
+      const updateVersionText = () => {
+        if (!appVersion) {
+          return;
+        }
+        const locale = getCurrentLocale();
+        if (versionState === "loaded") {
+          appVersion.textContent = translate(
+            "ui.version.label",
+            { version: versionValue },
+            locale,
+          );
+          return;
+        }
+        if (versionState === "error") {
+          appVersion.textContent = translate("ui.version.unavailable", {}, locale);
+          return;
+        }
+        appVersion.textContent = translate("ui.version.loading", {}, locale);
+      };
+
+      const applyTranslations = () => {
+        const locale = getCurrentLocale();
+        document.documentElement.lang = locale;
+        if (appTitle) {
+          appTitle.textContent = translate("ui.title", {}, locale);
+        }
+        if (appDescription) {
+          appDescription.textContent = translate("ui.description", {}, locale);
+        }
+        if (appAiNotice) {
+          appAiNotice.textContent = translate("ui.ai_notice", {}, locale);
+        }
+        if (labelPracticeType) {
+          labelPracticeType.textContent = translate("form.practice_type", {}, locale);
+        }
+        if (labelFocus) {
+          labelFocus.textContent = translate("form.focus", {}, locale);
+        }
+        if (labelDuration) {
+          labelDuration.textContent = translate("form.duration", {}, locale);
+        }
+        if (labelLanguage) {
+          labelLanguage.textContent = translate("form.language", {}, locale);
+        }
+        if (labelVoice) {
+          labelVoice.textContent = translate("form.voice", {}, locale);
+        }
+        if (voiceHelp) {
+          voiceHelp.textContent = translate("form.voice.help", {}, locale);
+        }
+        if (voicePreviewText) {
+          voicePreviewText.textContent = translate("form.voice.preview", {}, locale);
+        }
+        if (labelAudioDelivery) {
+          labelAudioDelivery.textContent = translate("form.audio_delivery", {}, locale);
+        }
+        if (audioDeliveryInfo) {
+          const helpText = translate("form.audio_delivery.help", {}, locale);
+          audioDeliveryInfo.setAttribute("aria-label", helpText);
+          audioDeliveryInfo.setAttribute("data-tooltip", helpText);
+        }
+        if (labelTtsNewline) {
+          labelTtsNewline.textContent = translate("form.tts_newline_pause", {}, locale);
+        }
+        if (labelDebugTts) {
+          labelDebugTts.textContent = translate("form.debug_tts_prompt", {}, locale);
+        }
+        if (debugTtsHelp) {
+          debugTtsHelp.textContent = translate("form.debug_tts_prompt.help", {}, locale);
+        }
+        if (submitButton) {
+          submitButton.textContent = translate("form.submit", {}, locale);
+        }
+        if (resetButton) {
+          resetButton.textContent = translate("form.reset", {}, locale);
+        }
+        if (resultTitle) {
+          resultTitle.textContent = translate("result.title", {}, locale);
+        }
+        if (downloadLink) {
+          downloadLink.textContent = translate("result.download_audio", {}, locale);
+        }
+        if (scriptDownloadLink) {
+          scriptDownloadLink.textContent = translate("result.download_text", {}, locale);
+        }
+        if (debugTitle) {
+          debugTitle.textContent = translate("result.debug_title", {}, locale);
+        }
+        if (footerText) {
+          footerText.textContent = translate("ui.footer", {}, locale);
+        }
+        if (groupPracticeType) {
+          groupPracticeType.setAttribute("aria-label", translate("form.practice_type", {}, locale));
+        }
+        if (groupFocus) {
+          groupFocus.setAttribute("aria-label", translate("form.focus", {}, locale));
+        }
+        if (groupDuration) {
+          groupDuration.setAttribute("aria-label", translate("form.duration", {}, locale));
+        }
+        if (groupLanguage) {
+          groupLanguage.setAttribute("aria-label", translate("form.language", {}, locale));
+        }
+        if (groupVoice) {
+          groupVoice.setAttribute("aria-label", translate("form.voice", {}, locale));
+        }
+        if (groupAudioDelivery) {
+          groupAudioDelivery.setAttribute("aria-label", translate("form.audio_delivery", {}, locale));
+        }
+        document.querySelectorAll("[data-i18n]").forEach((element) => {
+          const key = element.getAttribute("data-i18n");
+          if (!key) {
+            return;
+          }
+          element.textContent = translate(key, {}, locale);
+        });
+        document.querySelectorAll("[data-language]").forEach((element) => {
+          const langKey = element.getAttribute("data-language");
+          if (!langKey) {
+            return;
+          }
+          element.textContent = translate(`form.language.${langKey}`, {}, locale);
+        });
+        document.querySelectorAll("[data-duration]").forEach((element) => {
+          const value = Number(element.getAttribute("data-duration"));
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          element.textContent = formatDurationLabel(value, locale);
+        });
+        updateVersionText();
       };
 
       const formatTimestamp = (date) => {
@@ -866,6 +1298,7 @@
 
       updateDerivedFields();
       updateVoiceLabels();
+      applyTranslations();
       durationInputs.forEach((input) => {
         input.addEventListener("change", updateDerivedFields);
       });
@@ -873,7 +1306,10 @@
         input.addEventListener("change", updateDerivedFields);
       });
       form.querySelectorAll("input[name='language']").forEach((input) => {
-        input.addEventListener("change", updateVoiceLabels);
+        input.addEventListener("change", () => {
+          updateVoiceLabels();
+          applyTranslations();
+        });
       });
 
       const setPreviewIcon = (state) => {
@@ -942,7 +1378,9 @@
             }),
           });
           if (!response.ok) {
-            throw new Error(`Preview failed (${response.status}).`);
+            throw new Error(
+              translate("errors.preview_failed_status", { status: response.status }),
+            );
           }
           const contentType = response.headers.get("content-type") || "audio/wav";
           const audioBuffer = await response.arrayBuffer();
@@ -966,7 +1404,9 @@
         } catch (error) {
           previewPlaying = false;
           setPreviewIcon("idle");
-          setPreviewError(error instanceof Error ? error.message : "Preview failed.");
+          setPreviewError(
+            error instanceof Error ? error.message : translate("errors.preview_failed"),
+          );
         } finally {
           previewButton.disabled = false;
         }
@@ -982,15 +1422,20 @@
         if (!appVersion) {
           return;
         }
+        versionState = "loading";
+        updateVersionText();
         try {
           const response = await fetch("/version");
           if (!response.ok) {
-            throw new Error("Version unavailable.");
+            throw new Error("version_unavailable");
           }
           const data = await response.json();
-          appVersion.textContent = `Version: ${data?.version || "unknown"}`;
+          versionValue = data?.version || "unknown";
+          versionState = "loaded";
+          updateVersionText();
         } catch (err) {
-          appVersion.textContent = "Version: unavailable";
+          versionState = "error";
+          updateVersionText();
         }
       };
 
@@ -999,6 +1444,7 @@
         setFormValues(defaultValues);
         updateDerivedFields();
         updateVoiceLabels();
+        applyTranslations();
         localStorage.removeItem(storageKey);
       });
 
@@ -1073,7 +1519,7 @@
         submitButton.disabled = true;
         statusPanel.hidden = false;
         spinner.hidden = false;
-        status.textContent = "Preparing PQ Reps audio. This can take a few seconds.";
+        status.textContent = translate("status.preparing");
 
         const requestJson = async (outputMode) => {
           const response = await fetch("/api/generate", {
@@ -1087,7 +1533,9 @@
 
           if (!response.ok) {
             const errorBody = await response.json();
-            throw new Error(errorBody?.error?.message || "The generator failed to respond.");
+            throw new Error(
+              errorBody?.error?.message || translate("errors.generator_failed"),
+            );
           }
 
           return response.json();
@@ -1107,13 +1555,17 @@
             const errorContentType = response.headers.get("content-type") || "";
             if (errorContentType.includes("application/json")) {
               const errorBody = await response.json();
-              throw new Error(errorBody?.error?.message || "The generator failed to respond.");
+              throw new Error(
+                errorBody?.error?.message || translate("errors.generator_failed"),
+              );
             }
-            throw new Error(`The generator failed to respond. (${response.status})`);
+            throw new Error(
+              translate("errors.generator_failed_status", { status: response.status }),
+            );
           }
 
           if (!response.body) {
-            throw new Error("Streaming updates are not available.");
+            throw new Error(translate("errors.streaming_unavailable"));
           }
 
           const reader = response.body.getReader();
@@ -1153,13 +1605,13 @@
               } else if (eventType === "done") {
                 finalPayload = JSON.parse(data);
               } else if (eventType === "error") {
-                throw new Error(data || "Streaming failed.");
+                throw new Error(data || translate("errors.streaming_failed"));
               }
             }
           }
 
           if (!finalPayload) {
-            throw new Error("The stream ended before returning a response.");
+            throw new Error(translate("errors.stream_ended"));
           }
 
           return finalPayload;
@@ -1180,9 +1632,13 @@
             const errorContentType = response.headers.get("content-type") || "";
             if (errorContentType.includes("application/json")) {
               const errorBody = await response.json();
-              throw new Error(errorBody?.error?.message || "The generator failed to respond.");
+              throw new Error(
+                errorBody?.error?.message || translate("errors.generator_failed"),
+              );
             }
-            throw new Error(`The generator failed to respond. (${response.status})`);
+            throw new Error(
+              translate("errors.generator_failed_status", { status: response.status }),
+            );
           }
 
           const contentType = response.headers.get("content-type") || "audio/wav";
@@ -1225,7 +1681,8 @@
             try {
               notifyStreamStart();
               await new Promise((resolve, reject) => {
-                const handleError = () => reject(new Error("Audio stream failed."));
+                const handleError = () =>
+                  reject(new Error(translate("errors.audio_stream_failed")));
 
                 mediaSource.addEventListener("error", handleError, { once: true });
                 mediaSource.addEventListener(
@@ -1236,7 +1693,7 @@
                       const appendChunk = (chunk) =>
                         new Promise((appendResolve, appendReject) => {
                           const onError = () =>
-                            appendReject(new Error("Failed to append audio chunk."));
+                            appendReject(new Error(translate("errors.append_audio_chunk_failed")));
                           const onUpdateEnd = () => appendResolve();
                           sourceBuffer.addEventListener("error", onError, { once: true });
                           sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
@@ -1245,7 +1702,7 @@
 
                       const firstRead = await reader.read();
                       if (firstRead.done || !firstRead.value) {
-                        throw new Error("Audio stream ended before data arrived.");
+                        throw new Error(translate("errors.audio_stream_no_data"));
                       }
                       chunks.push(firstRead.value);
                       await appendChunk(firstRead.value);
@@ -1441,7 +1898,7 @@
           spinner.hidden = true;
         } catch (err) {
           error.hidden = false;
-          error.textContent = err instanceof Error ? err.message : "Something went wrong.";
+          error.textContent = err instanceof Error ? err.message : translate("errors.unknown");
           status.textContent = "";
           spinner.hidden = true;
         } finally {
