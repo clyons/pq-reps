@@ -29,7 +29,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [ ] Add common scenarios for PQ Reps which have their own settings / prompts
 - [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog"
 - [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min)
-- [ ] Update the WAV filenames to include "metadata" -- speaker, duration, focus, datetime
+- [x] Update the WAV filenames to include "metadata" -- speaker, duration, focus, datetime
 
 ## Streaming audio
 - `/api/tts` supports streaming WAV audio when you set the `x-tts-streaming: 1` header.
