@@ -24,6 +24,7 @@ export const SCRIPT_SYSTEM_PROMPT = [
   "- Normalize mind-wandering explicitly (“totally normal,” “not a sign of failure”)",
   "- Emphasize noticing physical sensations and letting go of thoughts",
   "Structure (must follow this order):",
+  "- Short introduction line that states the duration and primary sense (keep it natural, not templated)",
   "- Opening posture and safety instructions",
   "- Eyes open/closed instruction",
   "- Normalization of drifting attention",
