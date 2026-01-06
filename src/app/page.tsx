@@ -1126,7 +1126,7 @@ export default function HomePage() {
         padding: "2rem",
         maxWidth: 720,
         margin: "0 auto",
-        background: BRAND_COLORS.neutral.grayBase,
+        background: BRAND_COLORS.neutral.white,
         borderRadius: 16,
       }}
     >
@@ -1342,7 +1342,6 @@ export default function HomePage() {
             cursor: isLoading ? "not-allowed" : "pointer",
             fontWeight: 700,
             fontSize: "1.05rem",
-            boxShadow: `0 10px 20px ${BRAND_COLORS.neutral.black30}`,
           }}
         >
           {isLoading ? "Preparing PQ Reps…" : "Prepare PQ Reps"}
