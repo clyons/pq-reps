@@ -83,6 +83,9 @@ const MALE_VOICES_BY_LANGUAGE: Record<string, string> = {
   fr: "onyx",
 };
 
+const capitalize = (value: string) =>
+  value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
+
 const resolveVoiceForGender = (gender: FormState["voiceGender"], language: string) => {
   if (gender === "male") {
     return MALE_VOICES_BY_LANGUAGE[language] ?? "ash";
@@ -416,12 +419,87 @@ const deriveSenseRotation = (
   return "none" as const;
 };
 
+type PillOption = {
+  value: string;
+  label: string;
+  disabled?: boolean;
+};
+
+const pillGroupStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "0.5rem",
+};
+
+const pillLabelStyle: React.CSSProperties = {
+  position: "relative",
+  display: "inline-flex",
+  alignItems: "center",
+};
+
+const pillInputStyle: React.CSSProperties = {
+  position: "absolute",
+  opacity: 0,
+  pointerEvents: "none",
+};
+
+const getPillStyle = (checked: boolean, disabled?: boolean): React.CSSProperties => ({
+  padding: "0.5rem 0.9rem",
+  borderRadius: 999,
+  border: `1px solid ${checked ? "#111" : "#ccc"}`,
+  background: checked ? "#111" : "#f7f7f7",
+  color: checked ? "#fff" : "#111",
+  fontWeight: 600,
+  cursor: disabled ? "not-allowed" : "pointer",
+  opacity: disabled ? 0.5 : 1,
+  transition: "all 0.15s ease",
+});
+
+const PillRadioGroup = ({
+  name,
+  options,
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  name: string;
+  options: PillOption[];
+  value: string;
+  onChange: (value: string) => void;
+  ariaLabel: string;
+}) => (
+  <div role="radiogroup" aria-label={ariaLabel} style={pillGroupStyle}>
+    {options.map((option, index) => {
+      const checked = option.value === value;
+      return (
+        <label key={option.value} style={pillLabelStyle}>
+          <input
+            type="radio"
+            name={name}
+            value={option.value}
+            checked={checked}
+            required={index === 0}
+            disabled={option.disabled}
+            onChange={() => onChange(option.value)}
+            style={pillInputStyle}
+          />
+          <span style={getPillStyle(checked, option.disabled)}>{option.label}</span>
+        </label>
+      );
+    })}
+  </div>
+);
+
 export default function HomePage() {
   const [formState, setFormState] = useState<FormState>(DEFAULT_STATE);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [previewMessage, setPreviewMessage] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const previewAudioRef = useRef<HTMLAudioElement>(null);
 
   const isDevMode = process.env.NODE_ENV !== "production";
   const isLoading = status === "loading";
@@ -463,8 +541,11 @@ export default function HomePage() {
       if (result?.scriptDownloadUrl) {
         URL.revokeObjectURL(result.scriptDownloadUrl);
       }
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
     };
-  }, [result]);
+  }, [previewUrl, result]);
 
   useEffect(() => {
     if (!focusOptions.includes(formState.focus)) {
@@ -475,6 +556,46 @@ export default function HomePage() {
   const updateFormState = (updates: Partial<FormState>) => {
     setFormState((prev) => ({ ...prev, ...updates }));
   };
+
+  const practiceTypeOptions: PillOption[] = [
+    { value: "still_eyes_closed", label: "Still (Eyes closed)" },
+    { value: "still_eyes_open", label: "Still (Eyes open)" },
+    { value: "moving", label: "Moving" },
+    { value: "labeling", label: "Labeling" },
+  ];
+
+  const focusPillOptions: PillOption[] = focusOptions.map((option) => ({
+    value: option,
+    label:
+      option === "touch"
+        ? "Touch"
+        : option === "hearing"
+          ? "Hearing"
+          : option === "sight"
+            ? "Sight"
+            : "Breath",
+  }));
+
+  const durationPillOptions: PillOption[] = DURATION_OPTIONS.map((option) => ({
+    value: String(option),
+    label: formatDurationLabel(option),
+  }));
+
+  const languagePillOptions: PillOption[] = LANGUAGE_OPTIONS.map((option) => ({
+    value: option.value,
+    label: option.label,
+  }));
+
+  const voicePillOptions: PillOption[] = [
+    {
+      value: "female",
+      label: capitalize(resolveVoiceForGender("female", formState.language)),
+    },
+    {
+      value: "male",
+      label: capitalize(resolveVoiceForGender("male", formState.language)),
+    },
+  ];
 
   const validate = (state: FormState) => {
     const nextErrors: string[] = [];
@@ -885,6 +1006,52 @@ export default function HomePage() {
     }
   };
 
+  const handleVoicePreview = async () => {
+    const previewAudio = previewAudioRef.current;
+    if (!previewAudio) {
+      return;
+    }
+    const language = formState.language;
+    const voice = resolveVoiceForGender(formState.voiceGender, language);
+    setPreviewLoading(true);
+    setPreviewMessage("Loading preview...");
+    try {
+      const response = await fetch("/api/voice-preview", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "audio/wav",
+        },
+        body: JSON.stringify({
+          language,
+          voice,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`Preview failed (${response.status}).`);
+      }
+      const contentType = response.headers.get("content-type") ?? "audio/wav";
+      const audioBuffer = await response.arrayBuffer();
+      const audioBlob = new Blob([audioBuffer], { type: contentType });
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      const nextUrl = URL.createObjectURL(audioBlob);
+      setPreviewUrl(nextUrl);
+      previewAudio.src = nextUrl;
+      previewAudio.hidden = false;
+      setPreviewMessage("Playing preview...");
+      previewAudio.onended = () => {
+        setPreviewMessage(null);
+      };
+      await previewAudio.play();
+    } catch (error) {
+      setPreviewMessage(error instanceof Error ? error.message : "Preview failed.");
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   return (
     <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 720, margin: "0 auto" }}>
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>PQ Reps Generator</h1>
@@ -896,83 +1063,58 @@ export default function HomePage() {
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Practice type</span>
-          <select
+          <PillRadioGroup
             name="practiceType"
+            ariaLabel="Practice type"
+            options={practiceTypeOptions}
             value={formState.practiceType}
-            onChange={(event) =>
+            onChange={(value) =>
               updateFormState({
-                practiceType: event.target.value as FormState["practiceType"],
+                practiceType: value as FormState["practiceType"],
               })
             }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            <option value="still_eyes_closed">Still (Eyes closed)</option>
-            <option value="still_eyes_open">Still (Eyes open)</option>
-            <option value="moving">Moving</option>
-            <option value="labeling">Labeling</option>
-          </select>
+          />
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Focus</span>
-          <select
+          <PillRadioGroup
             name="focus"
+            ariaLabel="Focus"
+            options={focusPillOptions}
             value={formState.focus}
-            onChange={(event) =>
+            onChange={(value) =>
               updateFormState({
-                focus: event.target.value as FormState["focus"],
+                focus: value as FormState["focus"],
               })
             }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {focusOptions.map((option) => (
-              <option key={option} value={option}>
-                {option === "touch"
-                  ? "Touch"
-                  : option === "hearing"
-                    ? "Hearing"
-                    : option === "sight"
-                      ? "Sight"
-                      : "Breath"}
-              </option>
-            ))}
-          </select>
+          />
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Duration</span>
-          <select
+          <PillRadioGroup
             name="durationMinutes"
-            value={formState.durationMinutes}
-            onChange={(event) =>
+            ariaLabel="Duration"
+            options={durationPillOptions}
+            value={String(formState.durationMinutes)}
+            onChange={(value) =>
               updateFormState({
-                durationMinutes: Number(event.target.value) as FormState["durationMinutes"],
+                durationMinutes: Number(value) as FormState["durationMinutes"],
               })
             }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {DURATION_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {formatDurationLabel(option)}
-              </option>
-            ))}
-          </select>
+          />
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Language</span>
-          <select
+          <PillRadioGroup
             name="language"
+            ariaLabel="Language"
+            options={languagePillOptions}
             value={formState.language}
-            onChange={(event) => updateFormState({ language: event.target.value })}
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {LANGUAGE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => updateFormState({ language: value })}
+          />
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
@@ -980,17 +1122,36 @@ export default function HomePage() {
           <span style={{ fontSize: "0.9rem", color: "#555" }}>
             Choose the voice you prefer for guidance.
           </span>
-          <select
+          <PillRadioGroup
             name="voiceGender"
+            ariaLabel="Voice"
+            options={voicePillOptions}
             value={formState.voiceGender}
-            onChange={(event) =>
-              updateFormState({ voiceGender: event.target.value as FormState["voiceGender"] })
+            onChange={(value) =>
+              updateFormState({ voiceGender: value as FormState["voiceGender"] })
             }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+          />
+          <button
+            type="button"
+            onClick={() => handleVoicePreview()}
+            disabled={previewLoading}
+            style={{
+              justifySelf: "start",
+              padding: "0.4rem 0.9rem",
+              borderRadius: 999,
+              border: "1px solid #ccc",
+              background: "#fff",
+              color: "#111",
+              fontWeight: 600,
+              cursor: previewLoading ? "not-allowed" : "pointer",
+            }}
           >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
+            Preview &gt;
+          </button>
+          <audio ref={previewAudioRef} hidden />
+          {previewMessage && (
+            <span style={{ fontSize: "0.9rem", color: "#555" }}>{previewMessage}</span>
+          )}
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
