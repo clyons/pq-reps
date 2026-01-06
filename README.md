@@ -17,19 +17,21 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Build a configuration UI for sense, eyes, duration, and language.
 - [x] Add OpenAI TTS integration with direct audio bytes (no storage).
 - [x] Update prompts to generate on-brand PQ Reps scripts.
-- [x] Ensure text + audio uses a single generation pass to keep script/audio in sync.
 - [x] Improve the tone and pacing of PQ Reps scripts.
+- [x] Ensure text + audio uses a single generation pass to keep script/audio in sync.
 - [x] Add console disclosure when running against the OpenAI TTS API.
 - [x] Stream status updates with SSE for `/api/generate`.
-- [ ] Add user-facing AI-generated voice disclosure in the UI.
-- [ ] Add tests for prompt outline (API validation coverage exists in `tests/generate-api.test.ts`).
+- [x] Add user-facing AI-generated voice disclosure in the UI.
 - [x] Reduce latency by using the Speech API to support realtime audio streaming via chunked transfer encoding.
 - [x] Consider routing all audio (streamed and downloaded) through `/api/tts`.
+- [x] Update the WAV filenames to include "metadata" -- speaker, duration, focus, datetime
 - [ ] Replace drop-downs with pills or other friendlier UI elements
 - [ ] Add common scenarios for PQ Reps which have their own settings / prompts
 - [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog"
 - [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min)
-- [x] Update the WAV filenames to include "metadata" -- speaker, duration, focus, datetime
+- [ ] Add tests for prompt outline (API validation coverage exists in `tests/generate-api.test.ts`).
+- [ ] Secure the endpoints against unauthorised access
+- [ ] Remove duplicate newline pauses before passing to TTS
 
 ## Streaming audio
 - `/api/tts` supports streaming WAV audio when you set the `x-tts-streaming: 1` header.
