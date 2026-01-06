@@ -1298,22 +1298,24 @@ export default function HomePage() {
           type="submit"
           disabled={isLoading}
           style={{
-            padding: "0.85rem 1.5rem",
-            background: isLoading ? "#999" : "#111",
+            padding: "1.1rem 2.25rem",
+            background: isLoading ? "#8ac9ad" : "#63d9a0",
             color: "#fff",
             borderRadius: 999,
             border: "none",
             cursor: isLoading ? "not-allowed" : "pointer",
-            fontWeight: 600,
+            fontWeight: 700,
+            fontSize: "1.05rem",
+            boxShadow: "0 10px 20px rgba(99, 217, 160, 0.35)",
           }}
         >
-          {isLoading ? "Generating…" : "Generate"}
+          {isLoading ? "Preparing PQ Reps…" : "Prepare PQ Reps"}
         </button>
       </form>
 
       {status === "loading" && (
         <p style={{ marginTop: "1.5rem", color: "#555" }}>
-          Generating your session. This can take a few seconds.
+          Preparing your PQ Reps session. This can take a few seconds.
         </p>
       )}
 
