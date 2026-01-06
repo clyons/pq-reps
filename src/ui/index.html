@@ -195,10 +195,22 @@
       }
       .download-link {
         display: inline-flex;
-        margin-top: 0.75rem;
         font-weight: 600;
-        color: var(--color-primary-blue-dark);
+        color: var(--color-neutral-black);
         text-decoration: none;
+      }
+      .download-link.is-disabled {
+        color: var(--color-neutral-black-30);
+        pointer-events: none;
+      }
+      .download-links {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+      }
+      .download-separator {
+        color: var(--color-neutral-black);
       }
       .option-hint {
         font-weight: 400;
@@ -455,12 +467,25 @@
       <section id="result" class="result" hidden>
         <h2 id="result-title">Your session is ready</h2>
         <audio id="audio-player" controls style="width: 100%;" hidden></audio>
-        <a id="download-link" class="download-link" download="pq-reps.wav" hidden>
-          Download the audio
-        </a>
-        <a id="script-download-link" class="download-link" download="pq-reps.txt" hidden>
-          Download the text
-        </a>
+        <div class="download-links">
+          <a
+            id="download-link"
+            class="download-link is-disabled"
+            download="pq-reps.wav"
+            aria-disabled="true"
+          >
+            Download the audio
+          </a>
+          <span class="download-separator" aria-hidden="true"> | </span>
+          <a
+            id="script-download-link"
+            class="download-link is-disabled"
+            download="pq-reps.txt"
+            aria-disabled="true"
+          >
+            Download the text
+          </a>
+        </div>
         <p id="script-output" style="margin-top: 1rem; white-space: pre-line;" hidden></p>
         <div id="debug-section" hidden>
           <h3 id="debug-title">TTS prompt (debug)</h3>
@@ -779,6 +804,18 @@
       if (devControls) {
         devControls.hidden = !isDevMode;
       }
+
+      const setDownloadLinkState = (link, { enabled, href } = {}) => {
+        const isEnabled = Boolean(enabled);
+        link.classList.toggle("is-disabled", !isEnabled);
+        link.setAttribute("aria-disabled", String(!isEnabled));
+        link.tabIndex = isEnabled ? 0 : -1;
+        if (isEnabled && href) {
+          link.href = href;
+        } else {
+          link.removeAttribute("href");
+        }
+      };
 
       const derivePracticeConfig = (practiceType, durationMinutes) => {
         if (practiceType === "still_eyes_closed") {
@@ -1483,7 +1520,8 @@
         scriptOutput.textContent = "";
         debugOutput.textContent = "";
         debugSection.hidden = true;
-        scriptDownloadLink.hidden = true;
+        setDownloadLinkState(downloadLink, { enabled: false });
+        setDownloadLinkState(scriptDownloadLink, { enabled: false });
 
         if (currentUrl) {
           URL.revokeObjectURL(currentUrl);
@@ -1641,7 +1679,7 @@
           return finalPayload;
         };
 
-        const requestAudio = async (script, onStreamStart) => {
+        const requestAudio = async (script, { onStreamStart, onChunk } = {}) => {
           const response = await fetch("/api/tts", {
             method: "POST",
             headers: {
@@ -1683,7 +1721,10 @@
               reader,
               onStreamStart: (mediaStream) =>
                 onStreamStart?.({ mediaStream, contentType }),
-              onChunk: (chunk) => chunks.push(chunk),
+              onChunk: (chunk) => {
+                chunks.push(chunk);
+                onChunk?.(chunk, { contentType });
+              },
             });
             return { blob: new Blob(chunks, { type: contentType }), contentType };
           }
@@ -1729,6 +1770,7 @@
                         throw new Error(translate("errors.audio_stream_no_data"));
                       }
                       chunks.push(firstRead.value);
+                      onChunk?.(firstRead.value, { contentType });
                       await appendChunk(firstRead.value);
                       notifyStreamStart();
 
@@ -1739,6 +1781,7 @@
                         }
                         if (value) {
                           chunks.push(value);
+                          onChunk?.(value, { contentType });
                           await appendChunk(value);
                         }
                       }
@@ -1768,6 +1811,7 @@
             }
             if (value) {
               chunks.push(value);
+              onChunk?.(value, { contentType });
             }
           }
           return { blob: new Blob(chunks, { type: contentType }), contentType };
@@ -1795,39 +1839,71 @@
             scriptDownloadUrl = URL.createObjectURL(
               new Blob([cleanedScript], { type: "text/plain" }),
             );
-            scriptDownloadLink.href = scriptDownloadUrl;
             scriptDownloadLink.download = buildScriptDownloadFilename({
               voice: voiceStyle,
               durationMinutes,
               focus: primarySense,
             });
-            scriptDownloadLink.hidden = false;
+            setDownloadLinkState(scriptDownloadLink, { enabled: true, href: scriptDownloadUrl });
           }
           result.hidden = false;
-            const streamResponse = await requestAudio(script, ({ mediaUrl, mediaStream, contentType: streamContentType }) => {
-              streamUrl = mediaUrl;
-              if (mediaStream) {
-                audioPlayer.srcObject = mediaStream;
-                audioPlayer.play().catch(() => {});
-                audioPlayer.hidden = false;
-              } else if (mediaUrl) {
-                audioPlayer.srcObject = null;
-                audioPlayer.src = mediaUrl;
-                audioPlayer.play().catch(() => {});
-                audioPlayer.hidden = false;
-              }
-              status.textContent = "";
-            statusPanel.hidden = true;
-            spinner.hidden = true;
-              const downloadFilename = buildDownloadFilename({
-                voice: voiceStyle,
-                durationMinutes,
-                focus: primarySense,
-                extension: resolveAudioExtension(streamContentType),
-              });
-              downloadLink.download = downloadFilename;
-              downloadLink.hidden = true;
-              result.hidden = false;
+          const streamingChunks = [];
+          let streamContentType = null;
+          const enableDownloadFromChunks = () => {
+            if (!streamingChunks.length) {
+              return;
+            }
+            if (downloadUrl) {
+              URL.revokeObjectURL(downloadUrl);
+            }
+            const partialBlob = new Blob(streamingChunks, {
+              type: streamContentType || "audio/wav",
+            });
+            downloadUrl = URL.createObjectURL(partialBlob);
+            downloadLink.download = buildDownloadFilename({
+              voice: voiceStyle,
+              durationMinutes,
+              focus: primarySense,
+              extension: resolveAudioExtension(streamContentType || partialBlob.type),
+            });
+            setDownloadLinkState(downloadLink, { enabled: true, href: downloadUrl });
+          };
+            const streamResponse = await requestAudio(script, {
+              onStreamStart: ({ mediaUrl, mediaStream, contentType: streamResponseContentType }) => {
+                streamUrl = mediaUrl;
+                streamContentType = streamResponseContentType;
+                if (mediaStream) {
+                  audioPlayer.srcObject = mediaStream;
+                  audioPlayer.play().catch(() => {});
+                  audioPlayer.hidden = false;
+                } else if (mediaUrl) {
+                  audioPlayer.srcObject = null;
+                  audioPlayer.src = mediaUrl;
+                  audioPlayer.play().catch(() => {});
+                  audioPlayer.hidden = false;
+                }
+                status.textContent = "";
+                statusPanel.hidden = true;
+                spinner.hidden = true;
+                const downloadFilename = buildDownloadFilename({
+                  voice: voiceStyle,
+                  durationMinutes,
+                  focus: primarySense,
+                  extension: resolveAudioExtension(streamResponseContentType),
+                });
+                downloadLink.download = downloadFilename;
+                setDownloadLinkState(downloadLink, { enabled: false });
+                result.hidden = false;
+              },
+              onChunk: (chunk, { contentType }) => {
+                streamingChunks.push(chunk);
+                if (!streamContentType && contentType) {
+                  streamContentType = contentType;
+                }
+                if (streamingChunks.length === 1) {
+                  enableDownloadFromChunks();
+                }
+              },
             });
             audioBlob = streamResponse?.blob || null;
             if (streamResponse?.mediaUrl) {
@@ -1882,10 +1958,10 @@
               focus: primarySense,
               extension: resolveAudioExtension(audioBlob.type),
             });
-            downloadLink.hidden = false;
+            setDownloadLinkState(downloadLink, { enabled: true, href: downloadUrl });
           } else {
             audioPlayer.hidden = true;
-            downloadLink.hidden = true;
+            setDownloadLinkState(downloadLink, { enabled: false });
           }
 
           const cleanedScript = script ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim() : "";
@@ -1897,16 +1973,15 @@
               URL.revokeObjectURL(scriptDownloadUrl);
             }
             scriptDownloadUrl = URL.createObjectURL(new Blob([cleanedScript], { type: "text/plain" }));
-            scriptDownloadLink.href = scriptDownloadUrl;
             scriptDownloadLink.download = buildScriptDownloadFilename({
               voice: voiceStyle,
               durationMinutes,
               focus: primarySense,
             });
-            scriptDownloadLink.hidden = false;
+            setDownloadLinkState(scriptDownloadLink, { enabled: true, href: scriptDownloadUrl });
           } else {
             scriptOutput.hidden = true;
-            scriptDownloadLink.hidden = true;
+            setDownloadLinkState(scriptDownloadLink, { enabled: false });
           }
 
           if (ttsPrompt) {
