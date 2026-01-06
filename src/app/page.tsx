@@ -189,6 +189,7 @@ const streamWavViaWebAudio = async ({
         sampleRate: number;
       }
     | null = null;
+  let pendingPcmBytes = new Uint8Array(0);
   let headerBytes = new Uint8Array(0);
   let playbackStarted = false;
   let streamingEnabled = true;
@@ -226,9 +227,21 @@ const streamWavViaWebAudio = async ({
     if (!wavInfo || wavInfo.bitsPerSample !== 16) {
       return;
     }
-    const samples = new Float32Array(pcmBytes.length / 2);
-    for (let i = 0; i < pcmBytes.length; i += 2) {
-      const int16 = pcmBytes[i] | (pcmBytes[i + 1] << 8);
+    const frameSize = wavInfo.channels * (wavInfo.bitsPerSample / 8);
+    const combined = new Uint8Array(pendingPcmBytes.length + pcmBytes.length);
+    combined.set(pendingPcmBytes);
+    combined.set(pcmBytes, pendingPcmBytes.length);
+    const remainder = combined.length % frameSize;
+    const alignedLength = combined.length - remainder;
+    pendingPcmBytes =
+      remainder > 0 ? combined.slice(alignedLength) : new Uint8Array(0);
+    if (alignedLength === 0) {
+      return;
+    }
+    const alignedBytes = combined.slice(0, alignedLength);
+    const samples = new Float32Array(alignedBytes.length / 2);
+    for (let i = 0; i < alignedBytes.length; i += 2) {
+      const int16 = alignedBytes[i] | (alignedBytes[i + 1] << 8);
       const signed = int16 >= 0x8000 ? int16 - 0x10000 : int16;
       samples[i / 2] = signed / 32768;
     }
