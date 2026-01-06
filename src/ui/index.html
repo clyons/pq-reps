@@ -221,14 +221,14 @@
             </label>
           </div>
           <span class="option-hint">
-            Streaming starts playback sooner and fetches the script in a separate request.
+            Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.
           </span>
         </label>
 
         <div id="dev-controls" hidden>
           <label>
             TTS newline pause (seconds)
-            <input type="number" name="ttsNewlinePauseSeconds" min="0" step="0.5" value="2" />
+            <input type="number" name="ttsNewlinePauseSeconds" min="0" step="0.5" value="1.5" />
           </label>
 
           <label>
