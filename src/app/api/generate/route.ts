@@ -18,8 +18,6 @@ import { synthesizeSpeech, synthesizeSpeechStream, TTS_SYSTEM_PROMPT } from "../
 
 export const runtime = "nodejs";
 
-const PAUSE_MARKER_REGEX = /\[pause:(\d+(?:\.\d+)?)\]/gi;
-
 const formatTimestamp = (date: Date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -78,9 +76,6 @@ type SuccessResponse = {
   audioBase64?: string;
   audioContentType?: string;
 };
-
-const stripPauseMarkers = (script: string) =>
-  script.replace(PAUSE_MARKER_REGEX, "").replace(/\s{2,}/g, " ").trim();
 
 const createReadableStreamFromGenerator = (
   generator: AsyncGenerator<Buffer>,
@@ -144,10 +139,9 @@ export async function POST(request: Request) {
     const scriptStart = Date.now();
     const { script } = await generateScript({ prompt });
     console.info(`Script generation took ${Date.now() - scriptStart}ms.`);
-    const cleanedScript = stripPauseMarkers(script);
     if (outputMode === "text") {
       const response: SuccessResponse = {
-        script: cleanedScript,
+        script,
         metadata: {
           practiceMode: config.practiceMode,
           bodyState: config.bodyState,
@@ -206,7 +200,7 @@ export async function POST(request: Request) {
 
     if (outputMode === "text-audio") {
       const response: SuccessResponse = {
-        script: cleanedScript,
+        script,
         metadata: {
           practiceMode: config.practiceMode,
           bodyState: config.bodyState,

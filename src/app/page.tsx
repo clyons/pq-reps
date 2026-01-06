@@ -30,7 +30,7 @@ const DEFAULT_STATE: FormState = {
   durationMinutes: 2,
   language: "en",
   voiceGender: "female",
-  ttsNewlinePauseSeconds: 1,
+  ttsNewlinePauseSeconds: 2,
   debugTtsPrompt: false,
   streamAudio: false,
 };
