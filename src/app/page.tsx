@@ -21,7 +21,7 @@ type FormState = {
   voiceGender: "female" | "male";
   ttsNewlinePauseSeconds: number;
   debugTtsPrompt: boolean;
-  streamAudio: boolean;
+  audioDelivery: "generate" | "stream";
 };
 
 const DEFAULT_STATE: FormState = {
@@ -32,7 +32,7 @@ const DEFAULT_STATE: FormState = {
   voiceGender: "female",
   ttsNewlinePauseSeconds: 1.5,
   debugTtsPrompt: false,
-  streamAudio: false,
+  audioDelivery: "generate",
 };
 
 const useAudioSync = (
@@ -443,6 +443,38 @@ const pillInputStyle: React.CSSProperties = {
   pointerEvents: "none",
 };
 
+const infoIconStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 18,
+  height: 18,
+  borderRadius: 999,
+  border: "1px solid #b5b5b5",
+  color: "#555",
+  fontSize: "0.75rem",
+  fontWeight: 600,
+  cursor: "help",
+  position: "relative",
+};
+
+const infoTooltipStyle: React.CSSProperties = {
+  position: "absolute",
+  bottom: "calc(100% + 8px)",
+  left: "50%",
+  transform: "translateX(-50%)",
+  background: "#111",
+  color: "#fff",
+  padding: "0.4rem 0.6rem",
+  borderRadius: 8,
+  fontSize: "0.75rem",
+  fontWeight: 500,
+  whiteSpace: "nowrap",
+  pointerEvents: "none",
+  transition: "opacity 0.15s ease",
+  zIndex: 10,
+};
+
 const getPillStyle = (checked: boolean, disabled?: boolean): React.CSSProperties => ({
   padding: "0.5rem 0.9rem",
   borderRadius: 999,
@@ -499,6 +531,7 @@ export default function HomePage() {
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showAudioInfo, setShowAudioInfo] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
 
@@ -597,6 +630,10 @@ export default function HomePage() {
       label: capitalize(resolveVoiceForGender("male", formState.language)),
     },
   ];
+  const audioDeliveryOptions: PillOption[] = [
+    { value: "generate", label: "Generate" },
+    { value: "stream", label: "Stream" },
+  ];
 
   const validate = (state: FormState) => {
     const nextErrors: string[] = [];
@@ -622,7 +659,7 @@ export default function HomePage() {
 
     setStatus("loading");
 
-    const isStreamingAudio = formState.streamAudio;
+    const isStreamingAudio = formState.audioDelivery === "stream";
     const effectiveOutputMode = isStreamingAudio ? "audio" : "text-audio";
     const primarySense = focusOptions.includes(formState.focus)
       ? formState.focus
@@ -1176,19 +1213,38 @@ export default function HomePage() {
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Audio delivery</span>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <input
-              type="checkbox"
-              id="stream-audio"
-              checked={formState.streamAudio}
-              onChange={(event) => updateFormState({ streamAudio: event.target.checked })}
-            />
-            <label htmlFor="stream-audio">Stream audio as it is generated</label>
-          </div>
-          <span style={{ color: "#555", fontSize: "0.9rem" }}>
-            Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.
+          <span style={{ fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+            Audio delivery
+            <span
+              style={infoIconStyle}
+              aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+              tabIndex={0}
+              onMouseEnter={() => setShowAudioInfo(true)}
+              onMouseLeave={() => setShowAudioInfo(false)}
+              onFocus={() => setShowAudioInfo(true)}
+              onBlur={() => setShowAudioInfo(false)}
+            >
+              i
+              <span
+                style={{ ...infoTooltipStyle, opacity: showAudioInfo ? 1 : 0 }}
+                className="info-tooltip"
+                role="tooltip"
+              >
+                Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.
+              </span>
+            </span>
           </span>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+            <PillRadioGroup
+              name="audioDelivery"
+              ariaLabel="Audio delivery"
+              options={audioDeliveryOptions}
+              value={formState.audioDelivery}
+              onChange={(value) =>
+                updateFormState({ audioDelivery: value as FormState["audioDelivery"] })
+              }
+            />
+          </div>
         </label>
 
         {isDevMode && (
