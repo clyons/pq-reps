@@ -439,14 +439,17 @@ export async function synthesizeSpeechStream(
     let pendingPauseSeconds = 0;
     let headerSent = false;
     let hasAudio = false;
+    const emitPause = async function* (seconds: number) {
+      if (!format) {
+        pendingPauseSeconds += seconds;
+        return;
+      }
+      yield* chunkBuffer(createSilenceBuffer(seconds, format), chunkSize);
+    };
 
     for (const token of tokens) {
       if (token.type === "pause") {
-        if (format) {
-          yield* chunkBuffer(createSilenceBuffer(token.value, format), chunkSize);
-        } else {
-          pendingPauseSeconds += token.value;
-        }
+        yield* emitPause(token.value);
         continue;
       }
 
@@ -466,7 +469,7 @@ export async function synthesizeSpeechStream(
           yield* chunkBuffer(buildStreamingWavHeader(format), chunkSize);
         }
         if (pendingPauseSeconds > 0) {
-          yield* chunkBuffer(createSilenceBuffer(pendingPauseSeconds, format), chunkSize);
+          yield* emitPause(pendingPauseSeconds);
           pendingPauseSeconds = 0;
         }
       } else if (
