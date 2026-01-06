@@ -37,12 +37,48 @@
         gap: 0.5rem;
         font-weight: 600;
       }
-      input,
-      select {
+      input {
         padding: 0.75rem;
         border-radius: 8px;
         border: 1px solid #ccc;
         font-size: 1rem;
+      }
+      .pill-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .pill-option {
+        position: relative;
+      }
+      .pill-option input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid #ccc;
+        background: #f7f7f7;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .pill-option input:checked + .pill {
+        background: #111;
+        border-color: #111;
+        color: #fff;
+      }
+      .pill-option input:focus-visible + .pill {
+        outline: 2px solid #3545a3;
+        outline-offset: 2px;
+      }
+      .pill-option input:disabled + .pill {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       button {
         padding: 0.85rem 1.5rem;
@@ -165,50 +201,104 @@
       <form id="generator-form">
         <label>
           Practice type
-          <select name="practiceType" required>
-            <option value="still_eyes_closed">Still (Eyes closed)</option>
-            <option value="still_eyes_open">Still (Eyes open)</option>
-            <option value="moving">Moving</option>
-            <option value="labeling">Labeling</option>
-          </select>
+          <div class="pill-group" role="radiogroup" aria-label="Practice type">
+            <label class="pill-option">
+              <input type="radio" name="practiceType" value="still_eyes_closed" checked required />
+              <span class="pill">Still (Eyes closed)</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="practiceType" value="still_eyes_open" />
+              <span class="pill">Still (Eyes open)</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="practiceType" value="moving" />
+              <span class="pill">Moving</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="practiceType" value="labeling" />
+              <span class="pill">Labeling</span>
+            </label>
+          </div>
         </label>
 
         <label>
           Focus
-          <select name="focus" required>
-            <option value="touch">Touch</option>
-            <option value="hearing">Hearing</option>
-            <option value="sight">Sight</option>
-            <option value="breath">Breath</option>
-          </select>
+          <div class="pill-group" role="radiogroup" aria-label="Focus">
+            <label class="pill-option">
+              <input type="radio" name="focus" value="touch" checked required />
+              <span class="pill">Touch</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="focus" value="hearing" />
+              <span class="pill">Hearing</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="focus" value="sight" />
+              <span class="pill">Sight</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="focus" value="breath" />
+              <span class="pill">Breath</span>
+            </label>
+          </div>
         </label>
 
         <label>
           Duration
-          <select name="durationMinutes" required>
-            <option value="1">1 minute</option>
-            <option value="2">2 minutes</option>
-            <option value="5">5 minutes</option>
-            <option value="12">12 minutes</option>
-          </select>
+          <div class="pill-group" role="radiogroup" aria-label="Duration">
+            <label class="pill-option">
+              <input type="radio" name="durationMinutes" value="1" checked required />
+              <span class="pill">1 minute</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="durationMinutes" value="2" />
+              <span class="pill">2 minutes</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="durationMinutes" value="5" />
+              <span class="pill">5 minutes</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="durationMinutes" value="12" />
+              <span class="pill">12 minutes</span>
+            </label>
+          </div>
         </label>
 
         <label>
           Language
-          <select name="language" required>
-            <option value="en">English</option>
-            <option value="es">Spanish</option>
-            <option value="fr">French</option>
-            <option value="de">German</option>
-          </select>
+          <div class="pill-group" role="radiogroup" aria-label="Language">
+            <label class="pill-option">
+              <input type="radio" name="language" value="en" checked required />
+              <span class="pill">English</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="language" value="es" />
+              <span class="pill">Spanish</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="language" value="fr" />
+              <span class="pill">French</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="language" value="de" />
+              <span class="pill">German</span>
+            </label>
+          </div>
         </label>
 
         <label>
           Voice
-          <select name="voiceGender" required>
-            <option value="male">Male</option>
-            <option value="female" selected>Female</option>
-          </select>
+          <div class="pill-group" role="radiogroup" aria-label="Voice">
+            <label class="pill-option">
+              <input type="radio" name="voiceGender" value="male" required />
+              <span class="pill">Male</span>
+            </label>
+            <label class="pill-option">
+              <input type="radio" name="voiceGender" value="female" checked />
+              <span class="pill">Female</span>
+            </label>
+          </div>
           <span class="option-hint">Choose the voice you prefer for guidance.</span>
         </label>
 
@@ -279,9 +369,10 @@
 
     <script>
       const form = document.getElementById("generator-form");
-      const practiceTypeInput = form.querySelector("select[name='practiceType']");
-      const focusInput = form.querySelector("select[name='focus']");
-      const durationInput = form.querySelector("select[name='durationMinutes']");
+      const practiceTypeInputs = form.querySelectorAll("input[name='practiceType']");
+      const durationInputs = form.querySelectorAll("input[name='durationMinutes']");
+      const getSelectedValue = (name) =>
+        form.querySelector(`input[name='${name}']:checked`)?.value;
       const status = document.getElementById("status");
       const statusPanel = document.getElementById("status-panel");
       const spinner = document.getElementById("spinner");
@@ -592,23 +683,27 @@
       };
 
       const updateFocusOptions = (eyeState) => {
-        const sightOption = focusInput.querySelector("option[value='sight']");
-        if (!sightOption) {
+        const sightOption = form.querySelector("input[name='focus'][value='sight']");
+        const touchOption = form.querySelector("input[name='focus'][value='touch']");
+        if (!sightOption || !touchOption) {
           return;
         }
         if (eyeState === "closed") {
-          sightOption.hidden = true;
-          if (focusInput.value === "sight") {
-            focusInput.value = "touch";
+          sightOption.disabled = true;
+          if (sightOption.checked) {
+            touchOption.checked = true;
           }
         } else {
-          sightOption.hidden = false;
+          sightOption.disabled = false;
         }
       };
 
       const updateDerivedFields = () => {
-        const practiceType = practiceTypeInput.value;
-        const durationMinutes = Number(durationInput.value);
+        const practiceType = getSelectedValue("practiceType");
+        const durationMinutes = Number(getSelectedValue("durationMinutes"));
+        if (!practiceType || Number.isNaN(durationMinutes)) {
+          return;
+        }
         const { eyeState } = derivePracticeConfig(practiceType, durationMinutes);
         updateFocusOptions(eyeState);
       };
@@ -642,8 +737,12 @@
       }
 
       updateDerivedFields();
-      durationInput.addEventListener("change", updateDerivedFields);
-      practiceTypeInput.addEventListener("change", updateDerivedFields);
+      durationInputs.forEach((input) => {
+        input.addEventListener("change", updateDerivedFields);
+      });
+      practiceTypeInputs.forEach((input) => {
+        input.addEventListener("change", updateDerivedFields);
+      });
 
       const loadVersion = async () => {
         if (!appVersion) {

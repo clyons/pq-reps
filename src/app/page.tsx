@@ -416,6 +416,77 @@ const deriveSenseRotation = (
   return "none" as const;
 };
 
+type PillOption = {
+  value: string;
+  label: string;
+  disabled?: boolean;
+};
+
+const pillGroupStyle: React.CSSProperties = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "0.5rem",
+};
+
+const pillLabelStyle: React.CSSProperties = {
+  position: "relative",
+  display: "inline-flex",
+  alignItems: "center",
+};
+
+const pillInputStyle: React.CSSProperties = {
+  position: "absolute",
+  opacity: 0,
+  pointerEvents: "none",
+};
+
+const getPillStyle = (checked: boolean, disabled?: boolean): React.CSSProperties => ({
+  padding: "0.5rem 0.9rem",
+  borderRadius: 999,
+  border: `1px solid ${checked ? "#111" : "#ccc"}`,
+  background: checked ? "#111" : "#f7f7f7",
+  color: checked ? "#fff" : "#111",
+  fontWeight: 600,
+  cursor: disabled ? "not-allowed" : "pointer",
+  opacity: disabled ? 0.5 : 1,
+  transition: "all 0.15s ease",
+});
+
+const PillRadioGroup = ({
+  name,
+  options,
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  name: string;
+  options: PillOption[];
+  value: string;
+  onChange: (value: string) => void;
+  ariaLabel: string;
+}) => (
+  <div role="radiogroup" aria-label={ariaLabel} style={pillGroupStyle}>
+    {options.map((option, index) => {
+      const checked = option.value === value;
+      return (
+        <label key={option.value} style={pillLabelStyle}>
+          <input
+            type="radio"
+            name={name}
+            value={option.value}
+            checked={checked}
+            required={index === 0}
+            disabled={option.disabled}
+            onChange={() => onChange(option.value)}
+            style={pillInputStyle}
+          />
+          <span style={getPillStyle(checked, option.disabled)}>{option.label}</span>
+        </label>
+      );
+    })}
+  </div>
+);
+
 export default function HomePage() {
   const [formState, setFormState] = useState<FormState>(DEFAULT_STATE);
   const [result, setResult] = useState<GenerationResult | null>(null);
@@ -475,6 +546,40 @@ export default function HomePage() {
   const updateFormState = (updates: Partial<FormState>) => {
     setFormState((prev) => ({ ...prev, ...updates }));
   };
+
+  const practiceTypeOptions: PillOption[] = [
+    { value: "still_eyes_closed", label: "Still (Eyes closed)" },
+    { value: "still_eyes_open", label: "Still (Eyes open)" },
+    { value: "moving", label: "Moving" },
+    { value: "labeling", label: "Labeling" },
+  ];
+
+  const focusPillOptions: PillOption[] = focusOptions.map((option) => ({
+    value: option,
+    label:
+      option === "touch"
+        ? "Touch"
+        : option === "hearing"
+          ? "Hearing"
+          : option === "sight"
+            ? "Sight"
+            : "Breath",
+  }));
+
+  const durationPillOptions: PillOption[] = DURATION_OPTIONS.map((option) => ({
+    value: String(option),
+    label: formatDurationLabel(option),
+  }));
+
+  const languagePillOptions: PillOption[] = LANGUAGE_OPTIONS.map((option) => ({
+    value: option.value,
+    label: option.label,
+  }));
+
+  const voicePillOptions: PillOption[] = [
+    { value: "female", label: "Female" },
+    { value: "male", label: "Male" },
+  ];
 
   const validate = (state: FormState) => {
     const nextErrors: string[] = [];
@@ -896,83 +1001,58 @@ export default function HomePage() {
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Practice type</span>
-          <select
+          <PillRadioGroup
             name="practiceType"
+            ariaLabel="Practice type"
+            options={practiceTypeOptions}
             value={formState.practiceType}
-            onChange={(event) =>
+            onChange={(value) =>
               updateFormState({
-                practiceType: event.target.value as FormState["practiceType"],
+                practiceType: value as FormState["practiceType"],
               })
             }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            <option value="still_eyes_closed">Still (Eyes closed)</option>
-            <option value="still_eyes_open">Still (Eyes open)</option>
-            <option value="moving">Moving</option>
-            <option value="labeling">Labeling</option>
-          </select>
+          />
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Focus</span>
-          <select
+          <PillRadioGroup
             name="focus"
+            ariaLabel="Focus"
+            options={focusPillOptions}
             value={formState.focus}
-            onChange={(event) =>
+            onChange={(value) =>
               updateFormState({
-                focus: event.target.value as FormState["focus"],
+                focus: value as FormState["focus"],
               })
             }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {focusOptions.map((option) => (
-              <option key={option} value={option}>
-                {option === "touch"
-                  ? "Touch"
-                  : option === "hearing"
-                    ? "Hearing"
-                    : option === "sight"
-                      ? "Sight"
-                      : "Breath"}
-              </option>
-            ))}
-          </select>
+          />
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Duration</span>
-          <select
+          <PillRadioGroup
             name="durationMinutes"
-            value={formState.durationMinutes}
-            onChange={(event) =>
+            ariaLabel="Duration"
+            options={durationPillOptions}
+            value={String(formState.durationMinutes)}
+            onChange={(value) =>
               updateFormState({
-                durationMinutes: Number(event.target.value) as FormState["durationMinutes"],
+                durationMinutes: Number(value) as FormState["durationMinutes"],
               })
             }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {DURATION_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {formatDurationLabel(option)}
-              </option>
-            ))}
-          </select>
+          />
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Language</span>
-          <select
+          <PillRadioGroup
             name="language"
+            ariaLabel="Language"
+            options={languagePillOptions}
             value={formState.language}
-            onChange={(event) => updateFormState({ language: event.target.value })}
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            {LANGUAGE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => updateFormState({ language: value })}
+          />
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
@@ -980,17 +1060,15 @@ export default function HomePage() {
           <span style={{ fontSize: "0.9rem", color: "#555" }}>
             Choose the voice you prefer for guidance.
           </span>
-          <select
+          <PillRadioGroup
             name="voiceGender"
+            ariaLabel="Voice"
+            options={voicePillOptions}
             value={formState.voiceGender}
-            onChange={(event) =>
-              updateFormState({ voiceGender: event.target.value as FormState["voiceGender"] })
+            onChange={(value) =>
+              updateFormState({ voiceGender: value as FormState["voiceGender"] })
             }
-            style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
+          />
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
