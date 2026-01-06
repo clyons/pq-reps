@@ -647,6 +647,33 @@ export default function HomePage() {
         if (jsonResult.ttsPrompt) {
           ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
         }
+        const cleanedScript = script
+          ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
+          : "";
+        if (cleanedScript) {
+          const scriptDownloadFilename = buildScriptDownloadFilename({
+            voice: voiceStyle,
+            durationMinutes: formState.durationMinutes,
+            focus: primarySense,
+          });
+          const nextScriptUrl = URL.createObjectURL(
+            new Blob([cleanedScript], { type: "text/plain" }),
+          );
+          setResult((prev) => {
+            if (prev?.scriptDownloadUrl && prev.scriptDownloadUrl !== nextScriptUrl) {
+              URL.revokeObjectURL(prev.scriptDownloadUrl);
+            }
+            return {
+              audioUrl: prev?.audioUrl,
+              downloadUrl: prev?.downloadUrl,
+              script: cleanedScript,
+              ttsPrompt,
+              downloadFilename: prev?.downloadFilename,
+              scriptDownloadFilename,
+              scriptDownloadUrl: nextScriptUrl,
+            };
+          });
+        }
         const { blob, mediaUrl, contentType } = await requestAudio(
           script,
           (streamUrl, streamContentType) => {
@@ -664,17 +691,14 @@ export default function HomePage() {
               if (prev?.downloadUrl) {
                 URL.revokeObjectURL(prev.downloadUrl);
               }
-              if (prev?.scriptDownloadUrl) {
-                URL.revokeObjectURL(prev.scriptDownloadUrl);
-              }
               return {
                 audioUrl: streamUrl ?? undefined,
                 downloadUrl: undefined,
-                script: "",
-                ttsPrompt: undefined,
+                script: prev?.script,
+                ttsPrompt: prev?.ttsPrompt,
                 downloadFilename,
-                scriptDownloadFilename: undefined,
-                scriptDownloadUrl: undefined,
+                scriptDownloadFilename: prev?.scriptDownloadFilename,
+                scriptDownloadUrl: prev?.scriptDownloadUrl,
               };
             });
           },

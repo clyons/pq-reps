@@ -951,20 +951,41 @@
           let ttsPrompt = null;
           let streamUrl = null;
 
-          if (streamAudioEnabled) {
-            const jsonResponse = await requestJson("text");
-            script = jsonResponse?.script || "";
-            ttsPrompt = jsonResponse?.ttsPrompt || null;
-            const streamResponse = await requestAudio(script, (mediaUrl, streamContentType) => {
-              streamUrl = mediaUrl;
-              if (mediaUrl) {
-                audioPlayer.src = mediaUrl;
-                audioPlayer.play().catch(() => {});
-                audioPlayer.hidden = false;
-              }
-              status.textContent = "";
-              statusPanel.hidden = true;
-              spinner.hidden = true;
+        if (streamAudioEnabled) {
+          const jsonResponse = await requestJson("text");
+          script = jsonResponse?.script || "";
+          ttsPrompt = jsonResponse?.ttsPrompt || null;
+          const cleanedScript = script
+            ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
+            : "";
+          if (cleanedScript) {
+            scriptOutput.textContent = cleanedScript;
+            scriptOutput.hidden = false;
+            if (scriptDownloadUrl) {
+              URL.revokeObjectURL(scriptDownloadUrl);
+            }
+            scriptDownloadUrl = URL.createObjectURL(
+              new Blob([cleanedScript], { type: "text/plain" }),
+            );
+            scriptDownloadLink.href = scriptDownloadUrl;
+            scriptDownloadLink.download = buildScriptDownloadFilename({
+              voice: voiceStyle,
+              durationMinutes,
+              focus: primarySense,
+            });
+            scriptDownloadLink.hidden = false;
+          }
+          result.hidden = false;
+          const streamResponse = await requestAudio(script, (mediaUrl, streamContentType) => {
+            streamUrl = mediaUrl;
+            if (mediaUrl) {
+              audioPlayer.src = mediaUrl;
+              audioPlayer.play().catch(() => {});
+              audioPlayer.hidden = false;
+            }
+            status.textContent = "";
+            statusPanel.hidden = true;
+            spinner.hidden = true;
               const downloadFilename = buildDownloadFilename({
                 voice: voiceStyle,
                 durationMinutes,
