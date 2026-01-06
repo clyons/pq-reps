@@ -188,6 +188,29 @@
         font-size: 0.75rem;
         font-weight: 600;
         cursor: help;
+        position: relative;
+      }
+      .info-icon::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%);
+        background: #111;
+        color: #fff;
+        padding: 0.4rem 0.6rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.15s ease;
+        z-index: 10;
+      }
+      .info-icon:hover::after,
+      .info-icon:focus-visible::after {
+        opacity: 1;
       }
       .voice-preview {
         display: flex;
@@ -346,8 +369,9 @@
             Audio delivery
             <span
               class="info-icon"
-              title="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
               aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+              data-tooltip="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+              tabindex="0"
             >
               i
             </span>
