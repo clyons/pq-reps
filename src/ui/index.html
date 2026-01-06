@@ -18,6 +18,7 @@
         --color-primary-green: #63d9a0;
         --color-primary-green-light: #b8eed5;
         --color-primary-green-dark: #2fbf7f;
+        --color-neutral-white: #ffffff;
         --color-neutral-gray: #f8f8f8;
         --color-neutral-gray-mid: #e5e5e5;
         --color-neutral-black-30: #bfbfbf;
@@ -81,18 +82,18 @@
         padding: 0.5rem 0.9rem;
         border-radius: 999px;
         border: 1px solid var(--color-primary-orange);
-        background: var(--color-primary-orange);
+        background: var(--color-neutral-white);
         font-weight: 600;
         cursor: pointer;
         transition: all 0.15s ease;
       }
       .pill-option input:checked + .pill {
-        background: var(--color-primary-orange-dark);
-        border-color: var(--color-primary-orange-dark);
+        background: var(--color-primary-orange);
+        border-color: var(--color-primary-orange);
         color: var(--color-neutral-black);
       }
       .pill-option input:focus-visible + .pill {
-        outline: 2px solid var(--color-primary-blue-dark);
+        outline: 2px solid var(--color-primary-blue);
         outline-offset: 2px;
       }
       .pill-option input:disabled + .pill {
@@ -170,7 +171,7 @@
       }
       .error {
         background: var(--color-primary-orange-light);
-        color: var(--color-primary-orange-dark);
+        color: var(--color-neutral-black);
         padding: 1rem;
         border-radius: 8px;
       }

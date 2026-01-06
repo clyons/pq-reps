@@ -41,6 +41,7 @@ const BRAND_COLORS = {
   blue: { base: "#82E6E6", light: "#CFF5F5", dark: "#4FC6C6" },
   green: { base: "#63D9A0", light: "#B8EED5", dark: "#2FBF7F" },
   neutral: {
+    white: "#FFFFFF",
     grayBase: "#F8F8F8",
     grayMid: "#E5E5E5",
     black30: "#BFBFBF",
@@ -492,7 +493,7 @@ const getPillStyle = (checked: boolean, disabled?: boolean): React.CSSProperties
   padding: "0.5rem 0.9rem",
   borderRadius: 999,
   border: `1px solid ${checked ? BRAND_COLORS.orange.dark : BRAND_COLORS.orange.base}`,
-  background: checked ? BRAND_COLORS.orange.dark : BRAND_COLORS.orange.base,
+  background: checked ? BRAND_COLORS.orange.dark : BRAND_COLORS.neutral.white,
   color: BRAND_COLORS.neutral.black,
   fontWeight: 600,
   cursor: disabled ? "not-allowed" : "pointer",
