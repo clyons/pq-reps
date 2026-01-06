@@ -31,6 +31,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Allow the user to stop the voice Preview from playing by clicking the button a second time. Revert the button to show the play button once more.
 - [ ] Add common scenarios for PQ Reps which have their own settings / prompts
 - [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog"
+- [ ] Improve prompt handling for custom scenario line before re-enabling UI input
 - [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min)
 - [ ] Add tests for prompt outline (API validation coverage exists in `tests/generate-api.test.ts`).
 - [ ] Secure the endpoints against unauthorised access
