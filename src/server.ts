@@ -5,6 +5,7 @@ import path from "path";
 import { URL, fileURLToPath } from "url";
 import generateHandler from "./pages/api/generate";
 import ttsHandler from "./pages/api/tts";
+import voicePreviewHandler from "./pages/api/voice-preview";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -25,6 +26,11 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === "/api/tts") {
     await ttsHandler(req, res);
+    return;
+  }
+
+  if (url.pathname === "/api/voice-preview") {
+    await voicePreviewHandler(req, res);
     return;
   }
 

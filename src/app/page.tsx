@@ -83,13 +83,6 @@ const MALE_VOICES_BY_LANGUAGE: Record<string, string> = {
   fr: "onyx",
 };
 
-const PREVIEW_TEXT_BY_LANGUAGE: Record<string, string> = {
-  en: "The sun rises in the east, and sets in the west.\n\nThe colours of the sky fade with the setting sun.",
-  es: "El sol sale por el este y se pone por el oeste.\n\nLos colores del cielo se desvanecen con la puesta de sol.",
-  fr: "Le soleil se lève à l'est et se couche à l'ouest.\n\nLes couleurs du ciel s'estompent avec le soleil couchant.",
-  de: "Die Sonne geht im Osten auf und im Westen unter.\n\nDie Farben des Himmels verblassen mit der untergehenden Sonne.",
-};
-
 const capitalize = (value: string) =>
   value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
 
@@ -1013,28 +1006,25 @@ export default function HomePage() {
     }
   };
 
-  const handleVoicePreview = async (gender: FormState["voiceGender"]) => {
+  const handleVoicePreview = async () => {
     const previewAudio = previewAudioRef.current;
     if (!previewAudio) {
       return;
     }
     const language = formState.language;
-    const script = PREVIEW_TEXT_BY_LANGUAGE[language] ?? PREVIEW_TEXT_BY_LANGUAGE.en;
-    const voice = resolveVoiceForGender(gender, language);
+    const voice = resolveVoiceForGender(formState.voiceGender, language);
     setPreviewLoading(true);
     setPreviewMessage("Loading preview...");
     try {
-      const response = await fetch("/api/tts", {
+      const response = await fetch("/api/voice-preview", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "audio/wav",
         },
         body: JSON.stringify({
-          script,
           language,
           voice,
-          ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
         }),
       });
       if (!response.ok) {
@@ -1141,39 +1131,23 @@ export default function HomePage() {
               updateFormState({ voiceGender: value as FormState["voiceGender"] })
             }
           />
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
-            <span style={{ fontSize: "0.9rem", color: "#555" }}>Preview the voice:</span>
-            <button
-              type="button"
-              onClick={() => handleVoicePreview("female")}
-              disabled={previewLoading}
-              style={{
-                padding: "0.4rem 0.9rem",
-                borderRadius: 999,
-                border: "1px solid #ccc",
-                background: "#fff",
-                fontWeight: 600,
-                cursor: previewLoading ? "not-allowed" : "pointer",
-              }}
-            >
-              {voicePillOptions[0].label}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleVoicePreview("male")}
-              disabled={previewLoading}
-              style={{
-                padding: "0.4rem 0.9rem",
-                borderRadius: 999,
-                border: "1px solid #ccc",
-                background: "#fff",
-                fontWeight: 600,
-                cursor: previewLoading ? "not-allowed" : "pointer",
-              }}
-            >
-              {voicePillOptions[1].label}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => handleVoicePreview()}
+            disabled={previewLoading}
+            style={{
+              justifySelf: "start",
+              padding: "0.4rem 0.9rem",
+              borderRadius: 999,
+              border: "1px solid #ccc",
+              background: "#fff",
+              color: "#111",
+              fontWeight: 600,
+              cursor: previewLoading ? "not-allowed" : "pointer",
+            }}
+          >
+            Preview &gt;
+          </button>
           <audio ref={previewAudioRef} hidden />
           {previewMessage && (
             <span style={{ fontSize: "0.9rem", color: "#555" }}>{previewMessage}</span>

@@ -187,6 +187,7 @@
         border-radius: 999px;
         border: 1px solid #ccc;
         background: #fff;
+        color: #111;
         font-weight: 600;
       }
       .voice-preview button[disabled] {
@@ -318,8 +319,7 @@
           </div>
           <div class="voice-preview">
             <span class="option-hint">Choose the voice you prefer for guidance.</span>
-            <button type="button" data-preview-voice="female">Preview</button>
-            <button type="button" data-preview-voice="male">Preview</button>
+            <button type="button" id="voice-preview-button">Preview ></button>
           </div>
           <audio id="voice-preview-audio" hidden></audio>
           <span id="voice-preview-status" class="option-hint" hidden>Loading preview...</span>
@@ -419,13 +419,7 @@
       const storageKey = "pq-reps-form";
       const femaleVoiceByLanguage = { es: "nova", fr: "nova" };
       const maleVoiceByLanguage = { es: "onyx", fr: "onyx" };
-      const previewTextByLanguage = {
-        en: "The sun rises in the east, and sets in the west.\n\nThe colours of the sky fade with the setting sun.",
-        es: "El sol sale por el este y se pone por el oeste.\n\nLos colores del cielo se desvanecen con la puesta de sol.",
-        fr: "Le soleil se lève à l'est et se couche à l'ouest.\n\nLes couleurs du ciel s'estompent avec le soleil couchant.",
-        de: "Die Sonne geht im Osten auf und im Westen unter.\n\nDie Farben des Himmels verblassen mit der untergehenden Sonne.",
-      };
-      const previewButtons = form.querySelectorAll("[data-preview-voice]");
+      const previewButton = document.getElementById("voice-preview-button");
       const previewAudio = document.getElementById("voice-preview-audio");
       const previewStatus = document.getElementById("voice-preview-status");
       const isDevMode = new URLSearchParams(window.location.search).get("dev") === "1";
@@ -798,35 +792,29 @@
         input.addEventListener("change", updateVoiceLabels);
       });
 
-      const playPreview = async (gender) => {
-        if (!previewAudio || !previewStatus) {
+      const playPreview = async () => {
+        if (!previewAudio || !previewStatus || !previewButton) {
           return;
         }
         const language = getSelectedValue("language") || "en";
-        const script = previewTextByLanguage[language] || previewTextByLanguage.en;
+        const voiceGender = getSelectedValue("voiceGender") || "female";
         const voice =
-          gender === "male"
+          voiceGender === "male"
             ? maleVoiceByLanguage[language] || "ash"
             : femaleVoiceByLanguage[language] || "alloy";
         previewStatus.hidden = false;
         previewStatus.textContent = "Loading preview...";
-        previewButtons.forEach((button) => {
-          button.disabled = true;
-        });
+        previewButton.disabled = true;
         try {
-          const response = await fetch("/api/tts", {
+          const response = await fetch("/api/voice-preview", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               Accept: "audio/wav",
             },
             body: JSON.stringify({
-              script,
               language,
               voice,
-              ttsNewlinePauseSeconds:
-                Number(form.querySelector("input[name='ttsNewlinePauseSeconds']")?.value) ||
-                0,
             }),
           });
           if (!response.ok) {
@@ -846,17 +834,15 @@
           previewStatus.textContent =
             error instanceof Error ? error.message : "Preview failed.";
         } finally {
-          previewButtons.forEach((button) => {
-            button.disabled = false;
-          });
+          previewButton.disabled = false;
         }
       };
 
-      previewButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          playPreview(button.getAttribute("data-preview-voice") || "female");
+      if (previewButton) {
+        previewButton.addEventListener("click", () => {
+          playPreview();
         });
-      });
+      }
 
       const loadVersion = async () => {
         if (!appVersion) {
