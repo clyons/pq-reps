@@ -1050,7 +1050,8 @@
         scriptOutput.textContent = "";
         debugOutput.textContent = "";
         debugSection.hidden = true;
-        scriptDownloadLink.hidden = true;
+        setDownloadLinkState(downloadLink, { enabled: false });
+        setDownloadLinkState(scriptDownloadLink, { enabled: false });
 
         if (currentUrl) {
           URL.revokeObjectURL(currentUrl);
@@ -1202,7 +1203,7 @@
           return finalPayload;
         };
 
-        const requestAudio = async (script, onStreamStart) => {
+        const requestAudio = async (script, { onStreamStart, onChunk } = {}) => {
           const response = await fetch("/api/tts", {
             method: "POST",
             headers: {
@@ -1240,7 +1241,10 @@
               reader,
               onStreamStart: (mediaStream) =>
                 onStreamStart?.({ mediaStream, contentType }),
-              onChunk: (chunk) => chunks.push(chunk),
+              onChunk: (chunk) => {
+                chunks.push(chunk);
+                onChunk?.(chunk, { contentType });
+              },
             });
             return { blob: new Blob(chunks, { type: contentType }), contentType };
           }
@@ -1285,6 +1289,7 @@
                         throw new Error("Audio stream ended before data arrived.");
                       }
                       chunks.push(firstRead.value);
+                      onChunk?.(firstRead.value, { contentType });
                       await appendChunk(firstRead.value);
                       notifyStreamStart();
 
@@ -1295,6 +1300,7 @@
                         }
                         if (value) {
                           chunks.push(value);
+                          onChunk?.(value, { contentType });
                           await appendChunk(value);
                         }
                       }
@@ -1324,6 +1330,7 @@
             }
             if (value) {
               chunks.push(value);
+              onChunk?.(value, { contentType });
             }
           }
           return { blob: new Blob(chunks, { type: contentType }), contentType };
@@ -1351,39 +1358,71 @@
             scriptDownloadUrl = URL.createObjectURL(
               new Blob([cleanedScript], { type: "text/plain" }),
             );
-            scriptDownloadLink.href = scriptDownloadUrl;
             scriptDownloadLink.download = buildScriptDownloadFilename({
               voice: voiceStyle,
               durationMinutes,
               focus: primarySense,
             });
-            scriptDownloadLink.hidden = false;
+            setDownloadLinkState(scriptDownloadLink, { enabled: true, href: scriptDownloadUrl });
           }
           result.hidden = false;
-            const streamResponse = await requestAudio(script, ({ mediaUrl, mediaStream, contentType: streamContentType }) => {
-              streamUrl = mediaUrl;
-              if (mediaStream) {
-                audioPlayer.srcObject = mediaStream;
-                audioPlayer.play().catch(() => {});
-                audioPlayer.hidden = false;
-              } else if (mediaUrl) {
-                audioPlayer.srcObject = null;
-                audioPlayer.src = mediaUrl;
-                audioPlayer.play().catch(() => {});
-                audioPlayer.hidden = false;
-              }
-              status.textContent = "";
-            statusPanel.hidden = true;
-            spinner.hidden = true;
-              const downloadFilename = buildDownloadFilename({
-                voice: voiceStyle,
-                durationMinutes,
-                focus: primarySense,
-                extension: resolveAudioExtension(streamContentType),
-              });
-              downloadLink.download = downloadFilename;
-              setDownloadLinkState(downloadLink, { enabled: false });
-              result.hidden = false;
+          const streamingChunks = [];
+          let streamContentType = null;
+          const enableDownloadFromChunks = () => {
+            if (!streamingChunks.length) {
+              return;
+            }
+            if (downloadUrl) {
+              URL.revokeObjectURL(downloadUrl);
+            }
+            const partialBlob = new Blob(streamingChunks, {
+              type: streamContentType || "audio/wav",
+            });
+            downloadUrl = URL.createObjectURL(partialBlob);
+            downloadLink.download = buildDownloadFilename({
+              voice: voiceStyle,
+              durationMinutes,
+              focus: primarySense,
+              extension: resolveAudioExtension(streamContentType || partialBlob.type),
+            });
+            setDownloadLinkState(downloadLink, { enabled: true, href: downloadUrl });
+          };
+            const streamResponse = await requestAudio(script, {
+              onStreamStart: ({ mediaUrl, mediaStream, contentType: streamResponseContentType }) => {
+                streamUrl = mediaUrl;
+                streamContentType = streamResponseContentType;
+                if (mediaStream) {
+                  audioPlayer.srcObject = mediaStream;
+                  audioPlayer.play().catch(() => {});
+                  audioPlayer.hidden = false;
+                } else if (mediaUrl) {
+                  audioPlayer.srcObject = null;
+                  audioPlayer.src = mediaUrl;
+                  audioPlayer.play().catch(() => {});
+                  audioPlayer.hidden = false;
+                }
+                status.textContent = "";
+                statusPanel.hidden = true;
+                spinner.hidden = true;
+                const downloadFilename = buildDownloadFilename({
+                  voice: voiceStyle,
+                  durationMinutes,
+                  focus: primarySense,
+                  extension: resolveAudioExtension(streamResponseContentType),
+                });
+                downloadLink.download = downloadFilename;
+                setDownloadLinkState(downloadLink, { enabled: false });
+                result.hidden = false;
+              },
+              onChunk: (chunk, { contentType }) => {
+                streamingChunks.push(chunk);
+                if (!streamContentType && contentType) {
+                  streamContentType = contentType;
+                }
+                if (streamingChunks.length === 1) {
+                  enableDownloadFromChunks();
+                }
+              },
             });
             audioBlob = streamResponse?.blob || null;
             if (streamResponse?.mediaUrl) {

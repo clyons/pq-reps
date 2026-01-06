@@ -727,11 +727,17 @@ export default function HomePage() {
 
     const requestAudio = async (
       script: string,
-      onStreamStart?: (args: {
-        mediaUrl?: string;
-        mediaStream?: MediaStream;
-        contentType: string;
-      }) => void,
+      {
+        onStreamStart,
+        onChunk,
+      }: {
+        onStreamStart?: (args: {
+          mediaUrl?: string;
+          mediaStream?: MediaStream;
+          contentType: string;
+        }) => void;
+        onChunk?: (chunk: Uint8Array, data: { contentType: string }) => void;
+      } = {},
     ) => {
       const response = await fetch("/api/tts", {
         method: "POST",
@@ -770,7 +776,10 @@ export default function HomePage() {
           reader,
           onStreamStart: (mediaStream) =>
             onStreamStart?.({ mediaStream, contentType }),
-          onChunk: (chunk) => chunks.push(chunk),
+          onChunk: (chunk) => {
+            chunks.push(chunk);
+            onChunk?.(chunk, { contentType });
+          },
         });
         return { blob: new Blob(chunks, { type: contentType }), contentType };
       }
@@ -784,7 +793,7 @@ export default function HomePage() {
             return;
           }
           streamStartNotified = true;
-                  onStreamStart?.({ mediaUrl, contentType });
+          onStreamStart?.({ mediaUrl, contentType });
         };
 
         try {
@@ -812,6 +821,7 @@ export default function HomePage() {
                     throw new Error("Audio stream ended before data arrived.");
                   }
                   chunks.push(firstRead.value);
+                  onChunk?.(firstRead.value, { contentType });
                   await appendChunk(firstRead.value);
                   notifyStreamStart();
 
@@ -822,6 +832,7 @@ export default function HomePage() {
                     }
                     if (value) {
                       chunks.push(value);
+                      onChunk?.(value, { contentType });
                       await appendChunk(value);
                     }
                   }
@@ -852,6 +863,7 @@ export default function HomePage() {
         }
         if (value) {
           chunks.push(value);
+          onChunk?.(value, { contentType });
         }
       }
       return { blob: new Blob(chunks, { type: contentType }), contentType };
@@ -904,14 +916,17 @@ export default function HomePage() {
             };
           });
         }
-        const { blob, mediaUrl, contentType } = await requestAudio(
-          script,
-          ({ mediaUrl: streamUrl, mediaStream, contentType: streamContentType }) => {
+        const streamingChunks: Uint8Array[] = [];
+        let streamContentType: string | undefined;
+        let downloadReady = false;
+        const { blob, mediaUrl, contentType } = await requestAudio(script, {
+          onStreamStart: ({ mediaUrl: streamUrl, mediaStream, contentType: streamStartType }) => {
+            streamContentType = streamStartType;
             const downloadFilename = buildDownloadFilename({
               voice: voiceStyle,
               durationMinutes: formState.durationMinutes,
               focus: primarySense,
-              extension: resolveAudioExtension(streamContentType),
+              extension: resolveAudioExtension(streamStartType),
             });
             setStatus("success");
             setResult((prev) => {
@@ -933,7 +948,39 @@ export default function HomePage() {
               };
             });
           },
-        );
+          onChunk: (chunk, { contentType: chunkContentType }) => {
+            streamingChunks.push(chunk);
+            if (!streamContentType) {
+              streamContentType = chunkContentType;
+            }
+            if (!downloadReady && streamContentType) {
+              downloadReady = true;
+              const partialBlob = new Blob(streamingChunks, { type: streamContentType });
+              const partialDownloadUrl = URL.createObjectURL(partialBlob);
+              const downloadFilename = buildDownloadFilename({
+                voice: voiceStyle,
+                durationMinutes: formState.durationMinutes,
+                focus: primarySense,
+                extension: resolveAudioExtension(streamContentType),
+              });
+              setResult((prev) => {
+                if (prev?.downloadUrl && prev.downloadUrl !== partialDownloadUrl) {
+                  URL.revokeObjectURL(prev.downloadUrl);
+                }
+                return {
+                  audioStream: prev?.audioStream,
+                  audioUrl: prev?.audioUrl,
+                  downloadUrl: partialDownloadUrl,
+                  script: prev?.script,
+                  ttsPrompt: prev?.ttsPrompt,
+                  downloadFilename,
+                  scriptDownloadFilename: prev?.scriptDownloadFilename,
+                  scriptDownloadUrl: prev?.scriptDownloadUrl,
+                };
+              });
+            }
+          },
+        });
         if (mediaUrl) {
           audioUrl = mediaUrl;
         } else {
