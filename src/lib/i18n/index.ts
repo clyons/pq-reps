@@ -38,6 +38,9 @@ const MESSAGES: Record<Locale, Messages> = {
     "form.voice": "Voice",
     "form.voice.help": "Choose the voice you prefer for guidance.",
     "form.voice.preview": "Preview",
+    "form.custom_scenario_line": "Custom scenario line (optional)",
+    "form.custom_scenario_line.help":
+      "Add a short, neutral context line (max {max} characters). No URLs or sensitive topics.",
     "form.audio_delivery": "Audio delivery",
     "form.audio_delivery.help":
       "Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.",
@@ -123,6 +126,12 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.generate_failure": "Failed to generate a response.",
     "errors.not_found": "Route not found.",
     "errors.version_unavailable": "Unable to load version.",
+    "errors.invalid_custom_scenario_line":
+      "Custom scenario line must be a short, single-line sentence with allowed characters.",
+    "errors.custom_scenario_line_too_long":
+      "Custom scenario line must be {max} characters or fewer.",
+    "errors.custom_scenario_line_disallowed":
+      "Custom scenario line contains disallowed content.",
   },
   es: {
     "ui.title": "Generador de audio de PQ Reps",
@@ -153,6 +162,9 @@ const MESSAGES: Record<Locale, Messages> = {
     "form.voice": "Voz",
     "form.voice.help": "Elige la voz que prefieres para la guía.",
     "form.voice.preview": "Vista previa",
+    "form.custom_scenario_line": "Línea de escenario personalizada (opcional)",
+    "form.custom_scenario_line.help":
+      "Agrega una línea breve y neutral (máximo {max} caracteres). Sin URLs ni temas sensibles.",
     "form.audio_delivery": "Entrega de audio",
     "form.audio_delivery.help":
       "La transmisión inicia la reproducción antes, pero puede ser menos fiable con conexiones inestables y limitar la búsqueda o la reproducción sin conexión.",
@@ -245,6 +257,12 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.generate_failure": "No se pudo generar una respuesta.",
     "errors.not_found": "Ruta no encontrada.",
     "errors.version_unavailable": "No se pudo cargar la versión.",
+    "errors.invalid_custom_scenario_line":
+      "La línea de escenario personalizada debe ser una frase corta de una sola línea con caracteres permitidos.",
+    "errors.custom_scenario_line_too_long":
+      "La línea de escenario personalizada debe tener {max} caracteres o menos.",
+    "errors.custom_scenario_line_disallowed":
+      "La línea de escenario personalizada contiene contenido no permitido.",
   },
   fr: {
     "ui.title": "Générateur audio PQ Reps",
@@ -275,6 +293,9 @@ const MESSAGES: Record<Locale, Messages> = {
     "form.voice": "Voix",
     "form.voice.help": "Choisissez la voix que vous préférez pour la guidance.",
     "form.voice.preview": "Aperçu",
+    "form.custom_scenario_line": "Ligne de scénario personnalisée (optionnel)",
+    "form.custom_scenario_line.help":
+      "Ajoutez une ligne courte et neutre (max {max} caractères). Pas d'URL ni de sujets sensibles.",
     "form.audio_delivery": "Diffusion audio",
     "form.audio_delivery.help":
       "La diffusion démarre plus tôt, mais peut être moins fiable sur des connexions instables et limiter la recherche ou l'écoute hors ligne.",
@@ -367,6 +388,12 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.generate_failure": "Impossible de générer une réponse.",
     "errors.not_found": "Route introuvable.",
     "errors.version_unavailable": "Impossible de charger la version.",
+    "errors.invalid_custom_scenario_line":
+      "La ligne de scénario personnalisée doit être une phrase courte sur une seule ligne avec des caractères autorisés.",
+    "errors.custom_scenario_line_too_long":
+      "La ligne de scénario personnalisée doit contenir {max} caractères ou moins.",
+    "errors.custom_scenario_line_disallowed":
+      "La ligne de scénario personnalisée contient du contenu interdit.",
   },
   de: {
     "ui.title": "PQ Reps Audio-Generator",
@@ -397,6 +424,9 @@ const MESSAGES: Record<Locale, Messages> = {
     "form.voice": "Stimme",
     "form.voice.help": "Wähle die Stimme, die du für die Anleitung bevorzugst.",
     "form.voice.preview": "Vorschau",
+    "form.custom_scenario_line": "Benutzerdefinierte Szenariozeile (optional)",
+    "form.custom_scenario_line.help":
+      "Füge eine kurze, neutrale Zeile hinzu (max {max} Zeichen). Keine URLs oder sensible Themen.",
     "form.audio_delivery": "Audioübertragung",
     "form.audio_delivery.help":
       "Streaming startet die Wiedergabe früher, kann aber bei instabilen Verbindungen unzuverlässiger sein und das Suchen oder Offline-Hören einschränken.",
@@ -488,6 +518,12 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.generate_failure": "Antwort konnte nicht erzeugt werden.",
     "errors.not_found": "Route nicht gefunden.",
     "errors.version_unavailable": "Version konnte nicht geladen werden.",
+    "errors.invalid_custom_scenario_line":
+      "Die benutzerdefinierte Szenariozeile muss ein kurzer, einzeiliger Satz mit erlaubten Zeichen sein.",
+    "errors.custom_scenario_line_too_long":
+      "Die benutzerdefinierte Szenariozeile darf höchstens {max} Zeichen lang sein.",
+    "errors.custom_scenario_line_disallowed":
+      "Die benutzerdefinierte Szenariozeile enthält unzulässige Inhalte.",
   },
 };
 
