@@ -889,6 +889,11 @@
         return TRANSLATIONS[base] ? base : FALLBACK_LOCALE;
       };
 
+      const getLocaleFromPath = () => {
+        const match = window.location.pathname.match(/^\/(en|es|fr|de)(?:\/|$)/);
+        return match ? match[1] : null;
+      };
+
       const getCurrentLocale = () => resolveLocale(getSelectedValue("language") || FALLBACK_LOCALE);
 
       const translate = (key, params = {}, locale = getCurrentLocale()) => {
@@ -1322,15 +1327,28 @@
       const defaultValues = getFormValues();
 
       const storedValuesRaw = localStorage.getItem(storageKey);
+      let storedValues = null;
       if (storedValuesRaw) {
         try {
-          const storedValues = JSON.parse(storedValuesRaw);
-          if (storedValues && typeof storedValues === "object") {
-            setFormValues(storedValues);
-          }
+          storedValues = JSON.parse(storedValuesRaw);
         } catch (err) {
           localStorage.removeItem(storageKey);
         }
+      }
+
+      const persistFormValues = () => {
+        localStorage.setItem(storageKey, JSON.stringify(getFormValues()));
+      };
+
+      const pathLocale = getLocaleFromPath();
+      const mergedValues = {
+        ...defaultValues,
+        ...(storedValues && typeof storedValues === "object" ? storedValues : {}),
+        ...(pathLocale ? { language: pathLocale } : {}),
+      };
+      setFormValues(mergedValues);
+      if (pathLocale) {
+        persistFormValues();
       }
 
       updateDerivedFields();
@@ -1346,6 +1364,12 @@
         input.addEventListener("change", () => {
           updateVoiceLabels();
           applyTranslations();
+          const locale = getCurrentLocale();
+          const targetPath = `/${locale}/`;
+          if (window.location.pathname !== targetPath) {
+            window.history.replaceState(null, "", targetPath);
+          }
+          persistFormValues();
         });
       });
 

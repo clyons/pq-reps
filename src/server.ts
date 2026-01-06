@@ -20,6 +20,13 @@ const packageJsonPath = path.join(process.cwd(), "package.json");
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
 
+  if (url.pathname === "/") {
+    res.statusCode = 302;
+    res.setHeader("Location", "/en/");
+    res.end();
+    return;
+  }
+
   if (url.pathname === "/api/generate") {
     await generateHandler(req, res);
     return;
@@ -60,7 +67,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (url.pathname === "/") {
+  if (/^\/(en|es|fr|de)\/?$/.test(url.pathname)) {
     const html = await readFile(uiPath, "utf-8");
     res.statusCode = 200;
     res.setHeader("Content-Type", "text/html; charset=utf-8");
