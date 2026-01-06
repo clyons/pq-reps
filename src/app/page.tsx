@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 
 type GenerationResult = {
+  audioStream?: MediaStream;
   audioUrl?: string;
   downloadUrl?: string;
   script?: string;
@@ -32,6 +33,32 @@ const DEFAULT_STATE: FormState = {
   ttsNewlinePauseSeconds: 1,
   debugTtsPrompt: false,
   streamAudio: false,
+};
+
+const useAudioSync = (
+  audioRef: RefObject<HTMLAudioElement>,
+  audioStream?: MediaStream,
+  audioUrl?: string,
+) => {
+  useEffect(() => {
+    const audioElement = audioRef.current;
+    if (!audioElement) {
+      return;
+    }
+    if (audioStream) {
+      if (audioElement.srcObject !== audioStream) {
+        audioElement.srcObject = audioStream;
+      }
+      audioElement.play().catch(() => {});
+      return;
+    }
+    if (audioElement.srcObject) {
+      audioElement.srcObject = null;
+    }
+    if (audioUrl && audioElement.src !== audioUrl) {
+      audioElement.src = audioUrl;
+    }
+  }, [audioRef, audioStream, audioUrl]);
 };
 
 const LANGUAGE_OPTIONS = [
@@ -91,6 +118,199 @@ const resolveAudioExtension = (contentType?: string) =>
 
 const resolveStreamingMimeType = (contentType: string) =>
   contentType.includes("audio/wav") ? 'audio/wav; codecs="1"' : contentType;
+
+const parseWavHeader = (header: Uint8Array) => {
+  const readString = (offset: number, length: number) =>
+    String.fromCharCode(...header.slice(offset, offset + length));
+  if (readString(0, 4) !== "RIFF" || readString(8, 4) !== "WAVE") {
+    throw new Error("Invalid WAV header.");
+  }
+  let offset = 12;
+  let fmt: {
+    audioFormat: number;
+    channels: number;
+    sampleRate: number;
+    bitsPerSample: number;
+  } | null = null;
+  let dataOffset: number | null = null;
+  while (offset + 8 <= header.length) {
+    const chunkId = readString(offset, 4);
+    const chunkSize =
+      header[offset + 4] |
+      (header[offset + 5] << 8) |
+      (header[offset + 6] << 16) |
+      (header[offset + 7] << 24);
+    const chunkStart = offset + 8;
+    if (chunkId === "fmt ") {
+      const audioFormat = header[chunkStart] | (header[chunkStart + 1] << 8);
+      const channels = header[chunkStart + 2] | (header[chunkStart + 3] << 8);
+      const sampleRate =
+        header[chunkStart + 4] |
+        (header[chunkStart + 5] << 8) |
+        (header[chunkStart + 6] << 16) |
+        (header[chunkStart + 7] << 24);
+      const bitsPerSample = header[chunkStart + 14] | (header[chunkStart + 15] << 8);
+      fmt = { audioFormat, channels, sampleRate, bitsPerSample };
+    } else if (chunkId === "data") {
+      dataOffset = chunkStart;
+      break;
+    }
+    offset = chunkStart + chunkSize + (chunkSize % 2);
+  }
+  if (!fmt || dataOffset === null) {
+    throw new Error("Unsupported WAV header.");
+  }
+  if (fmt.audioFormat !== 1) {
+    throw new Error("Only PCM WAV is supported for streaming.");
+  }
+  return { ...fmt, dataOffset };
+};
+
+const streamWavViaWebAudio = async ({
+  reader,
+  onStreamStart,
+  onChunk,
+}: {
+  reader: ReadableStreamDefaultReader<Uint8Array>;
+  onStreamStart?: (mediaStream: MediaStream) => void;
+  onChunk?: (chunk: Uint8Array) => void;
+}) => {
+  const bufferSize = 4096;
+  let audioContext: AudioContext | null = null;
+  let activeProcessor: ScriptProcessorNode | null = null;
+  let streamDestination: MediaStreamAudioDestinationNode | null = null;
+  const sampleQueue: Float32Array[] = [];
+  let sampleOffset = 0;
+  let wavInfo:
+    | {
+        channels: number;
+        bitsPerSample: number;
+        dataOffset: number;
+        sampleRate: number;
+      }
+    | null = null;
+  let headerBytes = new Uint8Array(0);
+  let playbackStarted = false;
+  let streamingEnabled = true;
+
+  const readSample = () => {
+    while (sampleQueue.length > 0 && sampleOffset >= sampleQueue[0].length) {
+      sampleQueue.shift();
+      sampleOffset = 0;
+    }
+    if (sampleQueue.length === 0) {
+      return null;
+    }
+    const value = sampleQueue[0][sampleOffset];
+    sampleOffset += 1;
+    return value;
+  };
+
+  const handleAudioProcess = (event: AudioProcessingEvent) => {
+    if (!wavInfo) {
+      return;
+    }
+    const channelCount = wavInfo.channels;
+    const outputs = Array.from({ length: channelCount }, (_, idx) =>
+      event.outputBuffer.getChannelData(idx),
+    );
+    for (let i = 0; i < outputs[0].length; i += 1) {
+      for (let channel = 0; channel < channelCount; channel += 1) {
+        const sample = readSample();
+        outputs[channel][i] = sample === null ? 0 : sample;
+      }
+    }
+  };
+
+  const enqueuePcm = (pcmBytes: Uint8Array) => {
+    if (!wavInfo || wavInfo.bitsPerSample !== 16) {
+      return;
+    }
+    const samples = new Float32Array(pcmBytes.length / 2);
+    for (let i = 0; i < pcmBytes.length; i += 2) {
+      const int16 = pcmBytes[i] | (pcmBytes[i + 1] << 8);
+      const signed = int16 >= 0x8000 ? int16 - 0x10000 : int16;
+      samples[i / 2] = signed / 32768;
+    }
+    sampleQueue.push(samples);
+  };
+
+  const waitForDrain = async () =>
+    new Promise<void>((resolve) => {
+      const checkQueue = () => {
+        if (!streamingEnabled || sampleQueue.length === 0) {
+          resolve();
+          return;
+        }
+        setTimeout(checkQueue, 100);
+      };
+      checkQueue();
+    });
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) {
+      break;
+    }
+    if (!value) {
+      continue;
+    }
+    onChunk?.(value);
+
+    if (!wavInfo && streamingEnabled) {
+      const combined = new Uint8Array(headerBytes.length + value.length);
+      combined.set(headerBytes);
+      combined.set(value, headerBytes.length);
+      headerBytes = combined;
+      if (headerBytes.length >= 44) {
+        try {
+          wavInfo = parseWavHeader(headerBytes);
+          if (wavInfo.bitsPerSample !== 16) {
+            throw new Error("Only 16-bit PCM WAV streaming is supported.");
+          }
+          audioContext = new AudioContext({ sampleRate: wavInfo.sampleRate });
+          await audioContext.resume();
+          streamDestination = audioContext.createMediaStreamDestination();
+          activeProcessor = audioContext.createScriptProcessor(
+            bufferSize,
+            0,
+            wavInfo.channels,
+          );
+          activeProcessor.onaudioprocess = handleAudioProcess;
+          activeProcessor.connect(streamDestination);
+          if (!playbackStarted) {
+            playbackStarted = true;
+            onStreamStart?.(streamDestination.stream);
+          }
+          const pcmStart = headerBytes.slice(wavInfo.dataOffset);
+          enqueuePcm(pcmStart);
+          headerBytes = new Uint8Array(0);
+        } catch {
+          streamingEnabled = false;
+        }
+      }
+      continue;
+    }
+
+    if (streamingEnabled && !playbackStarted && streamDestination) {
+      playbackStarted = true;
+      onStreamStart?.(streamDestination.stream);
+    }
+    if (streamingEnabled) {
+      enqueuePcm(value);
+    }
+  }
+
+  if (streamingEnabled) {
+    await waitForDrain();
+  }
+  if (activeProcessor) {
+    activeProcessor.disconnect();
+  }
+  if (audioContext) {
+    audioContext.close().catch(() => {});
+  }
+};
 
 const buildScriptDownloadFilename = ({
   voice,
@@ -188,10 +408,16 @@ export default function HomePage() {
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const isDevMode = process.env.NODE_ENV !== "production";
   const isLoading = status === "loading";
-  const shouldShowResult = Boolean(result?.audioUrl || result?.script || result?.ttsPrompt);
+
+  useAudioSync(audioRef, result?.audioStream, result?.audioUrl);
+
+  const shouldShowResult = Boolean(
+    result?.audioStream || result?.audioUrl || result?.script || result?.ttsPrompt,
+  );
 
   const practiceConfig = useMemo(
     () => derivePracticeConfig(formState.practiceType, formState.durationMinutes),
@@ -217,6 +443,9 @@ export default function HomePage() {
       }
       if (result?.downloadUrl) {
         URL.revokeObjectURL(result.downloadUrl);
+      }
+      if (result?.audioStream) {
+        result.audioStream.getTracks().forEach((track) => track.stop());
       }
       if (result?.scriptDownloadUrl) {
         URL.revokeObjectURL(result.scriptDownloadUrl);
@@ -312,7 +541,11 @@ export default function HomePage() {
 
     const requestAudio = async (
       script: string,
-      onStreamStart?: (mediaUrl: string, contentType: string) => void,
+      onStreamStart?: (args: {
+        mediaUrl?: string;
+        mediaStream?: MediaStream;
+        contentType: string;
+      }) => void,
     ) => {
       const response = await fetch("/api/tts", {
         method: "POST",
@@ -343,12 +576,33 @@ export default function HomePage() {
       const chunks: Uint8Array[] = [];
       const streamingMimeType = resolveStreamingMimeType(contentType);
       const canAttemptStream = typeof MediaSource !== "undefined";
+      const canWebAudioStream =
+        contentType.includes("audio/wav") && typeof AudioContext !== "undefined";
+
+      if (canWebAudioStream) {
+        await streamWavViaWebAudio({
+          reader,
+          onStreamStart: (mediaStream) =>
+            onStreamStart?.({ mediaStream, contentType }),
+          onChunk: (chunk) => chunks.push(chunk),
+        });
+        return { blob: new Blob(chunks, { type: contentType }), contentType };
+      }
 
       if (canAttemptStream) {
         const mediaSource = new MediaSource();
         const mediaUrl = URL.createObjectURL(mediaSource);
+        let streamStartNotified = false;
+        const notifyStreamStart = () => {
+          if (streamStartNotified) {
+            return;
+          }
+          streamStartNotified = true;
+                  onStreamStart?.({ mediaUrl, contentType });
+        };
 
         try {
+          notifyStreamStart();
           await new Promise<void>((resolve, reject) => {
             const handleError = () => reject(new Error("Audio stream failed."));
 
@@ -373,7 +627,7 @@ export default function HomePage() {
                   }
                   chunks.push(firstRead.value);
                   await appendChunk(firstRead.value);
-                  onStreamStart?.(mediaUrl, contentType);
+                  notifyStreamStart();
 
                   while (true) {
                     const { value, done } = await reader.read();
@@ -436,9 +690,37 @@ export default function HomePage() {
         if (jsonResult.ttsPrompt) {
           ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
         }
+        const cleanedScript = script
+          ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
+          : "";
+        if (cleanedScript) {
+          const scriptDownloadFilename = buildScriptDownloadFilename({
+            voice: voiceStyle,
+            durationMinutes: formState.durationMinutes,
+            focus: primarySense,
+          });
+          const nextScriptUrl = URL.createObjectURL(
+            new Blob([cleanedScript], { type: "text/plain" }),
+          );
+          setResult((prev) => {
+            if (prev?.scriptDownloadUrl && prev.scriptDownloadUrl !== nextScriptUrl) {
+              URL.revokeObjectURL(prev.scriptDownloadUrl);
+            }
+            return {
+              audioStream: prev?.audioStream,
+              audioUrl: prev?.audioUrl,
+              downloadUrl: prev?.downloadUrl,
+              script: cleanedScript,
+              ttsPrompt,
+              downloadFilename: prev?.downloadFilename,
+              scriptDownloadFilename,
+              scriptDownloadUrl: nextScriptUrl,
+            };
+          });
+        }
         const { blob, mediaUrl, contentType } = await requestAudio(
           script,
-          (streamUrl, streamContentType) => {
+          ({ mediaUrl: streamUrl, mediaStream, contentType: streamContentType }) => {
             const downloadFilename = buildDownloadFilename({
               voice: voiceStyle,
               durationMinutes: formState.durationMinutes,
@@ -453,17 +735,15 @@ export default function HomePage() {
               if (prev?.downloadUrl) {
                 URL.revokeObjectURL(prev.downloadUrl);
               }
-              if (prev?.scriptDownloadUrl) {
-                URL.revokeObjectURL(prev.scriptDownloadUrl);
-              }
               return {
-                audioUrl: streamUrl,
+                audioStream: mediaStream ?? prev?.audioStream,
+                audioUrl: streamUrl ?? undefined,
                 downloadUrl: undefined,
-                script: "",
-                ttsPrompt: undefined,
+                script: prev?.script,
+                ttsPrompt: prev?.ttsPrompt,
                 downloadFilename,
-                scriptDownloadFilename: undefined,
-                scriptDownloadUrl: undefined,
+                scriptDownloadFilename: prev?.scriptDownloadFilename,
+                scriptDownloadUrl: prev?.scriptDownloadUrl,
               };
             });
           },
@@ -559,22 +839,23 @@ export default function HomePage() {
         ? URL.createObjectURL(new Blob([cleanedScript], { type: "text/plain" }))
         : undefined;
 
-      setResult((prev) => {
-        if (prev?.audioUrl && prev.audioUrl !== audioUrl) {
-          URL.revokeObjectURL(prev.audioUrl);
-        }
-        if (prev?.downloadUrl) {
-          URL.revokeObjectURL(prev.downloadUrl);
-        }
-        if (prev?.scriptDownloadUrl) {
-          URL.revokeObjectURL(prev.scriptDownloadUrl);
-        }
-        return {
-          audioUrl,
-          downloadUrl: downloadUrl ?? audioUrl,
-          script: cleanedScript,
-          ttsPrompt,
-          downloadFilename,
+        setResult((prev) => {
+          if (prev?.audioUrl && prev.audioUrl !== audioUrl) {
+            URL.revokeObjectURL(prev.audioUrl);
+          }
+          if (prev?.downloadUrl) {
+            URL.revokeObjectURL(prev.downloadUrl);
+          }
+          if (prev?.scriptDownloadUrl) {
+            URL.revokeObjectURL(prev.scriptDownloadUrl);
+          }
+          return {
+            audioStream: undefined,
+            audioUrl,
+            downloadUrl: downloadUrl ?? audioUrl,
+            script: cleanedScript,
+            ttsPrompt,
+            downloadFilename,
           scriptDownloadFilename,
           scriptDownloadUrl,
         };
@@ -790,19 +1071,25 @@ export default function HomePage() {
           <h2 style={{ marginTop: 0 }}>
             {isLoading ? "Streaming audio…" : "Your session is ready"}
           </h2>
-          {result.audioUrl && (
+          {(result.audioStream || result.audioUrl) && (
             <>
-              <audio controls style={{ width: "100%", marginBottom: "1rem" }}>
-                <source src={result.audioUrl} />
+              <audio
+                ref={audioRef}
+                controls
+                src={result.audioUrl}
+                style={{ width: "100%", marginBottom: "1rem" }}
+              >
                 Your browser does not support the audio element.
               </audio>
-              <a
-                href={result.downloadUrl ?? result.audioUrl}
-                download={result.downloadFilename ?? "pq-reps.wav"}
-                style={{ fontWeight: 600 }}
-              >
-                Download the WAV
-              </a>
+              {result.downloadUrl && (
+                <a
+                  href={result.downloadUrl}
+                  download={result.downloadFilename ?? "pq-reps.wav"}
+                  style={{ fontWeight: 600 }}
+                >
+                  Download the WAV
+                </a>
+              )}
             </>
           )}
           {result.script && (
