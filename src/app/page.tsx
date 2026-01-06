@@ -1161,7 +1161,8 @@ export default function HomePage() {
               border: "1px solid #ccc",
               background: "#fff",
               color: "#111",
-              fontWeight: 600,
+              fontWeight: 500,
+              lineHeight: 1.2,
               cursor: previewLoading ? "not-allowed" : "pointer",
             }}
           >
