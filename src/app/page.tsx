@@ -35,6 +35,20 @@ const DEFAULT_STATE: FormState = {
   audioDelivery: "generate",
 };
 
+const BRAND_COLORS = {
+  yellow: { base: "#FFC524", light: "#FFE28A", dark: "#E0A800" },
+  orange: { base: "#FF8E4F", light: "#FFC1A1", dark: "#E66F2E" },
+  blue: { base: "#82E6E6", light: "#CFF5F5", dark: "#4FC6C6" },
+  green: { base: "#63D9A0", light: "#B8EED5", dark: "#2FBF7F" },
+  neutral: {
+    white: "#FFFFFF",
+    grayBase: "#F8F8F8",
+    grayMid: "#E5E5E5",
+    black30: "#BFBFBF",
+    black: "#000000",
+  },
+};
+
 const useAudioSync = (
   audioRef: RefObject<HTMLAudioElement>,
   audioStream?: MediaStream,
@@ -450,8 +464,8 @@ const infoIconStyle: React.CSSProperties = {
   width: 18,
   height: 18,
   borderRadius: 999,
-  border: "1px solid #b5b5b5",
-  color: "#555",
+  border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+  color: BRAND_COLORS.neutral.black,
   fontSize: "0.75rem",
   fontWeight: 600,
   cursor: "help",
@@ -463,8 +477,8 @@ const infoTooltipStyle: React.CSSProperties = {
   bottom: "calc(100% + 8px)",
   left: "50%",
   transform: "translateX(-50%)",
-  background: "#111",
-  color: "#fff",
+  background: BRAND_COLORS.neutral.black,
+  color: BRAND_COLORS.neutral.grayBase,
   padding: "0.4rem 0.6rem",
   borderRadius: 8,
   fontSize: "0.75rem",
@@ -478,9 +492,9 @@ const infoTooltipStyle: React.CSSProperties = {
 const getPillStyle = (checked: boolean, disabled?: boolean): React.CSSProperties => ({
   padding: "0.5rem 0.9rem",
   borderRadius: 999,
-  border: `1px solid ${checked ? "#111" : "#ccc"}`,
-  background: checked ? "#111" : "#f7f7f7",
-  color: checked ? "#fff" : "#111",
+  border: `1px solid ${checked ? BRAND_COLORS.orange.dark : BRAND_COLORS.orange.base}`,
+  background: checked ? BRAND_COLORS.orange.dark : BRAND_COLORS.neutral.white,
+  color: BRAND_COLORS.neutral.black,
   fontWeight: 600,
   cursor: disabled ? "not-allowed" : "pointer",
   opacity: disabled ? 0.5 : 1,
@@ -1106,12 +1120,23 @@ export default function HomePage() {
   const previewIcon = previewLoading ? "⏳" : previewPlaying ? "■" : "▶";
 
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 720, margin: "0 auto" }}>
+    <main
+      style={{
+        fontFamily: "sans-serif",
+        padding: "2rem",
+        maxWidth: 720,
+        margin: "0 auto",
+        background: BRAND_COLORS.neutral.grayBase,
+        borderRadius: 16,
+      }}
+    >
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>PQ Reps Generator</h1>
-      <p style={{ marginBottom: "2rem", color: "#555" }}>
+      <p style={{ marginBottom: "2rem", color: BRAND_COLORS.neutral.black }}>
         Choose the type of PQ Reps you'd like to practice.
       </p>
-      <p style={{ marginBottom: "2rem", color: "#555" }}>Audio is AI-generated.</p>
+      <p style={{ marginBottom: "2rem", color: BRAND_COLORS.neutral.black }}>
+        Audio is AI-generated.
+      </p>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
         <label style={{ display: "grid", gap: "0.5rem" }}>
@@ -1172,7 +1197,7 @@ export default function HomePage() {
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Voice</span>
-          <span style={{ fontSize: "0.9rem", color: "#555" }}>
+          <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
             Choose the voice you prefer for guidance.
           </span>
           <PillRadioGroup
@@ -1195,9 +1220,9 @@ export default function HomePage() {
               gap: "0.4rem",
               padding: "0.4rem 0.9rem",
               borderRadius: 999,
-              border: "1px solid #ccc",
-              background: "#fff",
-              color: "#111",
+              border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+              background: BRAND_COLORS.neutral.grayBase,
+              color: BRAND_COLORS.neutral.black,
               fontWeight: 500,
               lineHeight: 1.2,
               cursor: previewLoading ? "not-allowed" : "pointer",
@@ -1208,7 +1233,9 @@ export default function HomePage() {
           </button>
           <audio ref={previewAudioRef} hidden />
           {previewError && (
-            <span style={{ fontSize: "0.9rem", color: "#b00020" }}>{previewError}</span>
+            <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.orange.dark }}>
+              {previewError}
+            </span>
           )}
         </label>
 
@@ -1261,13 +1288,17 @@ export default function HomePage() {
                     ttsNewlinePauseSeconds: Number.parseFloat(event.target.value) || 0,
                   })
                 }
-                style={{ padding: "0.75rem", borderRadius: 6, border: "1px solid #ccc" }}
+                style={{
+                  padding: "0.75rem",
+                  borderRadius: 6,
+                  border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+                }}
               />
             </label>
 
             <label style={{ display: "grid", gap: "0.5rem" }}>
               <span style={{ fontWeight: 600 }}>Debug TTS prompt</span>
-              <span style={{ fontSize: "0.9rem", color: "#555" }}>
+              <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
                 Shows the exact TTS payload used for OpenAI audio generation.
               </span>
               <input
@@ -1283,7 +1314,12 @@ export default function HomePage() {
         {errors.length > 0 && (
           <div
             role="alert"
-            style={{ background: "#ffecec", borderRadius: 8, padding: "1rem", color: "#b30000" }}
+            style={{
+              background: BRAND_COLORS.orange.light,
+              borderRadius: 8,
+              padding: "1rem",
+              color: BRAND_COLORS.orange.dark,
+            }}
           >
             <strong style={{ display: "block", marginBottom: "0.5rem" }}>Please fix the following:</strong>
             <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
@@ -1298,27 +1334,36 @@ export default function HomePage() {
           type="submit"
           disabled={isLoading}
           style={{
-            padding: "0.85rem 1.5rem",
-            background: isLoading ? "#999" : "#111",
-            color: "#fff",
+            padding: "1.1rem 2.25rem",
+            background: isLoading ? BRAND_COLORS.neutral.grayMid : BRAND_COLORS.neutral.black,
+            color: BRAND_COLORS.neutral.grayBase,
             borderRadius: 999,
             border: "none",
             cursor: isLoading ? "not-allowed" : "pointer",
-            fontWeight: 600,
+            fontWeight: 700,
+            fontSize: "1.05rem",
+            boxShadow: `0 10px 20px ${BRAND_COLORS.neutral.black30}`,
           }}
         >
-          {isLoading ? "Generating…" : "Generate"}
+          {isLoading ? "Preparing PQ Reps…" : "Prepare PQ Reps"}
         </button>
       </form>
 
       {status === "loading" && (
-        <p style={{ marginTop: "1.5rem", color: "#555" }}>
-          Generating your session. This can take a few seconds.
+        <p style={{ marginTop: "1.5rem", color: BRAND_COLORS.neutral.black }}>
+          Preparing your PQ Reps session. This can take a few seconds.
         </p>
       )}
 
       {shouldShowResult && result && (
-        <section style={{ marginTop: "2rem", padding: "1.5rem", borderRadius: 12, background: "#f7f7f7" }}>
+        <section
+          style={{
+            marginTop: "2rem",
+            padding: "1.5rem",
+            borderRadius: 12,
+            background: BRAND_COLORS.neutral.grayBase,
+          }}
+        >
           <h2 style={{ marginTop: 0 }}>
             {isLoading ? "Streaming audio…" : "Your session is ready"}
           </h2>
@@ -1362,8 +1407,8 @@ export default function HomePage() {
               <h3 style={{ marginBottom: "0.5rem" }}>TTS prompt (debug)</h3>
               <pre
                 style={{
-                  background: "#111",
-                  color: "#f5f5f5",
+                  background: BRAND_COLORS.neutral.black,
+                  color: BRAND_COLORS.neutral.grayBase,
                   padding: "1rem",
                   borderRadius: 8,
                   overflowX: "auto",
