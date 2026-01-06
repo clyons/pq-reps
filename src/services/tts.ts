@@ -99,7 +99,7 @@ const insertNewlinePauses = (script: string, pauseSeconds?: number): string => {
     return script;
   }
   const normalizedScript = script.endsWith("\n") ? script : `${script}\n`;
-  return normalizedScript.replace(/\r?\n/g, `\n[pause:${pauseSeconds}]\n`);
+  return normalizedScript.replace(/\r?\n+/g, `\n[pause:${pauseSeconds}]\n`);
 };
 
 const tokenizeScript = (script: string) => {
