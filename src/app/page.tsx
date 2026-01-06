@@ -83,6 +83,16 @@ const MALE_VOICES_BY_LANGUAGE: Record<string, string> = {
   fr: "onyx",
 };
 
+const PREVIEW_TEXT_BY_LANGUAGE: Record<string, string> = {
+  en: "The sun rises in the east, and sets in the west.\n\nThe colours of the sky fade with the setting sun.",
+  es: "El sol sale por el este y se pone por el oeste.\n\nLos colores del cielo se desvanecen con la puesta de sol.",
+  fr: "Le soleil se lève à l'est et se couche à l'ouest.\n\nLes couleurs du ciel s'estompent avec le soleil couchant.",
+  de: "Die Sonne geht im Osten auf und im Westen unter.\n\nDie Farben des Himmels verblassen mit der untergehenden Sonne.",
+};
+
+const capitalize = (value: string) =>
+  value.length === 0 ? value : value.charAt(0).toUpperCase() + value.slice(1);
+
 const resolveVoiceForGender = (gender: FormState["voiceGender"], language: string) => {
   if (gender === "male") {
     return MALE_VOICES_BY_LANGUAGE[language] ?? "ash";
@@ -492,7 +502,11 @@ export default function HomePage() {
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [previewMessage, setPreviewMessage] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const previewAudioRef = useRef<HTMLAudioElement>(null);
 
   const isDevMode = process.env.NODE_ENV !== "production";
   const isLoading = status === "loading";
@@ -534,8 +548,11 @@ export default function HomePage() {
       if (result?.scriptDownloadUrl) {
         URL.revokeObjectURL(result.scriptDownloadUrl);
       }
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
     };
-  }, [result]);
+  }, [previewUrl, result]);
 
   useEffect(() => {
     if (!focusOptions.includes(formState.focus)) {
@@ -577,8 +594,14 @@ export default function HomePage() {
   }));
 
   const voicePillOptions: PillOption[] = [
-    { value: "female", label: "Female" },
-    { value: "male", label: "Male" },
+    {
+      value: "female",
+      label: capitalize(resolveVoiceForGender("female", formState.language)),
+    },
+    {
+      value: "male",
+      label: capitalize(resolveVoiceForGender("male", formState.language)),
+    },
   ];
 
   const validate = (state: FormState) => {
@@ -990,6 +1013,55 @@ export default function HomePage() {
     }
   };
 
+  const handleVoicePreview = async (gender: FormState["voiceGender"]) => {
+    const previewAudio = previewAudioRef.current;
+    if (!previewAudio) {
+      return;
+    }
+    const language = formState.language;
+    const script = PREVIEW_TEXT_BY_LANGUAGE[language] ?? PREVIEW_TEXT_BY_LANGUAGE.en;
+    const voice = resolveVoiceForGender(gender, language);
+    setPreviewLoading(true);
+    setPreviewMessage("Loading preview...");
+    try {
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "audio/wav",
+        },
+        body: JSON.stringify({
+          script,
+          language,
+          voice,
+          ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(`Preview failed (${response.status}).`);
+      }
+      const contentType = response.headers.get("content-type") ?? "audio/wav";
+      const audioBuffer = await response.arrayBuffer();
+      const audioBlob = new Blob([audioBuffer], { type: contentType });
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      const nextUrl = URL.createObjectURL(audioBlob);
+      setPreviewUrl(nextUrl);
+      previewAudio.src = nextUrl;
+      previewAudio.hidden = false;
+      setPreviewMessage("Playing preview...");
+      previewAudio.onended = () => {
+        setPreviewMessage(null);
+      };
+      await previewAudio.play();
+    } catch (error) {
+      setPreviewMessage(error instanceof Error ? error.message : "Preview failed.");
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
   return (
     <main style={{ fontFamily: "sans-serif", padding: "2rem", maxWidth: 720, margin: "0 auto" }}>
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>PQ Reps Generator</h1>
@@ -1069,6 +1141,43 @@ export default function HomePage() {
               updateFormState({ voiceGender: value as FormState["voiceGender"] })
             }
           />
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "center" }}>
+            <span style={{ fontSize: "0.9rem", color: "#555" }}>Preview the voice:</span>
+            <button
+              type="button"
+              onClick={() => handleVoicePreview("female")}
+              disabled={previewLoading}
+              style={{
+                padding: "0.4rem 0.9rem",
+                borderRadius: 999,
+                border: "1px solid #ccc",
+                background: "#fff",
+                fontWeight: 600,
+                cursor: previewLoading ? "not-allowed" : "pointer",
+              }}
+            >
+              {voicePillOptions[0].label}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleVoicePreview("male")}
+              disabled={previewLoading}
+              style={{
+                padding: "0.4rem 0.9rem",
+                borderRadius: 999,
+                border: "1px solid #ccc",
+                background: "#fff",
+                fontWeight: 600,
+                cursor: previewLoading ? "not-allowed" : "pointer",
+              }}
+            >
+              {voicePillOptions[1].label}
+            </button>
+          </div>
+          <audio ref={previewAudioRef} hidden />
+          {previewMessage && (
+            <span style={{ fontSize: "0.9rem", color: "#555" }}>{previewMessage}</span>
+          )}
         </label>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>

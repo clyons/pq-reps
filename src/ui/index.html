@@ -176,6 +176,23 @@
         color: #555;
         font-size: 0.9rem;
       }
+      .voice-preview {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      .voice-preview button {
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid #ccc;
+        background: #fff;
+        font-weight: 600;
+      }
+      .voice-preview button[disabled] {
+        background: #f0f0f0;
+        color: #777;
+      }
       .footer {
         margin-top: 2.5rem;
         padding-top: 1.25rem;
@@ -292,14 +309,20 @@
           <div class="pill-group" role="radiogroup" aria-label="Voice">
             <label class="pill-option">
               <input type="radio" name="voiceGender" value="female" checked />
-              <span class="pill">Female</span>
+              <span class="pill" data-voice-label="female">Alloy</span>
             </label>
             <label class="pill-option">
               <input type="radio" name="voiceGender" value="male" required />
-              <span class="pill">Male</span>
+              <span class="pill" data-voice-label="male">Ash</span>
             </label>
           </div>
-          <span class="option-hint">Choose the voice you prefer for guidance.</span>
+          <div class="voice-preview">
+            <span class="option-hint">Choose the voice you prefer for guidance.</span>
+            <button type="button" data-preview-voice="female">Preview</button>
+            <button type="button" data-preview-voice="male">Preview</button>
+          </div>
+          <audio id="voice-preview-audio" hidden></audio>
+          <span id="voice-preview-status" class="option-hint" hidden>Loading preview...</span>
         </label>
 
         <label>
@@ -396,6 +419,15 @@
       const storageKey = "pq-reps-form";
       const femaleVoiceByLanguage = { es: "nova", fr: "nova" };
       const maleVoiceByLanguage = { es: "onyx", fr: "onyx" };
+      const previewTextByLanguage = {
+        en: "The sun rises in the east, and sets in the west.\n\nThe colours of the sky fade with the setting sun.",
+        es: "El sol sale por el este y se pone por el oeste.\n\nLos colores del cielo se desvanecen con la puesta de sol.",
+        fr: "Le soleil se lève à l'est et se couche à l'ouest.\n\nLes couleurs du ciel s'estompent avec le soleil couchant.",
+        de: "Die Sonne geht im Osten auf und im Westen unter.\n\nDie Farben des Himmels verblassen mit der untergehenden Sonne.",
+      };
+      const previewButtons = form.querySelectorAll("[data-preview-voice]");
+      const previewAudio = document.getElementById("voice-preview-audio");
+      const previewStatus = document.getElementById("voice-preview-status");
       const isDevMode = new URLSearchParams(window.location.search).get("dev") === "1";
 
       if (devControls) {
@@ -488,6 +520,13 @@
         contentType && contentType.includes("audio/wav")
           ? 'audio/wav; codecs="1"'
           : contentType;
+      const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1);
+      const resolveVoiceLabel = (gender, language) =>
+        capitalize(
+          gender === "male"
+            ? maleVoiceByLanguage[language] || "ash"
+            : femaleVoiceByLanguage[language] || "alloy",
+        );
       const parseWavHeader = (header) => {
         const readString = (offset, length) =>
           String.fromCharCode(...header.slice(offset, offset + length));
@@ -708,6 +747,17 @@
         updateFocusOptions(eyeState);
       };
 
+      const updateVoiceLabels = () => {
+        const language = getSelectedValue("language") || "en";
+        form.querySelectorAll("[data-voice-label]").forEach((label) => {
+          const gender = label.getAttribute("data-voice-label");
+          if (!gender) {
+            return;
+          }
+          label.textContent = resolveVoiceLabel(gender, language);
+        });
+      };
+
       const getFormValues = () => {
         const formData = new FormData(form);
         return Object.fromEntries(formData.entries());
@@ -737,11 +787,75 @@
       }
 
       updateDerivedFields();
+      updateVoiceLabels();
       durationInputs.forEach((input) => {
         input.addEventListener("change", updateDerivedFields);
       });
       practiceTypeInputs.forEach((input) => {
         input.addEventListener("change", updateDerivedFields);
+      });
+      form.querySelectorAll("input[name='language']").forEach((input) => {
+        input.addEventListener("change", updateVoiceLabels);
+      });
+
+      const playPreview = async (gender) => {
+        if (!previewAudio || !previewStatus) {
+          return;
+        }
+        const language = getSelectedValue("language") || "en";
+        const script = previewTextByLanguage[language] || previewTextByLanguage.en;
+        const voice =
+          gender === "male"
+            ? maleVoiceByLanguage[language] || "ash"
+            : femaleVoiceByLanguage[language] || "alloy";
+        previewStatus.hidden = false;
+        previewStatus.textContent = "Loading preview...";
+        previewButtons.forEach((button) => {
+          button.disabled = true;
+        });
+        try {
+          const response = await fetch("/api/tts", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "audio/wav",
+            },
+            body: JSON.stringify({
+              script,
+              language,
+              voice,
+              ttsNewlinePauseSeconds:
+                Number(form.querySelector("input[name='ttsNewlinePauseSeconds']")?.value) ||
+                0,
+            }),
+          });
+          if (!response.ok) {
+            throw new Error(`Preview failed (${response.status}).`);
+          }
+          const contentType = response.headers.get("content-type") || "audio/wav";
+          const audioBuffer = await response.arrayBuffer();
+          const audioBlob = new Blob([audioBuffer], { type: contentType });
+          if (previewAudio.src) {
+            URL.revokeObjectURL(previewAudio.src);
+          }
+          previewAudio.src = URL.createObjectURL(audioBlob);
+          previewAudio.hidden = false;
+          await previewAudio.play();
+          previewStatus.textContent = "Playing preview...";
+        } catch (error) {
+          previewStatus.textContent =
+            error instanceof Error ? error.message : "Preview failed.";
+        } finally {
+          previewButtons.forEach((button) => {
+            button.disabled = false;
+          });
+        }
+      };
+
+      previewButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          playPreview(button.getAttribute("data-preview-voice") || "female");
+        });
       });
 
       const loadVersion = async () => {
@@ -763,6 +877,8 @@
       loadVersion();
       resetButton.addEventListener("click", () => {
         setFormValues(defaultValues);
+        updateDerivedFields();
+        updateVoiceLabels();
         localStorage.removeItem(storageKey);
       });
 
