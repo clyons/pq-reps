@@ -228,7 +228,7 @@
         <div id="dev-controls" hidden>
           <label>
             TTS newline pause (seconds)
-            <input type="number" name="ttsNewlinePauseSeconds" min="0" step="0.5" value="1" />
+            <input type="number" name="ttsNewlinePauseSeconds" min="0" step="0.5" value="2" />
           </label>
 
           <label>
@@ -724,9 +724,7 @@
           senseRotation,
           languages: [language],
           voiceStyle,
-          ...(isDevMode
-            ? { ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0 }
-            : {}),
+          ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0,
           ...(debugEnabled ? { debugTtsPrompt: true } : {}),
         };
 
@@ -734,9 +732,7 @@
           script,
           language,
           voice: voiceStyle,
-          ttsNewlinePauseSeconds: isDevMode
-            ? Number(formData.get("ttsNewlinePauseSeconds")) || 0
-            : undefined,
+          ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0,
         });
         submitButton.disabled = true;
         statusPanel.hidden = false;

@@ -34,7 +34,7 @@ type ValidationResult = {
   error: ErrorResponse;
 };
 
-const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1;
+const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 2;
 
 const ALLOWED_PRACTICE_MODES: PracticeMode[] = [
   "tactile",
