@@ -23,18 +23,19 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Stream status updates with SSE for `/api/generate`.
 - [ ] Add user-facing AI-generated voice disclosure in the UI.
 - [ ] Add tests for prompt outline (API validation coverage exists in `tests/generate-api.test.ts`).
-- [ ] Reduce latency by using the Speech API to support realtime audio streaming via chunked transfer encoding.
-- [ ] Consider routing all audio (streamed and downloaded) through `/api/tts`.
+- [x] Reduce latency by using the Speech API to support realtime audio streaming via chunked transfer encoding.
+- [x] Consider routing all audio (streamed and downloaded) through `/api/tts`.
 - [ ] Replace drop-downs with pills or other friendlier UI elements
 - [ ] Add common scenarios for PQ Reps which have their own settings / prompts
 - [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog"
 - [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min)
-- [ ] Update the WAV filenames to include "metadata" -- speaker, duration, focus, datetime
+- [x] Update the WAV filenames to include "metadata" -- speaker, duration, focus, datetime
 
-## WIP: Streaming audio
-- Investigate OpenAI Speech API chunked streaming support for TTS audio bytes.
-- Prototype server-side chunked transfer encoding for `/api/generate`.
-- Add client playback buffering indicators for partial audio responses.
+## Streaming audio
+- `/api/tts` supports streaming WAV audio when you set the `x-tts-streaming: 1` header.
+- `/api/generate` also supports streaming audio when `outputMode=audio` and `x-tts-streaming: 1` are set.
+- Streaming responses send a WAV header first, followed by chunked audio bytes.
+- Pause markers like `[pause:2]` are preserved in streaming output as silent PCM buffers.
 
 ## Local setup (macOS)
 
@@ -106,6 +107,34 @@ Example response:
 
 To download audio bytes directly, omit the `Accept: application/json` header. The response
 will be `audio/wav` with `Content-Disposition: attachment; filename="pq-reps.wav"`.
+
+### Streaming audio (WAV)
+Both `POST /api/tts` and `POST /api/generate` support chunked WAV streaming when you send
+`x-tts-streaming: 1`. The WAV header is sent first, then audio chunks follow as they are
+generated.
+
+`POST /api/tts` expects:
+```json
+{
+  "script": "string",
+  "language": "en",
+  "voice": "alloy",
+  "ttsNewlinePauseSeconds": 1
+}
+```
+
+Example streaming call:
+```bash
+curl -s -H "x-tts-streaming: 1" -H "Content-Type: application/json" \
+  -d '{"script":"[pause:2]Hello\\nWorld","language":"en","voice":"alloy","ttsNewlinePauseSeconds":4}' \
+  http://localhost:3000/api/tts > out.wav
+```
+
+Notes:
+- Use `[pause:<seconds>]` markers in scripts to insert explicit silences. These pauses are
+  preserved in streaming audio as silence buffers.
+- Set `ttsNewlinePauseSeconds` to automatically insert pauses between newline-delimited
+  sentences before audio synthesis.
 
 ### Debug & streaming
 - `outputMode` controls response format:
