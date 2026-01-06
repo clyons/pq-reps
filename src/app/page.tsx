@@ -207,6 +207,18 @@ const streamWavViaWebAudio = async ({
     sampleQueue.push(samples);
   };
 
+  const waitForDrain = async () =>
+    new Promise<void>((resolve) => {
+      const checkQueue = () => {
+        if (!streamingEnabled || sampleQueue.length === 0) {
+          resolve();
+          return;
+        }
+        setTimeout(checkQueue, 100);
+      };
+      checkQueue();
+    });
+
   while (true) {
     const { value, done } = await reader.read();
     if (done) {
@@ -260,6 +272,9 @@ const streamWavViaWebAudio = async ({
     }
   }
 
+  if (streamingEnabled) {
+    await waitForDrain();
+  }
   if (activeProcessor) {
     activeProcessor.disconnect();
   }
