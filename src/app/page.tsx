@@ -1382,7 +1382,7 @@ export default function HomePage() {
                   download={result.downloadFilename ?? "pq-reps.wav"}
                   style={{ fontWeight: 600 }}
                 >
-                  Download the WAV
+                  Download the audio
                 </a>
               )}
             </>
@@ -1395,7 +1395,7 @@ export default function HomePage() {
                   download={result.scriptDownloadFilename ?? "pq-reps.txt"}
                   style={{ fontWeight: 600, display: "inline-block", marginTop: "1rem" }}
                 >
-                  Download the script
+                  Download the text
                 </a>
               )}
               <p style={{ marginTop: "1rem", whiteSpace: "pre-line" }}>{result.script}</p>
