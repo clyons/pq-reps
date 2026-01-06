@@ -20,6 +20,11 @@ import {
   TtsScriptTooLargeError,
   TTS_SYSTEM_PROMPT,
 } from "../../services/tts";
+import {
+  DEFAULT_LOCALE,
+  resolveLocaleFromPayload,
+  translate,
+} from "../../lib/i18n";
 
 type SuccessResponse = {
   script: string;
@@ -168,7 +173,7 @@ export default async function handler(
     sendJson(res, 405, {
       error: {
         code: "method_not_allowed",
-        message: "Only POST requests are supported.",
+        message: translate(DEFAULT_LOCALE, "errors.method_not_allowed"),
       },
     });
     return;
@@ -182,7 +187,7 @@ export default async function handler(
       sendJson(res, 413, {
         error: {
           code: "payload_too_large",
-          message: "Request body exceeds the maximum allowed size.",
+          message: translate(DEFAULT_LOCALE, "errors.payload_too_large"),
         },
       });
       return;
@@ -190,14 +195,15 @@ export default async function handler(
     sendJson(res, 400, {
       error: {
         code: "invalid_json",
-        message: "Request body must be valid JSON.",
+        message: translate(DEFAULT_LOCALE, "errors.invalid_json"),
         details: { error: (error as Error).message },
       },
     });
     return;
   }
 
-  const validation = validateGenerateConfig(payload);
+  const locale = resolveLocaleFromPayload(payload);
+  const validation = validateGenerateConfig(payload, locale);
   if (!validation.ok) {
     sendJson(res, 400, validation.error);
     return;
@@ -215,7 +221,7 @@ export default async function handler(
     sendJson(res, 400, {
       error: {
         code: "invalid_output_mode",
-        message: "Output mode must be one of: text, audio, text-audio.",
+        message: translate(locale, "errors.invalid_output_mode"),
       },
     });
     return;
@@ -224,7 +230,7 @@ export default async function handler(
   try {
     if (wantsStream) {
       sendEventStreamHeaders(res);
-      sendEvent(res, "status", "generating script…");
+      sendEvent(res, "status", translate(locale, "status.generating_script"));
     }
     const scriptStart = Date.now();
     const { script } = await generateScript({ prompt });
@@ -262,7 +268,7 @@ export default async function handler(
     }
 
     if (wantsStream) {
-      sendEvent(res, "status", "synthesizing audio…");
+      sendEvent(res, "status", translate(locale, "status.synthesizing_audio"));
     }
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
     const ttsStart = Date.now();
@@ -393,8 +399,8 @@ export default async function handler(
     if (wantsStream) {
       const message =
         error instanceof TtsScriptTooLargeError
-          ? "Script exceeds the maximum length supported for TTS."
-          : "Failed to generate a response.";
+          ? translate(locale, "errors.script_too_large")
+          : translate(locale, "errors.generate_failure");
       sendEvent(res, "error", message);
       res.end();
       return;
@@ -403,7 +409,7 @@ export default async function handler(
       sendJson(res, 400, {
         error: {
           code: error.code,
-          message: "Script exceeds the maximum length supported for TTS.",
+          message: translate(locale, "errors.script_too_large"),
           details: {
             maxSegments: error.maxSegments,
             maxChars: error.maxChars,
@@ -417,7 +423,7 @@ export default async function handler(
     sendJson(res, 500, {
       error: {
         code: "tts_failure",
-        message: "Failed to synthesize audio.",
+        message: translate(locale, "errors.tts_failure"),
         details: { error: (error as Error).message },
       },
     });

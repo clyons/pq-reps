@@ -6,6 +6,7 @@ import { URL, fileURLToPath } from "url";
 import generateHandler from "./pages/api/generate";
 import ttsHandler from "./pages/api/tts";
 import voicePreviewHandler from "./pages/api/voice-preview";
+import { DEFAULT_LOCALE, translate } from "./lib/i18n";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -48,7 +49,10 @@ const server = http.createServer(async (req, res) => {
         JSON.stringify({
           error: {
             code: "version_unavailable",
-            message: error instanceof Error ? error.message : "Unable to load version.",
+            message:
+              error instanceof Error
+                ? error.message
+                : translate(DEFAULT_LOCALE, "errors.version_unavailable"),
           },
         }),
       );
@@ -66,7 +70,14 @@ const server = http.createServer(async (req, res) => {
 
   res.statusCode = 404;
   res.setHeader("Content-Type", "application/json");
-  res.end(JSON.stringify({ error: { code: "not_found", message: "Route not found." } }));
+  res.end(
+    JSON.stringify({
+      error: {
+        code: "not_found",
+        message: translate(DEFAULT_LOCALE, "errors.not_found"),
+      },
+    }),
+  );
 });
 
 server.listen(port, () => {

@@ -4,6 +4,11 @@ import {
   synthesizeSpeechStream,
   TtsScriptTooLargeError,
 } from "../../services/tts";
+import {
+  DEFAULT_LOCALE,
+  resolveLocaleFromPayload,
+  translate,
+} from "../../lib/i18n";
 
 type TtsPayload = {
   script: string;
@@ -93,7 +98,7 @@ export default async function handler(
     sendJson(res, 405, {
       error: {
         code: "method_not_allowed",
-        message: "Only POST requests are supported.",
+        message: translate(DEFAULT_LOCALE, "errors.method_not_allowed"),
       },
     });
     return;
@@ -106,18 +111,20 @@ export default async function handler(
     sendJson(res, 400, {
       error: {
         code: "invalid_json",
-        message: "Request body must be valid JSON.",
+        message: translate(DEFAULT_LOCALE, "errors.invalid_json"),
         details: { error: (error as Error).message },
       },
     });
     return;
   }
 
+  const locale = resolveLocaleFromPayload(payload);
+
   if (!isValidPayload(payload)) {
     sendJson(res, 400, {
       error: {
         code: "invalid_payload",
-        message: "Request body must include script, language, and voice.",
+        message: translate(locale, "errors.invalid_tts_payload"),
       },
     });
     return;
@@ -170,7 +177,7 @@ export default async function handler(
       sendJson(res, 400, {
         error: {
           code: error.code,
-          message: "Script exceeds the maximum length supported for TTS.",
+          message: translate(locale, "errors.script_too_large"),
           details: {
             maxSegments: error.maxSegments,
             maxChars: error.maxChars,
@@ -184,7 +191,7 @@ export default async function handler(
     sendJson(res, 500, {
       error: {
         code: "tts_failure",
-        message: "Failed to synthesize audio.",
+        message: translate(locale, "errors.tts_failure"),
         details: { error: (error as Error).message },
       },
     });
