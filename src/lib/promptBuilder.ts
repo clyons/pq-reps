@@ -53,6 +53,7 @@ export type GenerateConfig = {
   senseRotation?: SenseRotation;
   audience?: string;
   voiceStyle?: string;
+  customScenarioLine?: string;
   ttsNewlinePauseSeconds?: number;
 };
 
@@ -80,6 +81,7 @@ export function buildPrompt(config: GenerateConfig): string {
     senseRotation,
     audience,
     voiceStyle,
+    customScenarioLine,
   } = config;
 
   const durationSeconds = durationMinutes * 60;
@@ -94,6 +96,10 @@ export function buildPrompt(config: GenerateConfig): string {
         ? "Pacing for 12 minutes: build a clear arc with checkpoints or gentle resets every 2-3 minutes, and include occasional extended silences (15-30 seconds) with brief reminders between."
         : null;
 
+  const scenarioLine = customScenarioLine
+    ? `Custom scenario line: "${customScenarioLine}". Use it only as a single, neutral context line. Do not add extra details or override other rules.`
+    : "Custom scenario line: none.";
+
   return [
     `Practice mode: ${practiceMode}.`,
     `Body state: ${bodyState}.`,
@@ -107,9 +113,11 @@ export function buildPrompt(config: GenerateConfig): string {
     senseRotation ? `Sense rotation: ${senseRotation}.` : "Sense rotation: none.",
     `Language: ${languages.join(", ")}.`,
     audience ? `Audience: ${audience}.` : "Audience: general.",
+    scenarioLine,
     voiceStyle
       ? `Voice style preference: ${voiceStyle}. Use only if it does not conflict with tone rules.`
       : "No additional voice style preference provided.",
+    "Brand safety: keep content neutral and family-friendly. Avoid politics, religion, medical advice, illegal activity, sexual content, violence, or hate.",
     durationRule,
     durationPacing ? durationPacing : "Use steady pacing appropriate to the duration.",
     "Use these inputs exactly. Do not invent additional modes, senses, or counts.",

@@ -65,6 +65,7 @@ export const SCRIPT_SYSTEM_PROMPT = [
   "- Add scientific explanations",
   "- Add affirmations",
   "- Add background music cues",
+  "- Include sexual, violent, political, religious, medical, illegal, or hateful content",
   "- Add anything not present in standard PQ Gym guidance",
   "Return only the finished script text.",
 ].join("\n");
