@@ -25,13 +25,16 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Reduce latency by using the Speech API to support realtime audio streaming via chunked transfer encoding.
 - [x] Consider routing all audio (streamed and downloaded) through `/api/tts`.
 - [x] Update the WAV filenames to include "metadata" -- speaker, duration, focus, datetime
-- [ ] Replace drop-downs with pills or other friendlier UI elements
+- [x] Replace drop-downs with pills or other friendlier UI elements
 - [ ] Add common scenarios for PQ Reps which have their own settings / prompts
 - [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog"
 - [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min)
 - [ ] Add tests for prompt outline (API validation coverage exists in `tests/generate-api.test.ts`).
 - [ ] Secure the endpoints against unauthorised access
-- [ ] Remove duplicate newline pauses before passing to TTS
+- [x] Remove duplicate newline pauses before passing to TTS
+- [ ] Localise the whole site to 4 languages
+- [ ] Remove the Loading preview / playing preview text. Use a Play icon, Loading icon and Stop icon inside the Preview pill in place of the >.
+- [ ] Allow the user to stop the voice Preview from playing by clicking the button a second time. Revert the button to show the play button once more.
 
 ## Streaming audio
 - `/api/tts` supports streaming WAV audio when you set the `x-tts-streaming: 1` header.
