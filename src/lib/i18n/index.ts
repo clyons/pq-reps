@@ -1,0 +1,553 @@
+export type Locale = "en" | "es" | "fr" | "de";
+
+export const DEFAULT_LOCALE: Locale = "en";
+
+export const SUPPORTED_LOCALES: Locale[] = ["en", "es", "fr", "de"];
+
+type MessageParams = Record<string, string | number>;
+
+type Messages = Record<string, string>;
+
+const MESSAGES: Record<Locale, Messages> = {
+  en: {
+    "ui.title": "PQ Reps Audio Generator",
+    "ui.version.loading": "Version: loading...",
+    "ui.version.unavailable": "Version: unavailable",
+    "ui.version.label": "Version: {version}",
+    "ui.description": "Choose the type of PQ Reps you'd like to practice.",
+    "ui.ai_notice": "Audio is AI-generated.",
+    "ui.footer":
+      "Inspired by publicly available teachings on Positive Intelligence® and PQ Reps® by Shirzad Chamine. Not affiliated with or endorsed by Positive Intelligence LLC. For educational purposes only.",
+    "form.practice_type": "Practice type",
+    "form.practice_type.still_eyes_closed": "Still (Eyes closed)",
+    "form.practice_type.still_eyes_open": "Still (Eyes open)",
+    "form.practice_type.moving": "Moving",
+    "form.practice_type.labeling": "Labeling",
+    "form.focus": "Focus",
+    "form.focus.touch": "Touch",
+    "form.focus.hearing": "Hearing",
+    "form.focus.sight": "Sight",
+    "form.focus.breath": "Breath",
+    "form.duration": "Duration",
+    "form.duration.minutes": "{count} minute{suffix}",
+    "form.language": "Language",
+    "form.language.en": "English",
+    "form.language.es": "Spanish",
+    "form.language.fr": "French",
+    "form.language.de": "German",
+    "form.voice": "Voice",
+    "form.voice.help": "Choose the voice you prefer for guidance.",
+    "form.voice.preview": "Preview",
+    "form.audio_delivery": "Audio delivery",
+    "form.audio_delivery.help":
+      "Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.",
+    "form.audio_delivery.generate": "Generate",
+    "form.audio_delivery.stream": "Stream",
+    "form.tts_newline_pause": "TTS newline pause (seconds)",
+    "form.debug_tts_prompt": "Debug TTS prompt",
+    "form.debug_tts_prompt.help":
+      "Include the raw TTS payload for OpenAI playground testing.",
+    "form.submit": "Prepare PQ Reps",
+    "form.submit.loading": "Preparing PQ Reps…",
+    "form.reset": "Reset to defaults",
+    "status.preparing": "Preparing PQ Reps audio. This can take a few seconds.",
+    "status.generating_script": "Generating script…",
+    "status.synthesizing_audio": "Synthesizing audio…",
+    "result.title": "Your session is ready",
+    "result.download_audio": "Download the audio",
+    "result.download_text": "Download the text",
+    "result.debug_title": "TTS prompt (debug)",
+    "errors.unknown": "Something went wrong.",
+    "errors.generator_failed": "The generator failed to respond.",
+    "errors.generator_failed_status": "The generator failed to respond. ({status})",
+    "errors.streaming_unavailable": "Streaming updates are not available.",
+    "errors.stream_ended": "The stream ended before returning a response.",
+    "errors.streaming_failed": "Streaming failed.",
+    "errors.audio_stream_failed": "Audio stream failed.",
+    "errors.append_audio_chunk_failed": "Failed to append audio chunk.",
+    "errors.audio_stream_no_data": "Audio stream ended before data arrived.",
+    "errors.preview_failed": "Preview failed.",
+    "errors.preview_failed_status": "Preview failed ({status}).",
+    "errors.invalid_payload": "Payload must be a JSON object.",
+    "errors.invalid_practice_mode": "Practice mode must be one of the supported values.",
+    "errors.invalid_body_state": "Body state must be one of the supported values.",
+    "errors.invalid_eye_state": "Eye state must be one of the supported values.",
+    "errors.invalid_primary_sense": "Primary sense must be one of the supported values.",
+    "errors.invalid_duration": "Duration must be one of the supported minute values.",
+    "errors.invalid_labeling_mode": "Labeling mode must be one of the supported values.",
+    "errors.invalid_silence_profile": "Silence profile must be one of the supported values.",
+    "errors.invalid_normalization_frequency":
+      "Normalization frequency must be one of the supported values.",
+    "errors.invalid_closing_style": "Closing style must be one of the supported values.",
+    "errors.invalid_sense_rotation": "Sense rotation must be one of the supported values.",
+    "errors.invalid_tts_newline_pause":
+      "TTS newline pause seconds must be a non-negative number.",
+    "errors.invalid_languages": "Languages must be a non-empty array of strings.",
+    "errors.unsupported_language": "One or more languages are not supported.",
+    "errors.moving_requires_body_state": "Moving practice mode requires a moving body state.",
+    "errors.moving_requires_eyes_open": "Moving practice mode requires eyes open.",
+    "errors.tactile_requires_body_state":
+      "Tactile practice mode requires still seated with eyes closed.",
+    "errors.tactile_requires_eyes_closed": "Tactile practice mode requires eyes closed.",
+    "errors.sitting_requires_eyes_open": "Sitting practice mode requires eyes open.",
+    "errors.moving_body_requires_moving_practice":
+      "Moving body state requires moving practice mode.",
+    "errors.label_with_anchor_requires_breath_anchor":
+      "Label with anchor mode requires breath anchor labeling.",
+    "errors.label_scan_requires_scan_label":
+      "Label while scanning mode requires scan and label.",
+    "errors.labeling_mode_must_be_none":
+      "Labeling mode must be none for non-label practice modes.",
+    "errors.extended_silence_requires_longer":
+      "Extended silence is only allowed for 5 or 12 minute sessions.",
+    "errors.short_sessions_require_once":
+      "Short sessions require normalization frequency of once.",
+    "errors.five_minute_requires_periodic":
+      "5-minute sessions require periodic normalization.",
+    "errors.twelve_minute_requires_repeated":
+      "12-minute sessions require repeated normalization.",
+    "errors.short_sessions_require_minimal_closing":
+      "2-minute sessions require minimal closing style.",
+    "errors.five_minute_requires_pq_framed":
+      "5-minute sessions require PQ-framed closing style.",
+    "errors.twelve_minute_requires_progression":
+      "12-minute sessions require PQ framing with progression.",
+    "errors.invalid_json": "Request body must be valid JSON.",
+    "errors.invalid_output_mode": "Output mode must be one of: text, audio, text-audio.",
+    "errors.tts_failure": "Failed to synthesize audio.",
+    "errors.invalid_tts_payload": "Request body must include script, language, and voice.",
+    "errors.script_too_large": "Script exceeds the maximum length supported for TTS.",
+    "errors.method_not_allowed": "Only POST requests are supported.",
+    "errors.payload_too_large": "Request body exceeds the maximum allowed size.",
+    "errors.voice_preview_failure": "Unable to generate preview.",
+    "errors.generate_failure": "Failed to generate a response.",
+    "errors.not_found": "Route not found.",
+    "errors.version_unavailable": "Unable to load version.",
+  },
+  es: {
+    "ui.title": "Generador de audio de PQ Reps",
+    "ui.version.loading": "Versión: cargando...",
+    "ui.version.unavailable": "Versión: no disponible",
+    "ui.version.label": "Versión: {version}",
+    "ui.description": "Elige el tipo de PQ Reps que quieres practicar.",
+    "ui.ai_notice": "El audio está generado por IA.",
+    "ui.footer":
+      "Inspirado en enseñanzas públicas sobre Positive Intelligence® y PQ Reps® de Shirzad Chamine. No afiliado ni avalado por Positive Intelligence LLC. Solo con fines educativos.",
+    "form.practice_type": "Tipo de práctica",
+    "form.practice_type.still_eyes_closed": "Quieto (ojos cerrados)",
+    "form.practice_type.still_eyes_open": "Quieto (ojos abiertos)",
+    "form.practice_type.moving": "En movimiento",
+    "form.practice_type.labeling": "Etiquetado",
+    "form.focus": "Enfoque",
+    "form.focus.touch": "Tacto",
+    "form.focus.hearing": "Oído",
+    "form.focus.sight": "Vista",
+    "form.focus.breath": "Respiración",
+    "form.duration": "Duración",
+    "form.duration.minutes": "{count} minuto{suffix}",
+    "form.language": "Idioma",
+    "form.language.en": "Inglés",
+    "form.language.es": "Español",
+    "form.language.fr": "Francés",
+    "form.language.de": "Alemán",
+    "form.voice": "Voz",
+    "form.voice.help": "Elige la voz que prefieres para la guía.",
+    "form.voice.preview": "Vista previa",
+    "form.audio_delivery": "Entrega de audio",
+    "form.audio_delivery.help":
+      "La transmisión inicia la reproducción antes, pero puede ser menos fiable con conexiones inestables y limitar la búsqueda o la reproducción sin conexión.",
+    "form.audio_delivery.generate": "Generar",
+    "form.audio_delivery.stream": "Transmitir",
+    "form.tts_newline_pause": "Pausa de salto de línea de TTS (segundos)",
+    "form.debug_tts_prompt": "Depurar prompt de TTS",
+    "form.debug_tts_prompt.help":
+      "Incluye la carga útil de TTS sin procesar para pruebas en OpenAI playground.",
+    "form.submit": "Preparar PQ Reps",
+    "form.submit.loading": "Preparando PQ Reps…",
+    "form.reset": "Restablecer valores",
+    "status.preparing": "Preparando el audio de PQ Reps. Esto puede tardar unos segundos.",
+    "status.generating_script": "Generando guion…",
+    "status.synthesizing_audio": "Sintetizando audio…",
+    "result.title": "Tu sesión está lista",
+    "result.download_audio": "Descargar el audio",
+    "result.download_text": "Descargar el texto",
+    "result.debug_title": "Prompt de TTS (depuración)",
+    "errors.unknown": "Algo salió mal.",
+    "errors.generator_failed": "El generador no respondió.",
+    "errors.generator_failed_status": "El generador no respondió. ({status})",
+    "errors.streaming_unavailable": "Las actualizaciones en streaming no están disponibles.",
+    "errors.stream_ended": "La transmisión terminó antes de devolver una respuesta.",
+    "errors.streaming_failed": "La transmisión falló.",
+    "errors.audio_stream_failed": "Falló la transmisión de audio.",
+    "errors.append_audio_chunk_failed": "No se pudo añadir el fragmento de audio.",
+    "errors.audio_stream_no_data": "La transmisión de audio terminó antes de que llegaran datos.",
+    "errors.preview_failed": "Falló la vista previa.",
+    "errors.preview_failed_status": "Falló la vista previa ({status}).",
+    "errors.invalid_payload": "La carga útil debe ser un objeto JSON.",
+    "errors.invalid_practice_mode": "El modo de práctica debe ser uno de los valores admitidos.",
+    "errors.invalid_body_state": "El estado corporal debe ser uno de los valores admitidos.",
+    "errors.invalid_eye_state": "El estado de los ojos debe ser uno de los valores admitidos.",
+    "errors.invalid_primary_sense": "El sentido principal debe ser uno de los valores admitidos.",
+    "errors.invalid_duration": "La duración debe ser uno de los valores de minutos admitidos.",
+    "errors.invalid_labeling_mode": "El modo de etiquetado debe ser uno de los valores admitidos.",
+    "errors.invalid_silence_profile": "El perfil de silencio debe ser uno de los valores admitidos.",
+    "errors.invalid_normalization_frequency":
+      "La frecuencia de normalización debe ser uno de los valores admitidos.",
+    "errors.invalid_closing_style": "El estilo de cierre debe ser uno de los valores admitidos.",
+    "errors.invalid_sense_rotation": "La rotación de sentidos debe ser uno de los valores admitidos.",
+    "errors.invalid_tts_newline_pause":
+      "Los segundos de pausa de salto de línea de TTS deben ser un número no negativo.",
+    "errors.invalid_languages": "Los idiomas deben ser un arreglo no vacío de cadenas.",
+    "errors.unsupported_language": "Uno o más idiomas no son compatibles.",
+    "errors.moving_requires_body_state":
+      "El modo de práctica en movimiento requiere un estado corporal en movimiento.",
+    "errors.moving_requires_eyes_open":
+      "El modo de práctica en movimiento requiere los ojos abiertos.",
+    "errors.tactile_requires_body_state":
+      "El modo táctil requiere estar sentado en quietud con los ojos cerrados.",
+    "errors.tactile_requires_eyes_closed": "El modo táctil requiere los ojos cerrados.",
+    "errors.sitting_requires_eyes_open":
+      "El modo sentado requiere los ojos abiertos.",
+    "errors.moving_body_requires_moving_practice":
+      "El estado corporal en movimiento requiere el modo de práctica en movimiento.",
+    "errors.label_with_anchor_requires_breath_anchor":
+      "El modo de etiquetar con ancla requiere etiquetado con ancla en la respiración.",
+    "errors.label_scan_requires_scan_label":
+      "El modo de etiquetar mientras se escanea requiere escanear y etiquetar.",
+    "errors.labeling_mode_must_be_none":
+      "El modo de etiquetado debe ser ninguno para prácticas sin etiquetado.",
+    "errors.extended_silence_requires_longer":
+      "El silencio prolongado solo se permite en sesiones de 5 o 12 minutos.",
+    "errors.short_sessions_require_once":
+      "Las sesiones cortas requieren frecuencia de normalización de una vez.",
+    "errors.five_minute_requires_periodic":
+      "Las sesiones de 5 minutos requieren normalización periódica.",
+    "errors.twelve_minute_requires_repeated":
+      "Las sesiones de 12 minutos requieren normalización repetida.",
+    "errors.short_sessions_require_minimal_closing":
+      "Las sesiones de 2 minutos requieren un estilo de cierre mínimo.",
+    "errors.five_minute_requires_pq_framed":
+      "Las sesiones de 5 minutos requieren un cierre con marco PQ.",
+    "errors.twelve_minute_requires_progression":
+      "Las sesiones de 12 minutos requieren un cierre PQ con progresión.",
+    "errors.invalid_json": "El cuerpo de la solicitud debe ser JSON válido.",
+    "errors.invalid_output_mode":
+      "El modo de salida debe ser uno de: text, audio, text-audio.",
+    "errors.tts_failure": "No se pudo sintetizar el audio.",
+    "errors.invalid_tts_payload":
+      "El cuerpo de la solicitud debe incluir script, language y voice.",
+    "errors.script_too_large":
+      "El guion supera la longitud máxima admitida para TTS.",
+    "errors.method_not_allowed": "Solo se admiten solicitudes POST.",
+    "errors.payload_too_large":
+      "El cuerpo de la solicitud supera el tamaño máximo permitido.",
+    "errors.voice_preview_failure": "No se pudo generar la vista previa.",
+    "errors.generate_failure": "No se pudo generar una respuesta.",
+    "errors.not_found": "Ruta no encontrada.",
+    "errors.version_unavailable": "No se pudo cargar la versión.",
+  },
+  fr: {
+    "ui.title": "Générateur audio PQ Reps",
+    "ui.version.loading": "Version : chargement...",
+    "ui.version.unavailable": "Version : indisponible",
+    "ui.version.label": "Version : {version}",
+    "ui.description": "Choisissez le type de PQ Reps que vous souhaitez pratiquer.",
+    "ui.ai_notice": "L'audio est généré par IA.",
+    "ui.footer":
+      "Inspiré d'enseignements publics sur Positive Intelligence® et PQ Reps® de Shirzad Chamine. Non affilié ni approuvé par Positive Intelligence LLC. À des fins éducatives uniquement.",
+    "form.practice_type": "Type de pratique",
+    "form.practice_type.still_eyes_closed": "Immobile (yeux fermés)",
+    "form.practice_type.still_eyes_open": "Immobile (yeux ouverts)",
+    "form.practice_type.moving": "En mouvement",
+    "form.practice_type.labeling": "Étiquetage",
+    "form.focus": "Focus",
+    "form.focus.touch": "Toucher",
+    "form.focus.hearing": "Ouïe",
+    "form.focus.sight": "Vue",
+    "form.focus.breath": "Respiration",
+    "form.duration": "Durée",
+    "form.duration.minutes": "{count} minute{suffix}",
+    "form.language": "Langue",
+    "form.language.en": "Anglais",
+    "form.language.es": "Espagnol",
+    "form.language.fr": "Français",
+    "form.language.de": "Allemand",
+    "form.voice": "Voix",
+    "form.voice.help": "Choisissez la voix que vous préférez pour la guidance.",
+    "form.voice.preview": "Aperçu",
+    "form.audio_delivery": "Diffusion audio",
+    "form.audio_delivery.help":
+      "La diffusion démarre plus tôt, mais peut être moins fiable sur des connexions instables et limiter la recherche ou l'écoute hors ligne.",
+    "form.audio_delivery.generate": "Générer",
+    "form.audio_delivery.stream": "Diffuser",
+    "form.tts_newline_pause": "Pause de retour à la ligne TTS (secondes)",
+    "form.debug_tts_prompt": "Déboguer le prompt TTS",
+    "form.debug_tts_prompt.help":
+      "Inclure la charge utile TTS brute pour les tests OpenAI playground.",
+    "form.submit": "Préparer PQ Reps",
+    "form.submit.loading": "Préparation de PQ Reps…",
+    "form.reset": "Réinitialiser",
+    "status.preparing": "Préparation de l'audio PQ Reps. Cela peut prendre quelques secondes.",
+    "status.generating_script": "Génération du script…",
+    "status.synthesizing_audio": "Synthèse audio…",
+    "result.title": "Votre session est prête",
+    "result.download_audio": "Télécharger l'audio",
+    "result.download_text": "Télécharger le texte",
+    "result.debug_title": "Prompt TTS (debug)",
+    "errors.unknown": "Une erreur est survenue.",
+    "errors.generator_failed": "Le générateur n'a pas répondu.",
+    "errors.generator_failed_status": "Le générateur n'a pas répondu. ({status})",
+    "errors.streaming_unavailable": "Les mises à jour en streaming ne sont pas disponibles.",
+    "errors.stream_ended": "Le flux s'est terminé avant d'envoyer une réponse.",
+    "errors.streaming_failed": "Le streaming a échoué.",
+    "errors.audio_stream_failed": "Le flux audio a échoué.",
+    "errors.append_audio_chunk_failed": "Impossible d'ajouter le fragment audio.",
+    "errors.audio_stream_no_data": "Le flux audio s'est terminé avant l'arrivée des données.",
+    "errors.preview_failed": "L'aperçu a échoué.",
+    "errors.preview_failed_status": "L'aperçu a échoué ({status}).",
+    "errors.invalid_payload": "La charge utile doit être un objet JSON.",
+    "errors.invalid_practice_mode": "Le mode de pratique doit être une valeur prise en charge.",
+    "errors.invalid_body_state": "L'état du corps doit être une valeur prise en charge.",
+    "errors.invalid_eye_state": "L'état des yeux doit être une valeur prise en charge.",
+    "errors.invalid_primary_sense": "Le sens principal doit être une valeur prise en charge.",
+    "errors.invalid_duration": "La durée doit être une valeur de minutes prise en charge.",
+    "errors.invalid_labeling_mode": "Le mode d'étiquetage doit être une valeur prise en charge.",
+    "errors.invalid_silence_profile": "Le profil de silence doit être une valeur prise en charge.",
+    "errors.invalid_normalization_frequency":
+      "La fréquence de normalisation doit être une valeur prise en charge.",
+    "errors.invalid_closing_style": "Le style de clôture doit être une valeur prise en charge.",
+    "errors.invalid_sense_rotation": "La rotation des sens doit être une valeur prise en charge.",
+    "errors.invalid_tts_newline_pause":
+      "Les secondes de pause TTS doivent être un nombre non négatif.",
+    "errors.invalid_languages": "Les langues doivent être un tableau non vide de chaînes.",
+    "errors.unsupported_language": "Une ou plusieurs langues ne sont pas prises en charge.",
+    "errors.moving_requires_body_state":
+      "Le mode de pratique en mouvement nécessite un état du corps en mouvement.",
+    "errors.moving_requires_eyes_open":
+      "Le mode de pratique en mouvement nécessite les yeux ouverts.",
+    "errors.tactile_requires_body_state":
+      "Le mode tactile nécessite d'être assis immobile avec les yeux fermés.",
+    "errors.tactile_requires_eyes_closed": "Le mode tactile nécessite les yeux fermés.",
+    "errors.sitting_requires_eyes_open":
+      "Le mode assis nécessite les yeux ouverts.",
+    "errors.moving_body_requires_moving_practice":
+      "Un état du corps en mouvement nécessite le mode de pratique en mouvement.",
+    "errors.label_with_anchor_requires_breath_anchor":
+      "Le mode étiquetage avec ancrage nécessite l'ancrage sur la respiration.",
+    "errors.label_scan_requires_scan_label":
+      "Le mode étiquetage en balayage nécessite un balayage et un étiquetage.",
+    "errors.labeling_mode_must_be_none":
+      "Le mode d'étiquetage doit être aucun pour les pratiques sans étiquetage.",
+    "errors.extended_silence_requires_longer":
+      "Le silence prolongé n'est autorisé que pour les sessions de 5 ou 12 minutes.",
+    "errors.short_sessions_require_once":
+      "Les sessions courtes nécessitent une normalisation unique.",
+    "errors.five_minute_requires_periodic":
+      "Les sessions de 5 minutes nécessitent une normalisation périodique.",
+    "errors.twelve_minute_requires_repeated":
+      "Les sessions de 12 minutes nécessitent une normalisation répétée.",
+    "errors.short_sessions_require_minimal_closing":
+      "Les sessions de 2 minutes nécessitent un style de clôture minimal.",
+    "errors.five_minute_requires_pq_framed":
+      "Les sessions de 5 minutes nécessitent une clôture cadrée PQ.",
+    "errors.twelve_minute_requires_progression":
+      "Les sessions de 12 minutes nécessitent une clôture PQ avec progression.",
+    "errors.invalid_json": "Le corps de la requête doit être un JSON valide.",
+    "errors.invalid_output_mode":
+      "Le mode de sortie doit être l'un de : text, audio, text-audio.",
+    "errors.tts_failure": "Échec de la synthèse audio.",
+    "errors.invalid_tts_payload":
+      "Le corps de la requête doit inclure script, language et voice.",
+    "errors.script_too_large":
+      "Le script dépasse la longueur maximale prise en charge pour le TTS.",
+    "errors.method_not_allowed": "Seules les requêtes POST sont prises en charge.",
+    "errors.payload_too_large":
+      "Le corps de la requête dépasse la taille maximale autorisée.",
+    "errors.voice_preview_failure": "Impossible de générer l'aperçu.",
+    "errors.generate_failure": "Impossible de générer une réponse.",
+    "errors.not_found": "Route introuvable.",
+    "errors.version_unavailable": "Impossible de charger la version.",
+  },
+  de: {
+    "ui.title": "PQ Reps Audio-Generator",
+    "ui.version.loading": "Version: wird geladen...",
+    "ui.version.unavailable": "Version: nicht verfügbar",
+    "ui.version.label": "Version: {version}",
+    "ui.description": "Wähle die Art der PQ Reps, die du üben möchtest.",
+    "ui.ai_notice": "Audio wird von KI erzeugt.",
+    "ui.footer":
+      "Inspiriert von öffentlich verfügbaren Lehren zu Positive Intelligence® und PQ Reps® von Shirzad Chamine. Nicht verbunden oder unterstützt von Positive Intelligence LLC. Nur zu Bildungszwecken.",
+    "form.practice_type": "Praxisart",
+    "form.practice_type.still_eyes_closed": "Still (Augen geschlossen)",
+    "form.practice_type.still_eyes_open": "Still (Augen offen)",
+    "form.practice_type.moving": "In Bewegung",
+    "form.practice_type.labeling": "Benennen",
+    "form.focus": "Fokus",
+    "form.focus.touch": "Berührung",
+    "form.focus.hearing": "Hören",
+    "form.focus.sight": "Sehen",
+    "form.focus.breath": "Atmung",
+    "form.duration": "Dauer",
+    "form.duration.minutes": "{count} Minute{suffix}",
+    "form.language": "Sprache",
+    "form.language.en": "Englisch",
+    "form.language.es": "Spanisch",
+    "form.language.fr": "Französisch",
+    "form.language.de": "Deutsch",
+    "form.voice": "Stimme",
+    "form.voice.help": "Wähle die Stimme, die du für die Anleitung bevorzugst.",
+    "form.voice.preview": "Vorschau",
+    "form.audio_delivery": "Audioübertragung",
+    "form.audio_delivery.help":
+      "Streaming startet die Wiedergabe früher, kann aber bei instabilen Verbindungen unzuverlässiger sein und das Suchen oder Offline-Hören einschränken.",
+    "form.audio_delivery.generate": "Erzeugen",
+    "form.audio_delivery.stream": "Streamen",
+    "form.tts_newline_pause": "TTS-Zeilenumbruchpause (Sekunden)",
+    "form.debug_tts_prompt": "TTS-Prompt debuggen",
+    "form.debug_tts_prompt.help":
+      "Fügt die rohe TTS-Nutzlast für Tests im OpenAI Playground hinzu.",
+    "form.submit": "PQ Reps vorbereiten",
+    "form.submit.loading": "PQ Reps werden vorbereitet…",
+    "form.reset": "Auf Standard zurücksetzen",
+    "status.preparing":
+      "PQ-Reps-Audio wird vorbereitet. Das kann ein paar Sekunden dauern.",
+    "status.generating_script": "Skript wird erstellt…",
+    "status.synthesizing_audio": "Audio wird synthetisiert…",
+    "result.title": "Deine Sitzung ist bereit",
+    "result.download_audio": "Audio herunterladen",
+    "result.download_text": "Text herunterladen",
+    "result.debug_title": "TTS-Prompt (Debug)",
+    "errors.unknown": "Es ist ein Fehler aufgetreten.",
+    "errors.generator_failed": "Der Generator hat nicht geantwortet.",
+    "errors.generator_failed_status": "Der Generator hat nicht geantwortet. ({status})",
+    "errors.streaming_unavailable": "Streaming-Updates sind nicht verfügbar.",
+    "errors.stream_ended": "Der Stream endete, bevor eine Antwort zurückkam.",
+    "errors.streaming_failed": "Streaming fehlgeschlagen.",
+    "errors.audio_stream_failed": "Audio-Stream fehlgeschlagen.",
+    "errors.append_audio_chunk_failed": "Audio-Chunk konnte nicht hinzugefügt werden.",
+    "errors.audio_stream_no_data": "Der Audio-Stream endete, bevor Daten ankamen.",
+    "errors.preview_failed": "Vorschau fehlgeschlagen.",
+    "errors.preview_failed_status": "Vorschau fehlgeschlagen ({status}).",
+    "errors.invalid_payload": "Die Nutzlast muss ein JSON-Objekt sein.",
+    "errors.invalid_practice_mode": "Der Praxismodus muss einer der unterstützten Werte sein.",
+    "errors.invalid_body_state": "Der Körperzustand muss einer der unterstützten Werte sein.",
+    "errors.invalid_eye_state": "Der Augenzustand muss einer der unterstützten Werte sein.",
+    "errors.invalid_primary_sense": "Der primäre Sinn muss einer der unterstützten Werte sein.",
+    "errors.invalid_duration": "Die Dauer muss einer der unterstützten Minutenwerte sein.",
+    "errors.invalid_labeling_mode": "Der Benennungsmodus muss einer der unterstützten Werte sein.",
+    "errors.invalid_silence_profile": "Das Stilleprofil muss einer der unterstützten Werte sein.",
+    "errors.invalid_normalization_frequency":
+      "Die Normalisierungshäufigkeit muss einer der unterstützten Werte sein.",
+    "errors.invalid_closing_style": "Der Abschlussstil muss einer der unterstützten Werte sein.",
+    "errors.invalid_sense_rotation": "Die Sinnesrotation muss einer der unterstützten Werte sein.",
+    "errors.invalid_tts_newline_pause":
+      "Die TTS-Zeilenumbruchpause muss eine nichtnegative Zahl sein.",
+    "errors.invalid_languages": "Sprachen müssen ein nicht leeres Array von Strings sein.",
+    "errors.unsupported_language": "Eine oder mehrere Sprachen werden nicht unterstützt.",
+    "errors.moving_requires_body_state":
+      "Der Übungsmodus in Bewegung erfordert einen Körperzustand in Bewegung.",
+    "errors.moving_requires_eyes_open":
+      "Der Übungsmodus in Bewegung erfordert offene Augen.",
+    "errors.tactile_requires_body_state":
+      "Der taktile Modus erfordert stilles Sitzen mit geschlossenen Augen.",
+    "errors.tactile_requires_eyes_closed": "Der taktile Modus erfordert geschlossene Augen.",
+    "errors.sitting_requires_eyes_open": "Der Sitzmodus erfordert offene Augen.",
+    "errors.moving_body_requires_moving_practice":
+      "Ein bewegter Körperzustand erfordert den Übungsmodus in Bewegung.",
+    "errors.label_with_anchor_requires_breath_anchor":
+      "Der Modus „Benennen mit Anker“ erfordert das Benennen mit Atemanker.",
+    "errors.label_scan_requires_scan_label":
+      "Der Modus „Benennen beim Scannen“ erfordert Scannen und Benennen.",
+    "errors.labeling_mode_must_be_none":
+      "Der Benennungsmodus muss „kein“ sein für Nicht-Benennungsübungen.",
+    "errors.extended_silence_requires_longer":
+      "Längere Stille ist nur bei 5- oder 12-Minuten-Sitzungen erlaubt.",
+    "errors.short_sessions_require_once":
+      "Kurze Sitzungen erfordern eine Normalisierung „einmal“.",
+    "errors.five_minute_requires_periodic":
+      "5-Minuten-Sitzungen erfordern periodische Normalisierung.",
+    "errors.twelve_minute_requires_repeated":
+      "12-Minuten-Sitzungen erfordern wiederholte Normalisierung.",
+    "errors.short_sessions_require_minimal_closing":
+      "2-Minuten-Sitzungen erfordern einen minimalen Abschlussstil.",
+    "errors.five_minute_requires_pq_framed":
+      "5-Minuten-Sitzungen erfordern einen PQ-gerahmten Abschlussstil.",
+    "errors.twelve_minute_requires_progression":
+      "12-Minuten-Sitzungen erfordern einen PQ-Abschluss mit Progression.",
+    "errors.invalid_json": "Der Anfragetext muss gültiges JSON sein.",
+    "errors.invalid_output_mode":
+      "Der Ausgabemodus muss einer der folgenden sein: text, audio, text-audio.",
+    "errors.tts_failure": "Audio konnte nicht synthetisiert werden.",
+    "errors.invalid_tts_payload":
+      "Der Anfragetext muss script, language und voice enthalten.",
+    "errors.script_too_large": "Das Skript überschreitet die maximale TTS-Länge.",
+    "errors.method_not_allowed": "Nur POST-Anfragen werden unterstützt.",
+    "errors.payload_too_large":
+      "Der Anfragetext überschreitet die maximal zulässige Größe.",
+    "errors.voice_preview_failure": "Vorschau konnte nicht erstellt werden.",
+    "errors.generate_failure": "Antwort konnte nicht erzeugt werden.",
+    "errors.not_found": "Route nicht gefunden.",
+    "errors.version_unavailable": "Version konnte nicht geladen werden.",
+  },
+};
+
+export const resolveLocale = (value?: string | null): Locale => {
+  if (!value) {
+    return DEFAULT_LOCALE;
+  }
+  const normalized = value.toLowerCase();
+  const base = normalized.split("-")[0];
+  return SUPPORTED_LOCALES.includes(base as Locale)
+    ? (base as Locale)
+    : DEFAULT_LOCALE;
+};
+
+export const resolveLocaleFromPayload = (payload: unknown): Locale => {
+  if (!payload || typeof payload !== "object") {
+    return DEFAULT_LOCALE;
+  }
+  const record = payload as {
+    locale?: string;
+    language?: string;
+    languages?: string[];
+  };
+  if (record.locale) {
+    return resolveLocale(record.locale);
+  }
+  if (record.language) {
+    return resolveLocale(record.language);
+  }
+  if (Array.isArray(record.languages) && record.languages.length > 0) {
+    return resolveLocale(record.languages[0]);
+  }
+  return DEFAULT_LOCALE;
+};
+
+export const translate = (
+  locale: Locale,
+  key: string,
+  params?: MessageParams,
+): string => {
+  const template = MESSAGES[locale]?.[key] ?? MESSAGES[DEFAULT_LOCALE]?.[key] ?? key;
+  if (!params) {
+    return template;
+  }
+  return Object.entries(params).reduce(
+    (result, [paramKey, value]) =>
+      result.replaceAll(`{${paramKey}}`, String(value)),
+    template,
+  );
+};
+
+export const formatMinutes = (locale: Locale, count: number): string => {
+  switch (locale) {
+    case "es":
+      return `${count} minuto${count === 1 ? "" : "s"}`;
+    case "fr":
+      return `${count} minute${count === 1 ? "" : "s"}`;
+    case "de":
+      return `${count} Minute${count === 1 ? "" : "n"}`;
+    default:
+      return `${count} minute${count === 1 ? "" : "s"}`;
+  }
+};
