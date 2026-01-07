@@ -540,7 +540,7 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
 
-  const isDevMode = process.env.NODE_ENV !== "production";
+  const [isDevMode, setIsDevMode] = useState(process.env.NODE_ENV !== "production");
   const isLoading = status === "loading";
 
   useAudioSync(audioRef, result?.audioStream, result?.audioUrl);
@@ -565,6 +565,12 @@ export default function HomePage() {
     }
     return ["touch", "hearing", "sight", "breath"] as FormState["focus"][];
   }, [practiceConfig.eyeState]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const devParamEnabled = params.get("dev") === "1";
+    setIsDevMode(devParamEnabled || process.env.NODE_ENV !== "production");
+  }, []);
 
   useEffect(() => {
     return () => {

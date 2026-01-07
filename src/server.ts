@@ -22,7 +22,7 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === "/") {
     res.statusCode = 302;
-    res.setHeader("Location", "/en/");
+    res.setHeader("Location", `/en/${url.search}`);
     res.end();
     return;
   }
