@@ -669,25 +669,12 @@
           </div>
         </label>
 
-        <div id="dev-controls" hidden>
-          <label>
-            <span id="label-tts-newline">TTS newline pause (seconds)</span>
-            <input type="number" name="ttsNewlinePauseSeconds" min="0" step="0.5" value="1.5" />
-          </label>
-
-          <label>
-            <span id="label-debug-tts">Debug TTS prompt</span>
-            <span class="hint" id="debug-tts-help">Include the raw TTS payload for OpenAI playground testing.</span>
-            <input type="checkbox" name="debugTtsPrompt" />
-          </label>
-        </div>
-
         </div>
 
         <details class="options-drawer">
           <summary id="options-summary" data-i18n="form.options">
             Options
-            <span aria-hidden="true">▾</span>
+            <span aria-hidden="true">▼</span>
           </summary>
           <div class="options-content">
             <label>
@@ -766,6 +753,18 @@
                 </div>
               </div>
             </label>
+
+            <div id="dev-controls" hidden>
+              <label style="display: grid; gap: 0.5rem;">
+                <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                  <span id="label-debug-tts">Debug TTS prompt</span>
+                  <input type="checkbox" name="debugTtsPrompt" />
+                </div>
+                <span class="hint" id="debug-tts-help">
+                  Include the raw TTS payload for OpenAI playground testing.
+                </span>
+              </label>
+            </div>
           </div>
         </details>
 
@@ -876,7 +875,6 @@
       const voicePreviewText = document.getElementById("voice-preview-text");
       const labelAudioDelivery = document.getElementById("label-audio-delivery");
       const audioDeliveryInfo = document.getElementById("audio-delivery-info");
-      const labelTtsNewline = document.getElementById("label-tts-newline");
       const labelDebugTts = document.getElementById("label-debug-tts");
       const debugTtsHelp = document.getElementById("debug-tts-help");
       const resultTitle = document.getElementById("result-title");
@@ -957,7 +955,6 @@
             "Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.",
           "form.audio_delivery.generate": "Generate",
           "form.audio_delivery.stream": "Stream",
-          "form.tts_newline_pause": "TTS newline pause (seconds)",
           "form.debug_tts_prompt": "Debug TTS prompt",
           "form.debug_tts_prompt.help":
             "Include the raw TTS payload for OpenAI playground testing.",
@@ -1027,7 +1024,6 @@
             "La transmisión inicia la reproducción antes, pero puede ser menos fiable con conexiones inestables y limitar la búsqueda o la reproducción sin conexión.",
           "form.audio_delivery.generate": "Generar",
           "form.audio_delivery.stream": "Transmitir",
-          "form.tts_newline_pause": "Pausa de salto de línea de TTS (segundos)",
           "form.debug_tts_prompt": "Depurar prompt de TTS",
           "form.debug_tts_prompt.help":
             "Incluye la carga útil de TTS sin procesar para pruebas en OpenAI playground.",
@@ -1100,7 +1096,6 @@
             "La diffusion démarre plus tôt, mais peut être moins fiable sur des connexions instables et limiter la recherche ou l'écoute hors ligne.",
           "form.audio_delivery.generate": "Générer",
           "form.audio_delivery.stream": "Diffuser",
-          "form.tts_newline_pause": "Pause de retour à la ligne TTS (secondes)",
           "form.debug_tts_prompt": "Déboguer le prompt TTS",
           "form.debug_tts_prompt.help":
             "Inclure la charge utile TTS brute pour les tests OpenAI playground.",
@@ -1173,7 +1168,6 @@
             "Streaming startet die Wiedergabe früher, kann aber bei instabilen Verbindungen unzuverlässiger sein und das Suchen oder Offline-Hören einschränken.",
           "form.audio_delivery.generate": "Erzeugen",
           "form.audio_delivery.stream": "Streamen",
-          "form.tts_newline_pause": "TTS-Zeilenumbruchpause (Sekunden)",
           "form.debug_tts_prompt": "TTS-Prompt debuggen",
           "form.debug_tts_prompt.help":
             "Fügt die rohe TTS-Nutzlast für Tests im OpenAI Playground hinzu.",
@@ -1464,9 +1458,6 @@
           const helpText = translate("form.audio_delivery.help", {}, locale);
           audioDeliveryInfo.setAttribute("aria-label", helpText);
           audioDeliveryInfo.setAttribute("data-tooltip", helpText);
-        }
-        if (labelTtsNewline) {
-          labelTtsNewline.textContent = translate("form.tts_newline_pause", {}, locale);
         }
         if (labelDebugTts) {
           labelDebugTts.textContent = translate("form.debug_tts_prompt", {}, locale);
@@ -2130,7 +2121,6 @@
           languages: [language],
           voiceStyle,
           customScenarioLine: customScenarioLine || undefined,
-          ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0,
           ...(debugEnabled ? { debugTtsPrompt: true } : {}),
         };
 
@@ -2138,7 +2128,6 @@
           script,
           language,
           voice: voiceStyle,
-          ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0,
         });
         submitButton.disabled = true;
         statusPanel.hidden = false;
