@@ -36,6 +36,8 @@ type FormState = {
   customScenarioLine: string;
 };
 
+type SectionId = "quick" | "customize";
+
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
 const AUTH_HEADERS = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
 
@@ -112,6 +114,11 @@ const PRACTICE_TYPE_LABELS: Record<PracticeType, string> = {
 };
 
 const QUICK_ACCESS_SCENARIOS = SCENARIOS;
+
+const SECTION_TABS: { id: SectionId; label: string }[] = [
+  { id: "quick", label: "Quick Access" },
+  { id: "customize", label: "Customize" },
+];
 
 const FEMALE_VOICES_BY_LANGUAGE: Record<string, string> = {
   es: "nova",
@@ -539,9 +546,10 @@ export default function HomePage() {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showAudioInfo, setShowAudioInfo] = useState(false);
-  const [activeSection, setActiveSection] = useState<"quick" | "customize">("quick");
+  const [activeSection, setActiveSection] = useState<SectionId>("quick");
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
+  const sectionTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const [isDevMode, setIsDevMode] = useState(process.env.NODE_ENV !== "production");
   const isLoading = status === "loading";
@@ -605,11 +613,29 @@ export default function HomePage() {
     setFormState((prev) => ({ ...prev, ...updates }));
   };
 
-  const handleSectionToggle = (section: "quick" | "customize") => {
+  const handleSectionToggle = (section: SectionId) => {
     setActiveSection(section);
     if (section === "customize") {
       setFormState((prev) => ({ ...prev, scenarioId: undefined }));
     }
+  };
+
+  const handleSectionTabKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+      return;
+    }
+
+    event.preventDefault();
+    const direction = event.key === "ArrowRight" ? 1 : -1;
+    const nextIndex = (index + direction + SECTION_TABS.length) % SECTION_TABS.length;
+    const nextTab = SECTION_TABS[nextIndex];
+    handleSectionToggle(nextTab.id);
+    requestAnimationFrame(() => {
+      sectionTabRefs.current[nextIndex]?.focus();
+    });
   };
 
   const handleScenarioSelect = (scenarioId: ScenarioId) => {
@@ -1213,137 +1239,149 @@ export default function HomePage() {
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
         <div>
-          <div style={sectionToggleStyle}>
-            <button
-              type="button"
-              style={getSectionToggleButtonStyle(activeSection === "quick")}
-              onClick={() => handleSectionToggle("quick")}
-            >
-              Quick Access
-            </button>
-            <button
-              type="button"
-              style={getSectionToggleButtonStyle(activeSection === "customize")}
-              onClick={() => handleSectionToggle("customize")}
-            >
-              Customize
-            </button>
+          <div role="tablist" aria-label="Scenario controls" style={sectionToggleStyle}>
+            {SECTION_TABS.map((tab, index) => (
+              <button
+                key={tab.id}
+                type="button"
+                id={`tab-${tab.id}`}
+                role="tab"
+                aria-selected={activeSection === tab.id}
+                aria-controls={`panel-${tab.id}`}
+                tabIndex={activeSection === tab.id ? 0 : -1}
+                ref={(node) => {
+                  sectionTabRefs.current[index] = node;
+                }}
+                style={getSectionToggleButtonStyle(activeSection === tab.id)}
+                onClick={() => handleSectionToggle(tab.id)}
+                onKeyDown={(event) => handleSectionTabKeyDown(event, index)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {activeSection === "quick" && (
-            <div>
-              <div style={scenarioGridStyle}>
-                {QUICK_ACCESS_SCENARIOS.map((scenario) => (
-                  <button
-                    key={scenario.id}
-                    type="button"
-                    onClick={() => handleScenarioSelect(scenario.id)}
-                    style={getScenarioCardStyle(formState.scenarioId === scenario.id)}
-                  >
-                    <div style={scenarioTitleStyle}>{scenario.label}</div>
-                    <div style={scenarioMetaStyle}>
-                      {PRACTICE_TYPE_LABELS[scenario.practiceType]} •{" "}
-                      {capitalize(scenario.primarySense)} •{" "}
-                      {formatDurationLabel(scenario.durationMinutes)}
-                    </div>
-                  </button>
-                ))}
-              </div>
+          <div
+            id="panel-quick"
+            role="tabpanel"
+            aria-labelledby="tab-quick"
+            hidden={activeSection !== "quick"}
+          >
+            <div style={scenarioGridStyle}>
+              {QUICK_ACCESS_SCENARIOS.map((scenario) => (
+                <button
+                  key={scenario.id}
+                  type="button"
+                  onClick={() => handleScenarioSelect(scenario.id)}
+                  style={getScenarioCardStyle(formState.scenarioId === scenario.id)}
+                >
+                  <div style={scenarioTitleStyle}>{scenario.label}</div>
+                  <div style={scenarioMetaStyle}>
+                    {PRACTICE_TYPE_LABELS[scenario.practiceType]} •{" "}
+                    {capitalize(scenario.primarySense)} •{" "}
+                    {formatDurationLabel(scenario.durationMinutes)}
+                  </div>
+                </button>
+              ))}
             </div>
-          )}
+          </div>
         </div>
 
-        {activeSection === "customize" && (
-          <>
-            <label style={{ display: "grid", gap: "0.5rem" }}>
-              <span style={{ fontWeight: 600 }}>Practice type</span>
-              <PillRadioGroup
-                name="practiceType"
-                ariaLabel="Practice type"
-                options={practiceTypeOptions}
-                value={formState.practiceType}
-                onChange={(value) =>
-                  updateFormState({
-                    practiceType: value as FormState["practiceType"],
-                    scenarioId: undefined,
-                  })
-                }
-              />
-            </label>
+        <div
+          id="panel-customize"
+          role="tabpanel"
+          aria-labelledby="tab-customize"
+          hidden={activeSection !== "customize"}
+          style={{ display: "grid", gap: "1.5rem" }}
+        >
+          <label style={{ display: "grid", gap: "0.5rem" }}>
+            <span style={{ fontWeight: 600 }}>Practice type</span>
+            <PillRadioGroup
+              name="practiceType"
+              ariaLabel="Practice type"
+              options={practiceTypeOptions}
+              value={formState.practiceType}
+              onChange={(value) =>
+                updateFormState({
+                  practiceType: value as FormState["practiceType"],
+                  scenarioId: undefined,
+                })
+              }
+            />
+          </label>
 
-            <label style={{ display: "grid", gap: "0.5rem" }}>
-              <span style={{ fontWeight: 600 }}>Focus</span>
-              <PillRadioGroup
-                name="focus"
-                ariaLabel="Focus"
-                options={focusPillOptions}
-                value={formState.focus}
-                onChange={(value) =>
-                  updateFormState({
-                    focus: value as FormState["focus"],
-                    scenarioId: undefined,
-                  })
-                }
-              />
-            </label>
+          <label style={{ display: "grid", gap: "0.5rem" }}>
+            <span style={{ fontWeight: 600 }}>Focus</span>
+            <PillRadioGroup
+              name="focus"
+              ariaLabel="Focus"
+              options={focusPillOptions}
+              value={formState.focus}
+              onChange={(value) =>
+                updateFormState({
+                  focus: value as FormState["focus"],
+                  scenarioId: undefined,
+                })
+              }
+            />
+          </label>
 
-            <label style={{ display: "grid", gap: "0.5rem" }}>
-              <span style={{ fontWeight: 600 }}>Duration</span>
-              <PillRadioGroup
-                name="durationMinutes"
-                ariaLabel="Duration"
-                options={durationPillOptions}
-                value={String(formState.durationMinutes)}
-                onChange={(value) =>
-                  updateFormState({
-                    durationMinutes: Number(value) as FormState["durationMinutes"],
-                    scenarioId: undefined,
-                  })
-                }
-              />
-            </label>
+          <label style={{ display: "grid", gap: "0.5rem" }}>
+            <span style={{ fontWeight: 600 }}>Duration</span>
+            <PillRadioGroup
+              name="durationMinutes"
+              ariaLabel="Duration"
+              options={durationPillOptions}
+              value={String(formState.durationMinutes)}
+              onChange={(value) =>
+                updateFormState({
+                  durationMinutes: Number(value) as FormState["durationMinutes"],
+                  scenarioId: undefined,
+                })
+              }
+            />
+          </label>
 
-            {isDevMode && (
-              <>
-                <label style={{ display: "grid", gap: "0.5rem" }}>
-                  <span style={{ fontWeight: 600 }}>TTS newline pause (seconds)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.5}
-                    value={formState.ttsNewlinePauseSeconds}
-                    onChange={(event) =>
-                      updateFormState({
-                        ttsNewlinePauseSeconds:
-                          Number.parseFloat(event.target.value) || 0,
-                      })
-                    }
-                    style={{
-                      padding: "0.75rem",
-                      borderRadius: 6,
-                      border: `1px solid ${BRAND_COLORS.neutral.black30}`,
-                    }}
-                  />
-                </label>
+          {isDevMode && (
+            <>
+              <label style={{ display: "grid", gap: "0.5rem" }}>
+                <span style={{ fontWeight: 600 }}>TTS newline pause (seconds)</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={formState.ttsNewlinePauseSeconds}
+                  onChange={(event) =>
+                    updateFormState({
+                      ttsNewlinePauseSeconds:
+                        Number.parseFloat(event.target.value) || 0,
+                    })
+                  }
+                  style={{
+                    padding: "0.75rem",
+                    borderRadius: 6,
+                    border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+                  }}
+                />
+              </label>
 
-                <label style={{ display: "grid", gap: "0.5rem" }}>
-                  <span style={{ fontWeight: 600 }}>Debug TTS prompt</span>
-                  <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
-                    Shows the exact TTS payload used for OpenAI audio generation.
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={formState.debugTtsPrompt}
-                    onChange={(event) =>
-                      updateFormState({ debugTtsPrompt: event.target.checked })
-                    }
-                    style={{ width: 18, height: 18 }}
-                  />
-                </label>
-              </>
-            )}
-          </>
-        )}
+              <label style={{ display: "grid", gap: "0.5rem" }}>
+                <span style={{ fontWeight: 600 }}>Debug TTS prompt</span>
+                <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
+                  Shows the exact TTS payload used for OpenAI audio generation.
+                </span>
+                <input
+                  type="checkbox"
+                  checked={formState.debugTtsPrompt}
+                  onChange={(event) =>
+                    updateFormState({ debugTtsPrompt: event.target.checked })
+                  }
+                  style={{ width: 18, height: 18 }}
+                />
+              </label>
+            </>
+          )}
+        </div>
 
         <label style={{ display: "grid", gap: "0.5rem" }}>
           <span style={{ fontWeight: 600 }}>Language</span>
