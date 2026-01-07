@@ -23,49 +23,72 @@
         --color-neutral-gray-mid: #e5e5e5;
         --color-neutral-black-30: #bfbfbf;
         --color-neutral-black: #000000;
+        --radius-pill: 999px;
+        --radius-card: 18px;
+        --radius-panel: 12px;
+        --font-size-xs: 0.8rem;
+        --font-size-sm: 0.9rem;
+        --font-size-md: 1rem;
+        --font-size-lg: 1.2rem;
+        --font-size-xl: 2rem;
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-5: 1.5rem;
+        --space-6: 2rem;
       }
       body {
         font-family: "Inter", system-ui, sans-serif;
         background: var(--color-neutral-gray-mid);
         margin: 0;
-        padding: 2rem;
+        padding: var(--space-6);
         color: var(--color-neutral-black);
+        font-size: var(--font-size-md);
+        line-height: 1.6;
       }
       main {
         max-width: 720px;
         margin: 0 auto;
         background: var(--color-neutral-white);
-        padding: 2rem;
-        border-radius: 16px;
+        padding: var(--space-6);
+        border-radius: 20px;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.08);
       }
       h1 {
-        margin-top: 0;
+        margin: 0 0 var(--space-2);
+        font-size: var(--font-size-xl);
+        line-height: 1.2;
+      }
+      p {
+        margin: 0 0 var(--space-3);
       }
       .version {
-        margin-top: -0.25rem;
-        color: var(--color-neutral-black);
-        font-size: 0.9rem;
+        margin: 0 0 var(--space-3);
+        color: rgba(0, 0, 0, 0.7);
+        font-size: var(--font-size-sm);
       }
       form {
         display: grid;
-        gap: 1.5rem;
+        gap: var(--space-5);
       }
       label {
         display: grid;
-        gap: 0.5rem;
+        gap: var(--space-2);
         font-weight: 600;
+        font-size: var(--font-size-md);
       }
       input {
-        padding: 0.75rem;
-        border-radius: 8px;
+        padding: var(--space-3);
+        border-radius: 10px;
         border: 1px solid var(--color-neutral-black-30);
-        font-size: 1rem;
+        font-size: var(--font-size-md);
         background: var(--color-neutral-gray);
       }
       .pill-group {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem;
+        gap: var(--space-2);
       }
       .pill-option {
         position: relative;
@@ -78,13 +101,14 @@
       .pill {
         display: inline-flex;
         align-items: center;
-        padding: 0.5rem 0.9rem;
-        border-radius: 999px;
+        padding: 0.55rem 1.1rem;
+        border-radius: var(--radius-pill);
         border: 1px solid var(--color-primary-orange);
         background: var(--color-neutral-white);
         font-weight: 600;
         cursor: pointer;
         transition: all 0.15s ease;
+        font-size: var(--font-size-md);
       }
       .pill-option input:checked + .pill {
         background: var(--color-primary-orange);
@@ -102,16 +126,18 @@
       .section-toggle {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.75rem;
+        gap: var(--space-3);
       }
       .section-toggle button {
-        padding: 0.5rem 1rem;
-        border-radius: 999px;
+        padding: 0.55rem 1.1rem;
+        border-radius: var(--radius-pill);
         border: 1px solid var(--color-primary-orange);
         background: var(--color-neutral-white);
         color: var(--color-neutral-black);
         font-weight: 600;
         cursor: pointer;
+        font-size: var(--font-size-md);
+        transition: all 0.15s ease;
       }
       .section-toggle button.is-active {
         background: var(--color-primary-orange);
@@ -120,44 +146,52 @@
       .scenario-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 0.75rem;
-        margin-bottom: 1rem;
+        gap: var(--space-3);
+        margin-bottom: var(--space-4);
       }
       .scenario-card {
         text-align: left;
-        border-radius: 16px;
-        border: 1px solid var(--color-primary-orange);
-        padding: 0.9rem;
-        background: var(--color-neutral-white);
+        border-radius: var(--radius-card);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        padding: var(--space-4);
+        background: linear-gradient(180deg, #ffffff 0%, #fff6ef 100%);
         color: var(--color-neutral-black);
         cursor: pointer;
-        transition: border 0.15s ease, box-shadow 0.15s ease;
+        transition: transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+      }
+      .scenario-card:hover {
+        transform: translateY(-1px);
       }
       .scenario-card.is-selected {
-        border-color: var(--color-primary-orange-dark);
-        background: var(--color-primary-orange-light);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        border-color: var(--color-primary-orange);
+        background: linear-gradient(180deg, #ffffff 0%, #ffe7d8 100%);
+        box-shadow: 0 10px 28px rgba(255, 142, 79, 0.25);
       }
       .scenario-title {
         font-weight: 700;
-        margin-bottom: 0.35rem;
+        margin-bottom: var(--space-1);
+        font-size: var(--font-size-md);
       }
       .scenario-meta {
-        font-size: 0.85rem;
-        line-height: 1.4;
+        font-size: var(--font-size-sm);
+        line-height: 1.5;
+        color: rgba(0, 0, 0, 0.7);
       }
       button {
-        padding: 0.85rem 1.5rem;
+        padding: 0.85rem 1.6rem;
         background: var(--color-neutral-black);
         color: var(--color-neutral-gray);
         border: none;
-        border-radius: 999px;
+        border-radius: var(--radius-pill);
         font-weight: 600;
         cursor: pointer;
+        font-size: var(--font-size-md);
+        line-height: 1.1;
       }
       .button-large {
-        padding: 1.1rem 2.25rem;
-        font-size: 1.05rem;
+        padding: 1.1rem 2.4rem;
+        font-size: var(--font-size-lg);
         font-weight: 700;
       }
       .button-primary {
@@ -174,13 +208,13 @@
         color: var(--color-neutral-black);
       }
       .status-panel {
-        margin-top: 1.5rem;
-        padding: 1rem;
-        border-radius: 12px;
+        margin-top: var(--space-5);
+        padding: var(--space-4);
+        border-radius: var(--radius-panel);
         background: var(--color-primary-blue-light);
         border: 1px solid var(--color-primary-blue);
         display: grid;
-        gap: 0.5rem;
+        gap: var(--space-2);
       }
       .status-panel[hidden] {
         display: none;
@@ -207,38 +241,38 @@
         font-weight: 600;
       }
       .progress-list {
-        margin: 0.5rem 0 0;
-        padding-left: 1.25rem;
+        margin: var(--space-2) 0 0;
+        padding-left: var(--space-5);
         color: var(--color-neutral-black);
       }
       .progress-list li {
-        margin: 0.25rem 0;
+        margin: var(--space-1) 0;
       }
       .error {
         background: var(--color-primary-orange-light);
         color: var(--color-neutral-black);
-        padding: 1rem;
-        border-radius: 8px;
+        padding: var(--space-4);
+        border-radius: 10px;
       }
       .result {
-        margin-top: 2rem;
+        margin-top: var(--space-6);
         background: var(--color-neutral-gray);
-        padding: 1.5rem;
-        border-radius: 12px;
+        padding: var(--space-5);
+        border-radius: var(--radius-panel);
       }
       .debug-prompt {
-        margin-top: 1.5rem;
+        margin-top: var(--space-5);
         background: var(--color-neutral-black);
         color: var(--color-neutral-gray);
-        padding: 1rem;
-        border-radius: 8px;
+        padding: var(--space-4);
+        border-radius: 10px;
         white-space: pre-wrap;
         word-break: break-word;
       }
       .hint {
         font-weight: 400;
         color: var(--color-neutral-black);
-        font-size: 0.9rem;
+        font-size: var(--font-size-sm);
       }
       .download-link {
         display: inline-flex;
@@ -262,7 +296,7 @@
       .option-hint {
         font-weight: 400;
         color: var(--color-neutral-black);
-        font-size: 0.9rem;
+        font-size: var(--font-size-sm);
       }
       .info-icon {
         display: inline-flex;
@@ -270,10 +304,10 @@
         justify-content: center;
         width: 18px;
         height: 18px;
-        border-radius: 999px;
+        border-radius: var(--radius-pill);
         border: 1px solid var(--color-neutral-black-30);
         color: var(--color-neutral-black);
-        font-size: 0.75rem;
+        font-size: var(--font-size-xs);
         font-weight: 600;
         cursor: help;
         position: relative;
@@ -287,8 +321,8 @@
         background: var(--color-neutral-black);
         color: var(--color-neutral-gray);
         padding: 0.4rem 0.6rem;
-        border-radius: 8px;
-        font-size: 0.75rem;
+        border-radius: 10px;
+        font-size: var(--font-size-xs);
         font-weight: 500;
         white-space: nowrap;
         opacity: 0;
@@ -304,27 +338,28 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 0.75rem;
+        gap: var(--space-3);
       }
       .voice-preview button {
-        padding: 0.4rem 0.9rem;
-        border-radius: 999px;
+        padding: 0.4rem 0.85rem;
+        border-radius: var(--radius-pill);
         border: 1px solid var(--color-neutral-black-30);
         background: var(--color-neutral-gray);
         color: var(--color-neutral-black);
         font-weight: 500;
         line-height: 1.2;
+        font-size: var(--font-size-sm);
       }
       .voice-preview button[disabled] {
         background: var(--color-primary-green-light);
         color: var(--color-neutral-black);
       }
       .footer {
-        margin-top: 2.5rem;
-        padding-top: 1.25rem;
+        margin-top: var(--space-6);
+        padding-top: var(--space-4);
         border-top: 1px solid var(--color-neutral-gray-mid);
         color: var(--color-neutral-black);
-        font-size: 0.9rem;
+        font-size: var(--font-size-sm);
         line-height: 1.5;
       }
       @keyframes spin {
