@@ -1920,6 +1920,9 @@
         const durationMinutes = Number(formData.get("durationMinutes"));
         const focus = formData.get("focus");
         const scenarioId = formData.get("scenarioId");
+        const customScenarioLineRaw = formData.get("customScenarioLine");
+        const customScenarioLine =
+          typeof customScenarioLineRaw === "string" ? customScenarioLineRaw.trim() : "";
         const practiceConfig = derivePracticeConfig(practiceType, durationMinutes);
         const durationConfig = deriveDurationConfig(durationMinutes);
         const primarySense = derivePrimarySense(focus, practiceConfig.eyeState);
