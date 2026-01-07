@@ -714,6 +714,8 @@
       const labelFocus = document.getElementById("label-focus");
       const labelDuration = document.getElementById("label-duration");
       const labelLanguage = document.getElementById("label-language");
+      const labelCustomScenario = document.getElementById("label-custom-scenario");
+      const customScenarioHelp = document.getElementById("custom-scenario-help");
       const labelVoice = document.getElementById("label-voice");
       const voiceHelp = document.getElementById("voice-help");
       const voicePreviewText = document.getElementById("voice-preview-text");
@@ -790,6 +792,9 @@
           "form.voice": "Voice",
           "form.voice.help": "Choose the voice you prefer for guidance.",
           "form.voice.preview": "Preview",
+          "form.custom_scenario_line": "Custom scenario line (optional)",
+          "form.custom_scenario_line.help":
+            "Add a short, neutral context line (max 120 characters). Avoid URLs or sensitive topics.",
           "form.audio_delivery": "Audio delivery",
           "form.audio_delivery.help":
             "Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.",
@@ -856,6 +861,9 @@
           "form.voice": "Voz",
           "form.voice.help": "Elige la voz que prefieres para la guía.",
           "form.voice.preview": "Vista previa",
+          "form.custom_scenario_line": "Línea de escenario personalizada (opcional)",
+          "form.custom_scenario_line.help":
+            "Agrega una línea breve y neutral (máximo 120 caracteres). Sin URLs ni temas sensibles.",
           "form.audio_delivery": "Entrega de audio",
           "form.audio_delivery.help":
             "La transmisión inicia la reproducción antes, pero puede ser menos fiable con conexiones inestables y limitar la búsqueda o la reproducción sin conexión.",
@@ -925,6 +933,9 @@
           "form.voice": "Voix",
           "form.voice.help": "Choisissez la voix que vous préférez pour la guidance.",
           "form.voice.preview": "Aperçu",
+          "form.custom_scenario_line": "Ligne de scénario personnalisée (optionnel)",
+          "form.custom_scenario_line.help":
+            "Ajoutez une ligne courte et neutre (max 120 caractères). Pas d'URL ni de sujets sensibles.",
           "form.audio_delivery": "Diffusion audio",
           "form.audio_delivery.help":
             "La diffusion démarre plus tôt, mais peut être moins fiable sur des connexions instables et limiter la recherche ou l'écoute hors ligne.",
@@ -994,6 +1005,9 @@
           "form.voice": "Stimme",
           "form.voice.help": "Wähle die Stimme, die du für die Anleitung bevorzugst.",
           "form.voice.preview": "Vorschau",
+          "form.custom_scenario_line": "Benutzerdefinierte Szenariozeile (optional)",
+          "form.custom_scenario_line.help":
+            "Füge eine kurze, neutrale Zeile hinzu (max 120 Zeichen). Keine URLs oder sensible Themen.",
           "form.audio_delivery": "Audioübertragung",
           "form.audio_delivery.help":
             "Streaming startet die Wiedergabe früher, kann aber bei instabilen Verbindungen unzuverlässiger sein und das Suchen oder Offline-Hören einschränken.",
@@ -1158,7 +1172,7 @@
         return match ? match[1] : null;
       };
 
-      const getCurrentLocale = () => resolveLocale(getSelectedValue("language") || FALLBACK_LOCALE);
+      const getCurrentLocale = () => resolveLocale(getLocaleFromPath() || FALLBACK_LOCALE);
 
       const translate = (key, params = {}, locale = getCurrentLocale()) => {
         const template =
@@ -1223,6 +1237,16 @@
         }
         if (labelLanguage) {
           labelLanguage.textContent = translate("form.language", {}, locale);
+        }
+        if (labelCustomScenario) {
+          labelCustomScenario.textContent = translate("form.custom_scenario_line", {}, locale);
+        }
+        if (customScenarioHelp) {
+          customScenarioHelp.textContent = translate(
+            "form.custom_scenario_line.help",
+            {},
+            locale,
+          );
         }
         if (labelVoice) {
           labelVoice.textContent = translate("form.voice", {}, locale);
@@ -1630,7 +1654,9 @@
       const mergedValues = {
         ...defaultValues,
         ...(storedValues && typeof storedValues === "object" ? storedValues : {}),
-        ...(pathLocale ? { language: pathLocale } : {}),
+        ...(pathLocale && !(storedValues && storedValues.language)
+          ? { language: pathLocale }
+          : {}),
       };
       setFormValues(mergedValues);
       if (pathLocale) {
@@ -1667,11 +1693,6 @@
         input.addEventListener("change", () => {
           updateVoiceLabels();
           applyTranslations();
-          const locale = getCurrentLocale();
-          const targetPath = `/${locale}/`;
-          if (window.location.pathname !== targetPath) {
-            window.history.replaceState(null, "", targetPath);
-          }
           persistFormValues();
         });
       });
@@ -1875,6 +1896,7 @@
           ...(scenarioId ? { scenarioId } : {}),
           languages: [language],
           voiceStyle,
+          customScenarioLine: customScenarioLine || undefined,
           ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0,
           ...(debugEnabled ? { debugTtsPrompt: true } : {}),
         };

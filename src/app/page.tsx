@@ -33,6 +33,7 @@ type FormState = {
   debugTtsPrompt: boolean;
   audioDelivery: "generate" | "stream";
   scenarioId?: ScenarioId;
+  customScenarioLine: string;
 };
 
 const DEFAULT_STATE: FormState = {
@@ -44,6 +45,7 @@ const DEFAULT_STATE: FormState = {
   ttsNewlinePauseSeconds: 1.5,
   debugTtsPrompt: false,
   audioDelivery: "generate",
+  customScenarioLine: "",
 };
 
 const BRAND_COLORS = {
@@ -94,6 +96,7 @@ const LANGUAGE_OPTIONS = [
 ];
 
 const DURATION_OPTIONS: FormState["durationMinutes"][] = [1, 2, 5, 12];
+const CUSTOM_SCENARIO_MAX_LENGTH = 120;
 
 const formatDurationLabel = (minutes: number) =>
   `${minutes} minute${minutes === 1 ? "" : "s"}`;
@@ -706,6 +709,7 @@ export default function HomePage() {
       scenarioId: formState.scenarioId,
       languages: [formState.language],
       voiceStyle,
+      customScenarioLine: formState.customScenarioLine.trim() || undefined,
       ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
       debugTtsPrompt: formState.debugTtsPrompt,
     };
