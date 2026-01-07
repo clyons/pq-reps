@@ -469,6 +469,33 @@ const scenarioGridStyle: React.CSSProperties = {
   marginBottom: "1.5rem",
 };
 
+const optionsDrawerStyle: React.CSSProperties = {
+  border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+  borderRadius: 12,
+  padding: "0.5rem 0.75rem",
+  background: BRAND_COLORS.neutral.grayBase,
+};
+
+const optionsSummaryStyle: React.CSSProperties = {
+  cursor: "pointer",
+  fontWeight: 600,
+  listStyle: "none",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "0.75rem",
+  padding: "0.5rem 0.75rem",
+  borderRadius: 10,
+  background: BRAND_COLORS.neutral.white,
+  border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+};
+
+const optionsContentStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "1.5rem",
+  marginTop: "1rem",
+};
+
 const getScenarioCardStyle = (active: boolean): React.CSSProperties => ({
   border: `1px solid ${active ? BRAND_COLORS.orange.dark : BRAND_COLORS.orange.base}`,
   borderRadius: 16,
@@ -1385,95 +1412,110 @@ export default function HomePage() {
           )}
         </div>
 
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Language</span>
-          <PillRadioGroup
-            name="language"
-            ariaLabel="Language"
-            options={languagePillOptions}
-            value={formState.language}
-            onChange={(value) => updateFormState({ language: value })}
-          />
-        </label>
+        <details style={optionsDrawerStyle}>
+          <summary style={optionsSummaryStyle}>
+            <span>Options</span>
+            <span aria-hidden="true">▾</span>
+          </summary>
+          <div style={optionsContentStyle}>
+            <label style={{ display: "grid", gap: "0.5rem" }}>
+              <span style={{ fontWeight: 600 }}>Language</span>
+              <PillRadioGroup
+                name="language"
+                ariaLabel="Language"
+                options={languagePillOptions}
+                value={formState.language}
+                onChange={(value) => updateFormState({ language: value })}
+              />
+            </label>
 
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Voice</span>
-          <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
-            Choose the voice you prefer for guidance.
-          </span>
-          <PillRadioGroup
-            name="voiceGender"
-            ariaLabel="Voice"
-            options={voicePillOptions}
-            value={formState.voiceGender}
-            onChange={(value) => updateFormState({ voiceGender: value as FormState["voiceGender"] })}
-          />
-          <button
-            type="button"
-            onClick={() => handleVoicePreview()}
-            disabled={previewLoading}
-            style={{
-              justifySelf: "start",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.4rem",
-              padding: "0.4rem 0.9rem",
-              borderRadius: 999,
-              border: `1px solid ${BRAND_COLORS.neutral.black30}`,
-              background: BRAND_COLORS.neutral.grayBase,
-              color: BRAND_COLORS.neutral.black,
-              fontWeight: 500,
-              lineHeight: 1.2,
-              cursor: previewLoading ? "not-allowed" : "pointer",
-            }}
-          >
-            <span>Preview</span>
-            <span aria-hidden="true">{previewIcon}</span>
-          </button>
-          <audio ref={previewAudioRef} hidden />
-          {previewError && (
-            <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.orange.dark }}>
-              {previewError}
-            </span>
-          )}
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span
-            style={{ fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
-          >
-            Audio delivery
-            <span
-              style={infoIconStyle}
-              aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
-              tabIndex={0}
-              onMouseEnter={() => setShowAudioInfo(true)}
-              onMouseLeave={() => setShowAudioInfo(false)}
-              onFocus={() => setShowAudioInfo(true)}
-              onBlur={() => setShowAudioInfo(false)}
-            >
-              i
-              <span
-                style={{ ...infoTooltipStyle, opacity: showAudioInfo ? 1 : 0 }}
-                className="info-tooltip"
-                role="tooltip"
-              >
-                Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.
+            <label style={{ display: "grid", gap: "0.5rem" }}>
+              <span style={{ fontWeight: 600 }}>Voice</span>
+              <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
+                Choose the voice you prefer for guidance.
               </span>
-            </span>
-          </span>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-            <PillRadioGroup
-              name="audioDelivery"
-              ariaLabel="Audio delivery"
-              options={audioDeliveryOptions}
-              value={formState.audioDelivery}
-              onChange={(value) =>
-                updateFormState({ audioDelivery: value as FormState["audioDelivery"] })
-              }
-            />
+              <PillRadioGroup
+                name="voiceGender"
+                ariaLabel="Voice"
+                options={voicePillOptions}
+                value={formState.voiceGender}
+                onChange={(value) =>
+                  updateFormState({ voiceGender: value as FormState["voiceGender"] })
+                }
+              />
+              <button
+                type="button"
+                onClick={() => handleVoicePreview()}
+                disabled={previewLoading}
+                style={{
+                  justifySelf: "start",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  padding: "0.4rem 0.9rem",
+                  borderRadius: 999,
+                  border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+                  background: BRAND_COLORS.neutral.grayBase,
+                  color: BRAND_COLORS.neutral.black,
+                  fontWeight: 500,
+                  lineHeight: 1.2,
+                  cursor: previewLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                <span>Preview</span>
+                <span aria-hidden="true">{previewIcon}</span>
+              </button>
+              <audio ref={previewAudioRef} hidden />
+              {previewError && (
+                <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.orange.dark }}>
+                  {previewError}
+                </span>
+              )}
+            </label>
+
+            <label style={{ display: "grid", gap: "0.5rem" }}>
+              <span
+                style={{
+                  fontWeight: 600,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                }}
+              >
+                Audio delivery
+                <span
+                  style={infoIconStyle}
+                  aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+                  tabIndex={0}
+                  onMouseEnter={() => setShowAudioInfo(true)}
+                  onMouseLeave={() => setShowAudioInfo(false)}
+                  onFocus={() => setShowAudioInfo(true)}
+                  onBlur={() => setShowAudioInfo(false)}
+                >
+                  i
+                  <span
+                    style={{ ...infoTooltipStyle, opacity: showAudioInfo ? 1 : 0 }}
+                    className="info-tooltip"
+                    role="tooltip"
+                  >
+                    Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.
+                  </span>
+                </span>
+              </span>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                <PillRadioGroup
+                  name="audioDelivery"
+                  ariaLabel="Audio delivery"
+                  options={audioDeliveryOptions}
+                  value={formState.audioDelivery}
+                  onChange={(value) =>
+                    updateFormState({ audioDelivery: value as FormState["audioDelivery"] })
+                  }
+                />
+              </div>
+            </label>
           </div>
-        </label>
+        </details>
 
         {errors.length > 0 && (
           <div

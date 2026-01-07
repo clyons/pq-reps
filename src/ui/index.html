@@ -164,6 +164,33 @@
         outline: 2px solid var(--color-primary-blue);
         outline-offset: 2px;
       }
+      .options-drawer {
+        border: 1px solid var(--color-neutral-black-30);
+        border-radius: var(--radius-panel);
+        padding: var(--space-3) var(--space-4);
+        background: var(--color-neutral-gray);
+      }
+      .options-drawer summary {
+        cursor: pointer;
+        font-weight: 600;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border-radius: 10px;
+        background: var(--color-neutral-white);
+        border: 1px solid var(--color-neutral-black-30);
+      }
+      .options-drawer summary::-webkit-details-marker {
+        display: none;
+      }
+      .options-content {
+        display: grid;
+        gap: var(--space-4);
+        margin-top: var(--space-4);
+      }
       .scenario-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -659,77 +686,90 @@
 
         </div>
 
-        <label>
-          <span id="label-language">Language</span>
-          <div class="pill-group" role="radiogroup" aria-label="Language" id="group-language">
-            <label class="pill-option">
-              <input type="radio" name="language" value="en" checked required />
-              <span class="pill" data-language="en">English</span>
+        <details class="options-drawer">
+          <summary id="options-summary" data-i18n="form.options">
+            Options
+            <span aria-hidden="true">▾</span>
+          </summary>
+          <div class="options-content">
+            <label>
+              <span id="label-language">Language</span>
+              <div class="pill-group" role="radiogroup" aria-label="Language" id="group-language">
+                <label class="pill-option">
+                  <input type="radio" name="language" value="en" checked required />
+                  <span class="pill" data-language="en">English</span>
+                </label>
+                <label class="pill-option">
+                  <input type="radio" name="language" value="es" />
+                  <span class="pill" data-language="es">Spanish</span>
+                </label>
+                <label class="pill-option">
+                  <input type="radio" name="language" value="fr" />
+                  <span class="pill" data-language="fr">French</span>
+                </label>
+                <label class="pill-option">
+                  <input type="radio" name="language" value="de" />
+                  <span class="pill" data-language="de">German</span>
+                </label>
+              </div>
             </label>
-            <label class="pill-option">
-              <input type="radio" name="language" value="es" />
-              <span class="pill" data-language="es">Spanish</span>
-            </label>
-            <label class="pill-option">
-              <input type="radio" name="language" value="fr" />
-              <span class="pill" data-language="fr">French</span>
-            </label>
-            <label class="pill-option">
-              <input type="radio" name="language" value="de" />
-              <span class="pill" data-language="de">German</span>
-            </label>
-          </div>
-        </label>
 
-        <label>
-          <span id="label-voice">Voice</span>
-          <div class="pill-group" role="radiogroup" aria-label="Voice" id="group-voice">
-            <label class="pill-option">
-              <input type="radio" name="voiceGender" value="female" checked />
-              <span class="pill" data-voice-label="female">Alloy</span>
+            <label>
+              <span id="label-voice">Voice</span>
+              <div class="pill-group" role="radiogroup" aria-label="Voice" id="group-voice">
+                <label class="pill-option">
+                  <input type="radio" name="voiceGender" value="female" checked />
+                  <span class="pill" data-voice-label="female">Alloy</span>
+                </label>
+                <label class="pill-option">
+                  <input type="radio" name="voiceGender" value="male" required />
+                  <span class="pill" data-voice-label="male">Ash</span>
+                </label>
+              </div>
+              <div class="voice-preview">
+                <span class="option-hint" id="voice-help">Choose the voice you prefer for guidance.</span>
+                <button type="button" id="voice-preview-button">
+                  <span id="voice-preview-text">Preview</span>
+                  <span id="voice-preview-icon" aria-hidden="true">▶</span>
+                </button>
+              </div>
+              <audio id="voice-preview-audio" hidden></audio>
+              <span id="voice-preview-status" class="option-hint" hidden></span>
             </label>
-            <label class="pill-option">
-              <input type="radio" name="voiceGender" value="male" required />
-              <span class="pill" data-voice-label="male">Ash</span>
-            </label>
-          </div>
-          <div class="voice-preview">
-            <span class="option-hint" id="voice-help">Choose the voice you prefer for guidance.</span>
-            <button type="button" id="voice-preview-button">
-              <span id="voice-preview-text">Preview</span>
-              <span id="voice-preview-icon" aria-hidden="true">▶</span>
-            </button>
-          </div>
-          <audio id="voice-preview-audio" hidden></audio>
-          <span id="voice-preview-status" class="option-hint" hidden></span>
-        </label>
 
-        <label>
-          <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
-            <span id="label-audio-delivery">Audio delivery</span>
-            <span
-              class="info-icon"
-              id="audio-delivery-info"
-              aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
-              data-tooltip="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
-              tabindex="0"
-            >
-              i
-            </span>
-          </span>
-          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-            <div class="pill-group" role="radiogroup" aria-label="Audio delivery" id="group-audio-delivery">
-              <label class="pill-option">
-                <input type="radio" name="audioDelivery" value="generate" checked />
-                <span class="pill" data-i18n="form.audio_delivery.generate">Generate</span>
-              </label>
-              <label class="pill-option">
-                <input type="radio" name="audioDelivery" value="stream" />
-                <span class="pill" data-i18n="form.audio_delivery.stream">Stream</span>
-              </label>
-            </div>
+            <label>
+              <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+                <span id="label-audio-delivery">Audio delivery</span>
+                <span
+                  class="info-icon"
+                  id="audio-delivery-info"
+                  aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+                  data-tooltip="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+                  tabindex="0"
+                >
+                  i
+                </span>
+              </span>
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <div
+                  class="pill-group"
+                  role="radiogroup"
+                  aria-label="Audio delivery"
+                  id="group-audio-delivery"
+                >
+                  <label class="pill-option">
+                    <input type="radio" name="audioDelivery" value="generate" checked />
+                    <span class="pill" data-i18n="form.audio_delivery.generate">Generate</span>
+                  </label>
+                  <label class="pill-option">
+                    <input type="radio" name="audioDelivery" value="stream" />
+                    <span class="pill" data-i18n="form.audio_delivery.stream">Stream</span>
+                  </label>
+                </div>
+              </div>
+            </label>
           </div>
-        </label>
+        </details>
 
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
           <button type="submit" id="submit-button" class="button-primary button-large">
@@ -881,6 +921,7 @@
           "ui.ai_notice": "Audio is AI-generated.",
           "form.quick_access": "Quick access",
           "form.customize": "Customize",
+          "form.options": "Options",
           "ui.footer":
             "Inspired by publicly available teachings on Positive Intelligence® and PQ Reps® by Shirzad Chamine. Not affiliated with or endorsed by Positive Intelligence LLC. For educational purposes only.",
           "form.practice_type": "Practice type",
@@ -950,6 +991,7 @@
           "ui.ai_notice": "El audio está generado por IA.",
           "form.quick_access": "Acceso rápido",
           "form.customize": "Personalizar",
+          "form.options": "Opciones",
           "ui.footer":
             "Inspirado en enseñanzas públicas sobre Positive Intelligence® y PQ Reps® de Shirzad Chamine. No afiliado ni avalado por Positive Intelligence LLC. Solo con fines educativos.",
           "form.practice_type": "Tipo de práctica",
@@ -1022,6 +1064,7 @@
           "ui.ai_notice": "L'audio est généré par IA.",
           "form.quick_access": "Accès rapide",
           "form.customize": "Personnaliser",
+          "form.options": "Options",
           "ui.footer":
             "Inspiré d'enseignements publics sur Positive Intelligence® et PQ Reps® de Shirzad Chamine. Non affilié ni approuvé par Positive Intelligence LLC. À des fins éducatives uniquement.",
           "form.practice_type": "Type de pratique",
@@ -1094,6 +1137,7 @@
           "ui.ai_notice": "Audio wird von KI erzeugt.",
           "form.quick_access": "Schnellzugriff",
           "form.customize": "Anpassen",
+          "form.options": "Optionen",
           "ui.footer":
             "Inspiriert von öffentlich verfügbaren Lehren zu Positive Intelligence® und PQ Reps® von Shirzad Chamine. Nicht verbunden oder unterstützt von Positive Intelligence LLC. Nur zu Bildungszwecken.",
           "form.practice_type": "Praxisart",
