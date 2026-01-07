@@ -921,7 +921,7 @@
         return match ? match[1] : null;
       };
 
-      const getCurrentLocale = () => resolveLocale(getSelectedValue("language") || FALLBACK_LOCALE);
+      const getCurrentLocale = () => resolveLocale(getLocaleFromPath() || FALLBACK_LOCALE);
 
       const translate = (key, params = {}, locale = getCurrentLocale()) => {
         const template =
@@ -1381,7 +1381,9 @@
       const mergedValues = {
         ...defaultValues,
         ...(storedValues && typeof storedValues === "object" ? storedValues : {}),
-        ...(pathLocale ? { language: pathLocale } : {}),
+        ...(pathLocale && !(storedValues && storedValues.language)
+          ? { language: pathLocale }
+          : {}),
       };
       setFormValues(mergedValues);
       if (pathLocale) {
@@ -1401,11 +1403,6 @@
         input.addEventListener("change", () => {
           updateVoiceLabels();
           applyTranslations();
-          const locale = getCurrentLocale();
-          const targetPath = `/${locale}/`;
-          if (window.location.pathname !== targetPath) {
-            window.history.replaceState(null, "", targetPath);
-          }
           persistFormValues();
         });
       });
