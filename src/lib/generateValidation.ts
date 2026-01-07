@@ -43,6 +43,20 @@ type ValidationResult = {
 };
 
 const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
+const MAX_CUSTOM_SCENARIO_LENGTH = 120;
+const CUSTOM_SCENARIO_INVALID_CHAR_PATTERN = /[^\p{L}\p{N} .,'’"?!:;()&-]/u;
+const CUSTOM_SCENARIO_URL_PATTERN = /(https?:\/\/|www\.)/i;
+const CUSTOM_SCENARIO_DISALLOWED_TERMS = [
+  /\b(?:sex|sexual|nude|porn|erotic)\b/i,
+  /\b(?:violence|violent|kill|killing|murder|suicide|assault)\b/i,
+  /\b(?:weapon|gun|knife|bomb)\b/i,
+  /\b(?:drugs|cocaine|heroin|meth|opioid|marijuana|weed)\b/i,
+  /\b(?:alcohol|drunk|gambling|casino|betting)\b/i,
+  /\b(?:politics|political|election|vote|government)\b/i,
+  /\b(?:religion|religious|church|mosque|temple|god|jesus|allah)\b/i,
+  /\b(?:hate|racist|bigot)\b/i,
+  /\b(?:medical|therapy|diagnose|treatment|prescription)\b/i,
+];
 
 const ALLOWED_PRACTICE_MODES: PracticeMode[] = [
   "tactile",
