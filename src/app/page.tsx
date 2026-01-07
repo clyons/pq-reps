@@ -29,7 +29,6 @@ type FormState = {
   durationMinutes: 1 | 2 | 5 | 12;
   language: string;
   voiceGender: "female" | "male";
-  ttsNewlinePauseSeconds: number;
   debugTtsPrompt: boolean;
   audioDelivery: "generate" | "stream";
   scenarioId?: ScenarioId;
@@ -47,7 +46,6 @@ const DEFAULT_STATE: FormState = {
   durationMinutes: 2,
   language: "en",
   voiceGender: "female",
-  ttsNewlinePauseSeconds: 1.5,
   debugTtsPrompt: false,
   audioDelivery: "generate",
   customScenarioLine: "",
@@ -774,7 +772,6 @@ export default function HomePage() {
       languages: [formState.language],
       voiceStyle,
       customScenarioLine: formState.customScenarioLine.trim() || undefined,
-      ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
       debugTtsPrompt: formState.debugTtsPrompt,
     };
 
@@ -782,7 +779,6 @@ export default function HomePage() {
       script,
       language: formState.language,
       voice: voiceStyle,
-      ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
     });
 
     const requestJson = async (outputMode: "text" | "text-audio") => {
@@ -1371,45 +1367,6 @@ export default function HomePage() {
             />
           </label>
 
-          {isDevMode && (
-            <>
-              <label style={{ display: "grid", gap: "0.5rem" }}>
-                <span style={{ fontWeight: 600 }}>TTS newline pause (seconds)</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={formState.ttsNewlinePauseSeconds}
-                  onChange={(event) =>
-                    updateFormState({
-                      ttsNewlinePauseSeconds:
-                        Number.parseFloat(event.target.value) || 0,
-                    })
-                  }
-                  style={{
-                    padding: "0.75rem",
-                    borderRadius: 6,
-                    border: `1px solid ${BRAND_COLORS.neutral.black30}`,
-                  }}
-                />
-              </label>
-
-              <label style={{ display: "grid", gap: "0.5rem" }}>
-                <span style={{ fontWeight: 600 }}>Debug TTS prompt</span>
-                <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
-                  Shows the exact TTS payload used for OpenAI audio generation.
-                </span>
-                <input
-                  type="checkbox"
-                  checked={formState.debugTtsPrompt}
-                  onChange={(event) =>
-                    updateFormState({ debugTtsPrompt: event.target.checked })
-                  }
-                  style={{ width: 18, height: 18 }}
-                />
-              </label>
-            </>
-          )}
         </div>
 
         <details style={optionsDrawerStyle}>
@@ -1514,6 +1471,25 @@ export default function HomePage() {
                 />
               </div>
             </label>
+
+            {isDevMode && (
+              <label style={{ display: "grid", gap: "0.5rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <span style={{ fontWeight: 600 }}>Debug TTS prompt</span>
+                  <input
+                    type="checkbox"
+                    checked={formState.debugTtsPrompt}
+                    onChange={(event) =>
+                      updateFormState({ debugTtsPrompt: event.target.checked })
+                    }
+                    style={{ width: 18, height: 18, margin: 0 }}
+                  />
+                </div>
+                <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
+                  Shows the exact TTS payload used for OpenAI audio generation.
+                </span>
+              </label>
+            )}
           </div>
         </details>
 
