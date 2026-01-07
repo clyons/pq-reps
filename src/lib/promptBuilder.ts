@@ -287,21 +287,12 @@ type Template = {
   closingLine: string;
 };
 
-const senseLabels: Record<Language, Record<Sense, string>> = {
-  en: {
-    sight: "sight",
-    sound: "sound",
-    touch: "touch",
-    smell: "smell",
-    taste: "taste",
-  },
-  es: {
-    sight: "la vista",
-    sound: "el sonido",
-    touch: "el tacto",
-    smell: "el olfato",
-    taste: "el gusto",
-  },
+const senseLabels: Record<Sense, string> = {
+  sight: "sight",
+  sound: "sound",
+  touch: "touch",
+  smell: "smell",
+  taste: "taste",
 };
 
 const templates: Record<Language, Template> = {
@@ -311,7 +302,7 @@ const templates: Record<Language, Template> = {
       practice: "Practice",
       closing: "Closing",
     },
-    senseFocus: (sense) => `Focus on ${senseLabels.en[sense]}.`,
+    senseFocus: (sense) => `Focus on ${senseLabels[sense]}.`,
     eyesInstruction: (eyes) => {
       if (eyes === "closed") {
         return "Gently close your eyes.";
@@ -341,7 +332,7 @@ const templates: Record<Language, Template> = {
       practice: "Práctica",
       closing: "Cierre",
     },
-    senseFocus: (sense) => `Enfoca tu atención en ${senseLabels.es[sense]}.`,
+    senseFocus: (sense) => `Enfoca tu atención en ${senseLabels[sense]}.`,
     eyesInstruction: (eyes) => {
       if (eyes === "closed") {
         return "Cierra los ojos suavemente.";
