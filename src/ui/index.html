@@ -454,7 +454,12 @@
       <form id="generator-form">
         <input type="hidden" name="scenarioId" id="scenario-id" value="" />
 
-        <div class="section-toggle" id="section-tablist" role="tablist" aria-label="">
+        <div
+          class="section-toggle"
+          id="section-tablist"
+          role="tablist"
+          aria-label="form.scenario_controls"
+        >
           <button
             type="button"
             id="quick-access-toggle"
@@ -605,7 +610,12 @@
         <div id="panel-customize" role="tabpanel" aria-labelledby="customize-toggle" hidden>
         <label>
           <span id="label-practice-type">Practice type</span>
-          <div class="pill-group" role="radiogroup" aria-label="" id="group-practice-type">
+          <div
+            class="pill-group"
+            role="radiogroup"
+            aria-label="form.practice_type"
+            id="group-practice-type"
+          >
             <label class="pill-option">
               <input type="radio" name="practiceType" value="still_eyes_closed" checked required />
               <span class="pill" data-i18n="form.practice_type.still_eyes_closed">Still (Eyes closed)</span>
@@ -627,7 +637,12 @@
 
         <label>
           <span id="label-focus">Focus</span>
-          <div class="pill-group" role="radiogroup" aria-label="" id="group-focus">
+          <div
+            class="pill-group"
+            role="radiogroup"
+            aria-label="form.focus"
+            id="group-focus"
+          >
             <label class="pill-option">
               <input type="radio" name="focus" value="touch" checked required />
               <span class="pill" data-i18n="form.focus.touch">Touch</span>
@@ -649,7 +664,12 @@
 
         <label>
           <span id="label-duration">Duration</span>
-          <div class="pill-group" role="radiogroup" aria-label="" id="group-duration">
+          <div
+            class="pill-group"
+            role="radiogroup"
+            aria-label="form.duration"
+            id="group-duration"
+          >
             <label class="pill-option">
               <input type="radio" name="durationMinutes" value="1" checked required />
               <span class="pill" data-duration="1">1 minute</span>
@@ -679,7 +699,12 @@
           <div class="options-content">
             <label>
               <span id="label-language">Language</span>
-              <div class="pill-group" role="radiogroup" aria-label="" id="group-language">
+              <div
+                class="pill-group"
+                role="radiogroup"
+                aria-label="form.language"
+                id="group-language"
+              >
                 <label class="pill-option">
                   <input type="radio" name="language" value="en" checked required />
                   <span class="pill" data-language="en">English</span>
@@ -701,7 +726,12 @@
 
             <label>
               <span id="label-voice">Voice</span>
-              <div class="pill-group" role="radiogroup" aria-label="" id="group-voice">
+              <div
+                class="pill-group"
+                role="radiogroup"
+                aria-label="form.voice"
+                id="group-voice"
+              >
                 <label class="pill-option">
                   <input type="radio" name="voiceGender" value="female" checked />
                   <span class="pill" data-voice-label="female">Alloy</span>
@@ -728,8 +758,8 @@
                 <span
                   class="info-icon"
                   id="audio-delivery-info"
-                  aria-label=""
-                  data-tooltip=""
+                  aria-label="form.audio_delivery.help"
+                  data-tooltip="form.audio_delivery.help"
                   tabindex="0"
                 >
                   i
@@ -739,7 +769,7 @@
                 <div
                   class="pill-group"
                   role="radiogroup"
-                  aria-label=""
+                  aria-label="form.audio_delivery"
                   id="group-audio-delivery"
                 >
                   <label class="pill-option">
@@ -824,7 +854,7 @@
         <div class="footer-locale">
           <span class="footer-locale-icon" aria-hidden="true">🌐</span>
           <span class="footer-locale-label" data-i18n="form.language_label">Language:</span>
-          <select id="footer-locale-select" aria-label="">
+          <select id="footer-locale-select" aria-label="form.language">
             <option value="en" data-language="en">English</option>
             <option value="es" data-language="es">Spanish</option>
             <option value="fr" data-language="fr">French</option>
