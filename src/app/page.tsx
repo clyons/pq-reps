@@ -476,8 +476,7 @@ const getScenarioCardStyle = (active: boolean): React.CSSProperties => ({
   background: active ? BRAND_COLORS.orange.light : BRAND_COLORS.neutral.white,
   textAlign: "left",
   cursor: "pointer",
-  transition: "border 0.15s ease, box-shadow 0.15s ease",
-  boxShadow: active ? "0 6px 16px rgba(0,0,0,0.08)" : "none",
+  transition: "border 0.15s ease",
 });
 
 const scenarioTitleStyle: React.CSSProperties = {
