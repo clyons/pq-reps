@@ -542,6 +542,21 @@
           </div>
         </label>
 
+        <div id="dev-controls" hidden>
+          <label>
+            <span id="label-tts-newline">TTS newline pause (seconds)</span>
+            <input type="number" name="ttsNewlinePauseSeconds" min="0" step="0.5" value="1.5" />
+          </label>
+
+          <label>
+            <span id="label-debug-tts">Debug TTS prompt</span>
+            <span class="hint" id="debug-tts-help">Include the raw TTS payload for OpenAI playground testing.</span>
+            <input type="checkbox" name="debugTtsPrompt" />
+          </label>
+        </div>
+
+        </div>
+
         <label>
           <span id="label-language">Language</span>
           <div class="pill-group" role="radiogroup" aria-label="Language" id="group-language">
@@ -613,21 +628,6 @@
             </div>
           </div>
         </label>
-
-        <div id="dev-controls" hidden>
-          <label>
-            <span id="label-tts-newline">TTS newline pause (seconds)</span>
-            <input type="number" name="ttsNewlinePauseSeconds" min="0" step="0.5" value="1.5" />
-          </label>
-
-          <label>
-            <span id="label-debug-tts">Debug TTS prompt</span>
-            <span class="hint" id="debug-tts-help">Include the raw TTS payload for OpenAI playground testing.</span>
-            <input type="checkbox" name="debugTtsPrompt" />
-          </label>
-        </div>
-
-        </div>
 
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
           <button type="submit" id="submit-button" class="button-primary button-large">
