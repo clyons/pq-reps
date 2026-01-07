@@ -371,6 +371,35 @@
         color: var(--color-neutral-black);
         font-size: var(--font-size-sm);
         line-height: 1.5;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-3);
+        align-items: start;
+      }
+      .footer-text {
+        grid-column: 1 / span 2;
+        margin: 0;
+      }
+      .footer-locale {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      .footer-locale-icon {
+        color: var(--color-neutral-black);
+      }
+      .footer-locale-label {
+        font-weight: 600;
+      }
+      .footer-locale select {
+        padding: 0.35rem 0.7rem;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--color-neutral-black-30);
+        background: var(--color-neutral-gray);
+        color: var(--color-neutral-black);
+        font-size: var(--font-size-sm);
       }
       @keyframes spin {
         to {
@@ -721,10 +750,22 @@
         </div>
       </section>
 
-      <footer class="footer" id="footer-text">
-        Inspired by publicly available teachings on Positive Intelligence® and PQ Reps® by Shirzad
-        Chamine. Not affiliated with or endorsed by Positive Intelligence LLC. For educational
-        purposes only.
+      <footer class="footer">
+        <p id="footer-text" class="footer-text">
+          Inspired by publicly available teachings on Positive Intelligence® and PQ Reps® by
+          Shirzad Chamine. Not affiliated with or endorsed by Positive Intelligence LLC. For
+          educational purposes only.
+        </p>
+        <div class="footer-locale">
+          <span class="footer-locale-icon" aria-hidden="true">🌐</span>
+          <span class="footer-locale-label">Language:</span>
+          <select id="footer-locale-select" aria-label="Language">
+            <option value="en" data-language="en">English</option>
+            <option value="es" data-language="es">Spanish</option>
+            <option value="fr" data-language="fr">French</option>
+            <option value="de" data-language="de">German</option>
+          </select>
+        </div>
       </footer>
     </main>
 
@@ -772,6 +813,7 @@
       const resultTitle = document.getElementById("result-title");
       const debugTitle = document.getElementById("debug-title");
       const footerText = document.getElementById("footer-text");
+      const footerLocaleSelect = document.getElementById("footer-locale-select");
       const groupPracticeType = document.getElementById("group-practice-type");
       const groupFocus = document.getElementById("group-focus");
       const groupDuration = document.getElementById("group-duration");
@@ -1217,6 +1259,15 @@
         return match ? match[1] : null;
       };
 
+      const buildLocalePath = (locale) => {
+        const pathname = window.location.pathname;
+        const updated = pathname.replace(/^\/(en|es|fr|de)(?=\/|$)/, `/${locale}`);
+        if (updated === pathname) {
+          return `/${locale}${pathname === "/" ? "" : pathname}`;
+        }
+        return updated;
+      };
+
       const getCurrentLocale = () => resolveLocale(getLocaleFromPath() || FALLBACK_LOCALE);
 
       const translate = (key, params = {}, locale = getCurrentLocale()) => {
@@ -1339,6 +1390,10 @@
         }
         if (footerText) {
           footerText.textContent = translate("ui.footer", {}, locale);
+        }
+        if (footerLocaleSelect) {
+          footerLocaleSelect.value = locale;
+          footerLocaleSelect.setAttribute("aria-label", translate("form.language", {}, locale));
         }
         if (groupPracticeType) {
           groupPracticeType.setAttribute("aria-label", translate("form.practice_type", {}, locale));
@@ -1741,6 +1796,25 @@
           persistFormValues();
         });
       });
+      if (footerLocaleSelect) {
+        footerLocaleSelect.addEventListener("change", (event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLSelectElement)) {
+            return;
+          }
+          const nextLocale = resolveLocale(target.value);
+          if (nextLocale === getCurrentLocale()) {
+            return;
+          }
+          const nextPath = buildLocalePath(nextLocale);
+          window.history.replaceState(
+            {},
+            "",
+            `${nextPath}${window.location.search}${window.location.hash}`,
+          );
+          applyTranslations();
+        });
+      }
 
       const setPreviewIcon = (state) => {
         if (!previewIcon) {
