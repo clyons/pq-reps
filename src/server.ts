@@ -35,6 +35,7 @@ const getRateLimitKey = (req: http.IncomingMessage) => {
     typeof forwardedFor === "string" ? forwardedFor.split(",")[0]?.trim() : undefined;
   const remoteAddress = req.socket.remoteAddress ?? "unknown";
   return `ip:${forwardedIp || remoteAddress}`;
+};
 const apiKey = process.env.API_KEY;
 
 const isUiRoute = (pathname: string) => pathname === "/" || /^\/(en|es|fr|de)\/?$/.test(pathname);
