@@ -361,7 +361,7 @@
               data-scenario-id="calm_me_now"
               data-practice-type="still_eyes_open"
               data-focus="touch"
-              data-duration="1"
+              data-duration-minutes="1"
             >
               <div class="scenario-title" data-i18n="scenario.calm_me_now">Calm me now</div>
               <div class="scenario-meta">
@@ -376,7 +376,7 @@
               data-scenario-id="get_present_for_meeting"
               data-practice-type="still_eyes_open"
               data-focus="touch"
-              data-duration="1"
+              data-duration-minutes="1"
             >
               <div class="scenario-title" data-i18n="scenario.get_present_for_meeting">
                 Get present for a meeting
@@ -393,7 +393,7 @@
               data-scenario-id="start_the_thing_im_avoiding"
               data-practice-type="moving"
               data-focus="touch"
-              data-duration="1"
+              data-duration-minutes="1"
             >
               <div class="scenario-title" data-i18n="scenario.start_the_thing_im_avoiding">
                 Start the thing I’m avoiding
@@ -410,7 +410,7 @@
               data-scenario-id="prepare_for_a_tough_conversation"
               data-practice-type="still_eyes_open"
               data-focus="sight"
-              data-duration="2"
+              data-duration-minutes="2"
             >
               <div class="scenario-title" data-i18n="scenario.prepare_for_a_tough_conversation">
                 Prepare for a tough conversation
@@ -427,7 +427,7 @@
               data-scenario-id="reset_after_feedback"
               data-practice-type="labeling"
               data-focus="hearing"
-              data-duration="2"
+              data-duration-minutes="2"
             >
               <div class="scenario-title" data-i18n="scenario.reset_after_feedback">
                 Reset after feedback
@@ -444,7 +444,7 @@
               data-scenario-id="wind_down_for_sleep"
               data-practice-type="still_eyes_closed"
               data-focus="breath"
-              data-duration="5"
+              data-duration-minutes="5"
             >
               <div class="scenario-title" data-i18n="scenario.wind_down_for_sleep">
                 Wind down for sleep
@@ -461,7 +461,7 @@
               data-scenario-id="daily_deep_reset"
               data-practice-type="still_eyes_closed"
               data-focus="touch"
-              data-duration="12"
+              data-duration-minutes="12"
             >
               <div class="scenario-title" data-i18n="scenario.daily_deep_reset">
                 Daily deep reset
@@ -1591,7 +1591,7 @@
         const scenarioId = card.dataset.scenarioId;
         const practiceType = card.dataset.practiceType;
         const focus = card.dataset.focus;
-        const duration = card.dataset.duration;
+        const duration = card.dataset.durationMinutes;
         if (!scenarioId || !practiceType || !focus || !duration) {
           return;
         }
@@ -1878,9 +1878,6 @@
         const durationMinutes = Number(formData.get("durationMinutes"));
         const focus = formData.get("focus");
         const scenarioId = formData.get("scenarioId");
-        const customScenarioLine = String(
-          formData.get("customScenarioLine") || "",
-        ).trim();
         const practiceConfig = derivePracticeConfig(practiceType, durationMinutes);
         const durationConfig = deriveDurationConfig(durationMinutes);
         const primarySense = derivePrimarySense(focus, practiceConfig.eyeState);
