@@ -7,6 +7,7 @@ import generateHandler from "./pages/api/generate";
 import ttsHandler from "./pages/api/tts";
 import voicePreviewHandler from "./pages/api/voice-preview";
 import { DEFAULT_LOCALE, translate } from "./lib/i18n";
+import { createRateLimiter } from "./lib/rateLimiter";
 
 dotenv.config({ path: ".env.local" });
 dotenv.config();
@@ -16,6 +17,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uiPath = path.join(__dirname, "ui", "index.html");
 const packageJsonPath = path.join(process.cwd(), "package.json");
+const rateLimitMaxRequests = Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
+const rateLimitWindowSeconds = Number.parseInt(process.env.RATE_LIMIT_WINDOW_SECONDS ?? "60", 10);
+const rateLimiter = createRateLimiter({
+  capacity: rateLimitMaxRequests,
+  refillPerSecond: rateLimitMaxRequests / rateLimitWindowSeconds,
+});
+
+const getRateLimitKey = (req: http.IncomingMessage) => {
+  const apiKeyHeader = req.headers["x-api-key"];
+  if (typeof apiKeyHeader === "string" && apiKeyHeader.trim().length > 0) {
+    return `api-key:${apiKeyHeader.trim()}`;
+  }
+
+  const forwardedFor = req.headers["x-forwarded-for"];
+  const forwardedIp =
+    typeof forwardedFor === "string" ? forwardedFor.split(",")[0]?.trim() : undefined;
+  const remoteAddress = req.socket.remoteAddress ?? "unknown";
+  return `ip:${forwardedIp || remoteAddress}`;
 const apiKey = process.env.API_KEY;
 
 const isUiRoute = (pathname: string) => pathname === "/" || /^\/(en|es|fr|de)\/?$/.test(pathname);
@@ -78,6 +97,23 @@ const server = http.createServer(async (req, res) => {
       },
     });
     return;
+  }
+
+  if (url.pathname.startsWith("/api/")) {
+    const key = getRateLimitKey(req);
+    if (!rateLimiter.isAllowed(key)) {
+      res.statusCode = 429;
+      res.setHeader("Content-Type", "application/json");
+      res.end(
+        JSON.stringify({
+          error: {
+            code: "rate_limited",
+            message: "Rate limit exceeded. Try again later.",
+          },
+        }),
+      );
+      return;
+    }
   }
 
   if (url.pathname === "/api/generate") {

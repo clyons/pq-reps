@@ -60,6 +60,13 @@ OPENAI_API_KEY=your_api_key_here
 API_KEY=your_api_key_here
 ```
 
+Optional rate limit tuning for `/api/*` requests (in-memory, per IP or `x-api-key`):
+```bash
+# Allow 60 requests per 60-second window (token bucket defaults).
+RATE_LIMIT_MAX_REQUESTS=60
+RATE_LIMIT_WINDOW_SECONDS=60
+```
+
 ### Run the API locally
 ```bash
 npm run dev
