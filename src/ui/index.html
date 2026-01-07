@@ -72,14 +72,14 @@
         display: grid;
         gap: var(--space-5);
       }
-      #customize-section {
+      #panel-customize {
         display: grid;
         gap: var(--space-4);
       }
-      #customize-section[hidden] {
+      #panel-customize[hidden] {
         display: none;
       }
-      #customize-section label {
+      #panel-customize label {
         margin: 0;
       }
       label {
@@ -137,21 +137,28 @@
         display: flex;
         flex-wrap: wrap;
         gap: var(--space-3);
+        border-bottom: 1px solid var(--color-primary-orange);
       }
       .section-toggle button {
-        padding: 0.55rem 1.1rem;
-        border-radius: var(--radius-pill);
-        border: 1px solid var(--color-primary-orange);
-        background: var(--color-neutral-white);
-        color: var(--color-neutral-black);
+        padding: 0.55rem 1rem;
+        border-radius: 8px 8px 0 0;
+        border: 1px solid transparent;
+        border-bottom: 3px solid transparent;
+        background: transparent;
+        color: rgba(0, 0, 0, 0.75);
         font-weight: 600;
         cursor: pointer;
         font-size: var(--font-size-md);
         transition: all 0.15s ease;
       }
       .section-toggle button.is-active {
-        background: var(--color-primary-orange);
-        border-color: var(--color-primary-orange-dark);
+        background: var(--color-neutral-white);
+        border-bottom-color: var(--color-primary-orange-dark);
+        color: var(--color-neutral-black);
+      }
+      .section-toggle [role="tab"]:focus-visible {
+        outline: 2px solid var(--color-primary-blue);
+        outline-offset: 2px;
       }
       .scenario-grid {
         display: grid;
@@ -418,16 +425,33 @@
       <form id="generator-form">
         <input type="hidden" name="scenarioId" id="scenario-id" value="" />
 
-        <div class="section-toggle">
-          <button type="button" id="quick-access-toggle" class="is-active" data-i18n="form.quick_access">
+        <div class="section-toggle" role="tablist" aria-label="Scenario controls">
+          <button
+            type="button"
+            id="quick-access-toggle"
+            class="is-active"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-quick"
+            tabindex="0"
+            data-i18n="form.quick_access"
+          >
             Quick access
           </button>
-          <button type="button" id="customize-toggle" data-i18n="form.customize">
+          <button
+            type="button"
+            id="customize-toggle"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-customize"
+            tabindex="-1"
+            data-i18n="form.customize"
+          >
             Customize
           </button>
         </div>
 
-        <div id="quick-access-section">
+        <div id="panel-quick" role="tabpanel" aria-labelledby="quick-access-toggle">
           <div class="scenario-grid">
             <button
               type="button"
@@ -549,7 +573,7 @@
           </div>
         </div>
 
-        <div id="customize-section" hidden>
+        <div id="panel-customize" role="tabpanel" aria-labelledby="customize-toggle" hidden>
         <label>
           <span id="label-practice-type">Practice type</span>
           <div class="pill-group" role="radiogroup" aria-label="Practice type" id="group-practice-type">
@@ -776,8 +800,9 @@
       const scenarioIdInput = document.getElementById("scenario-id");
       const quickAccessToggle = document.getElementById("quick-access-toggle");
       const customizeToggle = document.getElementById("customize-toggle");
-      const quickAccessSection = document.getElementById("quick-access-section");
-      const customizeSection = document.getElementById("customize-section");
+      const quickAccessSection = document.getElementById("panel-quick");
+      const customizeSection = document.getElementById("panel-customize");
+      const sectionTabs = [quickAccessToggle, customizeToggle].filter(Boolean);
       const scenarioCards = form.querySelectorAll(".scenario-card");
       const practiceTypeInputs = form.querySelectorAll("input[name='practiceType']");
       const durationInputs = form.querySelectorAll("input[name='durationMinutes']");
@@ -1162,13 +1187,44 @@
         }
         if (quickAccessToggle) {
           quickAccessToggle.classList.toggle("is-active", showQuick);
+          quickAccessToggle.setAttribute("aria-selected", String(showQuick));
+          quickAccessToggle.tabIndex = showQuick ? 0 : -1;
         }
         if (customizeToggle) {
           customizeToggle.classList.toggle("is-active", !showQuick);
+          customizeToggle.setAttribute("aria-selected", String(!showQuick));
+          customizeToggle.tabIndex = showQuick ? -1 : 0;
         }
         if (!showQuick && !preserveScenario) {
           clearScenarioSelection();
         }
+      };
+
+      const focusSectionTab = (index) => {
+        const tab = sectionTabs[index];
+        if (tab instanceof HTMLElement) {
+          tab.focus();
+        }
+      };
+
+      const handleSectionTabKeyDown = (event) => {
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+          return;
+        }
+        event.preventDefault();
+        const direction = event.key === "ArrowRight" ? 1 : -1;
+        const currentIndex = sectionTabs.indexOf(event.currentTarget);
+        if (currentIndex === -1) {
+          return;
+        }
+        const nextIndex = (currentIndex + direction + sectionTabs.length) % sectionTabs.length;
+        const nextTab = sectionTabs[nextIndex];
+        if (nextTab === quickAccessToggle) {
+          setActiveSection("quick", { preserveScenario: true });
+        } else {
+          setActiveSection("customize");
+        }
+        requestAnimationFrame(() => focusSectionTab(nextIndex));
       };
 
       const syncScenarioSelection = () => {
@@ -1773,11 +1829,13 @@
         quickAccessToggle.addEventListener("click", () => {
           setActiveSection("quick", { preserveScenario: true });
         });
+        quickAccessToggle.addEventListener("keydown", handleSectionTabKeyDown);
       }
       if (customizeToggle) {
         customizeToggle.addEventListener("click", () => {
           setActiveSection("customize");
         });
+        customizeToggle.addEventListener("keydown", handleSectionTabKeyDown);
       }
       scenarioCards.forEach((card) => {
         card.addEventListener("click", () => {
