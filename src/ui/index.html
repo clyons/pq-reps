@@ -99,6 +99,53 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
+      .section-toggle {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+      .section-toggle button {
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--color-primary-orange);
+        background: var(--color-neutral-white);
+        color: var(--color-neutral-black);
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .section-toggle button.is-active {
+        background: var(--color-primary-orange);
+        border-color: var(--color-primary-orange-dark);
+      }
+      .scenario-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+      }
+      .scenario-card {
+        text-align: left;
+        border-radius: 16px;
+        border: 1px solid var(--color-primary-orange);
+        padding: 0.9rem;
+        background: var(--color-neutral-white);
+        color: var(--color-neutral-black);
+        cursor: pointer;
+        transition: border 0.15s ease, box-shadow 0.15s ease;
+      }
+      .scenario-card.is-selected {
+        border-color: var(--color-primary-orange-dark);
+        background: var(--color-primary-orange-light);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      }
+      .scenario-title {
+        font-weight: 700;
+        margin-bottom: 0.35rem;
+      }
+      .scenario-meta {
+        font-size: 0.85rem;
+        line-height: 1.4;
+      }
       button {
         padding: 0.85rem 1.5rem;
         background: var(--color-neutral-black);
@@ -295,6 +342,140 @@
       <p id="app-ai-notice">Audio is AI-generated.</p>
 
       <form id="generator-form">
+        <input type="hidden" name="scenarioId" id="scenario-id" value="" />
+
+        <div class="section-toggle">
+          <button type="button" id="quick-access-toggle" class="is-active" data-i18n="form.quick_access">
+            Quick access
+          </button>
+          <button type="button" id="customize-toggle" data-i18n="form.customize">
+            Customize
+          </button>
+        </div>
+
+        <div id="quick-access-section">
+          <div class="scenario-grid">
+            <button
+              type="button"
+              class="scenario-card"
+              data-scenario-id="calm_me_now"
+              data-practice-type="still_eyes_open"
+              data-focus="touch"
+              data-duration-minutes="1"
+            >
+              <div class="scenario-title" data-i18n="scenario.calm_me_now">Calm me now</div>
+              <div class="scenario-meta">
+                <span data-i18n="form.practice_type.still_eyes_open">Still (Eyes open)</span> •
+                <span data-i18n="form.focus.touch">Touch</span> •
+                <span data-duration="1">1 minute</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="scenario-card"
+              data-scenario-id="get_present_for_meeting"
+              data-practice-type="still_eyes_open"
+              data-focus="touch"
+              data-duration-minutes="1"
+            >
+              <div class="scenario-title" data-i18n="scenario.get_present_for_meeting">
+                Get present for a meeting
+              </div>
+              <div class="scenario-meta">
+                <span data-i18n="form.practice_type.still_eyes_open">Still (Eyes open)</span> •
+                <span data-i18n="form.focus.touch">Touch</span> •
+                <span data-duration="1">1 minute</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="scenario-card"
+              data-scenario-id="start_the_thing_im_avoiding"
+              data-practice-type="moving"
+              data-focus="touch"
+              data-duration-minutes="1"
+            >
+              <div class="scenario-title" data-i18n="scenario.start_the_thing_im_avoiding">
+                Start the thing I’m avoiding
+              </div>
+              <div class="scenario-meta">
+                <span data-i18n="form.practice_type.moving">Moving</span> •
+                <span data-i18n="form.focus.touch">Touch</span> •
+                <span data-duration="1">1 minute</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="scenario-card"
+              data-scenario-id="prepare_for_a_tough_conversation"
+              data-practice-type="still_eyes_open"
+              data-focus="sight"
+              data-duration-minutes="2"
+            >
+              <div class="scenario-title" data-i18n="scenario.prepare_for_a_tough_conversation">
+                Prepare for a tough conversation
+              </div>
+              <div class="scenario-meta">
+                <span data-i18n="form.practice_type.still_eyes_open">Still (Eyes open)</span> •
+                <span data-i18n="form.focus.sight">Sight</span> •
+                <span data-duration="2">2 minutes</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="scenario-card"
+              data-scenario-id="reset_after_feedback"
+              data-practice-type="labeling"
+              data-focus="hearing"
+              data-duration-minutes="2"
+            >
+              <div class="scenario-title" data-i18n="scenario.reset_after_feedback">
+                Reset after feedback
+              </div>
+              <div class="scenario-meta">
+                <span data-i18n="form.practice_type.labeling">Labeling</span> •
+                <span data-i18n="form.focus.hearing">Hearing</span> •
+                <span data-duration="2">2 minutes</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="scenario-card"
+              data-scenario-id="wind_down_for_sleep"
+              data-practice-type="still_eyes_closed"
+              data-focus="breath"
+              data-duration-minutes="5"
+            >
+              <div class="scenario-title" data-i18n="scenario.wind_down_for_sleep">
+                Wind down for sleep
+              </div>
+              <div class="scenario-meta">
+                <span data-i18n="form.practice_type.still_eyes_closed">Still (Eyes closed)</span> •
+                <span data-i18n="form.focus.breath">Breath</span> •
+                <span data-duration="5">5 minutes</span>
+              </div>
+            </button>
+            <button
+              type="button"
+              class="scenario-card"
+              data-scenario-id="daily_deep_reset"
+              data-practice-type="still_eyes_closed"
+              data-focus="touch"
+              data-duration-minutes="12"
+            >
+              <div class="scenario-title" data-i18n="scenario.daily_deep_reset">
+                Daily deep reset
+              </div>
+              <div class="scenario-meta">
+                <span data-i18n="form.practice_type.still_eyes_closed">Still (Eyes closed)</span> •
+                <span data-i18n="form.focus.touch">Touch</span> •
+                <span data-duration="12">12 minutes</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div id="customize-section" hidden>
         <label>
           <span id="label-practice-type">Practice type</span>
           <div class="pill-group" role="radiogroup" aria-label="Practice type" id="group-practice-type">
@@ -446,6 +627,8 @@
           </label>
         </div>
 
+        </div>
+
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
           <button type="submit" id="submit-button" class="button-primary button-large">
             Prepare PQ Reps
@@ -502,6 +685,12 @@
 
     <script>
       const form = document.getElementById("generator-form");
+      const scenarioIdInput = document.getElementById("scenario-id");
+      const quickAccessToggle = document.getElementById("quick-access-toggle");
+      const customizeToggle = document.getElementById("customize-toggle");
+      const quickAccessSection = document.getElementById("quick-access-section");
+      const customizeSection = document.getElementById("customize-section");
+      const scenarioCards = form.querySelectorAll(".scenario-card");
       const practiceTypeInputs = form.querySelectorAll("input[name='practiceType']");
       const durationInputs = form.querySelectorAll("input[name='durationMinutes']");
       const getSelectedValue = (name) =>
@@ -570,6 +759,8 @@
           "ui.version.label": "Version: {version}",
           "ui.description": "Choose the type of PQ Reps you'd like to practice.",
           "ui.ai_notice": "Audio is AI-generated.",
+          "form.quick_access": "Quick access",
+          "form.customize": "Customize",
           "ui.footer":
             "Inspired by publicly available teachings on Positive Intelligence® and PQ Reps® by Shirzad Chamine. Not affiliated with or endorsed by Positive Intelligence LLC. For educational purposes only.",
           "form.practice_type": "Practice type",
@@ -577,6 +768,13 @@
           "form.practice_type.still_eyes_open": "Still (Eyes open)",
           "form.practice_type.moving": "Moving",
           "form.practice_type.labeling": "Labeling",
+          "scenario.calm_me_now": "Calm me now",
+          "scenario.get_present_for_meeting": "Get present for a meeting",
+          "scenario.start_the_thing_im_avoiding": "Start the thing I’m avoiding",
+          "scenario.prepare_for_a_tough_conversation": "Prepare for a tough conversation",
+          "scenario.reset_after_feedback": "Reset after feedback",
+          "scenario.wind_down_for_sleep": "Wind down for sleep",
+          "scenario.daily_deep_reset": "Daily deep reset",
           "form.focus": "Focus",
           "form.focus.touch": "Touch",
           "form.focus.hearing": "Hearing",
@@ -627,6 +825,8 @@
           "ui.version.label": "Versión: {version}",
           "ui.description": "Elige el tipo de PQ Reps que quieres practicar.",
           "ui.ai_notice": "El audio está generado por IA.",
+          "form.quick_access": "Acceso rápido",
+          "form.customize": "Personalizar",
           "ui.footer":
             "Inspirado en enseñanzas públicas sobre Positive Intelligence® y PQ Reps® de Shirzad Chamine. No afiliado ni avalado por Positive Intelligence LLC. Solo con fines educativos.",
           "form.practice_type": "Tipo de práctica",
@@ -634,6 +834,13 @@
           "form.practice_type.still_eyes_open": "Quieto (ojos abiertos)",
           "form.practice_type.moving": "En movimiento",
           "form.practice_type.labeling": "Etiquetado",
+          "scenario.calm_me_now": "Calm me now",
+          "scenario.get_present_for_meeting": "Get present for a meeting",
+          "scenario.start_the_thing_im_avoiding": "Start the thing I’m avoiding",
+          "scenario.prepare_for_a_tough_conversation": "Prepare for a tough conversation",
+          "scenario.reset_after_feedback": "Reset after feedback",
+          "scenario.wind_down_for_sleep": "Wind down for sleep",
+          "scenario.daily_deep_reset": "Daily deep reset",
           "form.focus": "Enfoque",
           "form.focus.touch": "Tacto",
           "form.focus.hearing": "Oído",
@@ -687,6 +894,8 @@
           "ui.version.label": "Version : {version}",
           "ui.description": "Choisissez le type de PQ Reps que vous souhaitez pratiquer.",
           "ui.ai_notice": "L'audio est généré par IA.",
+          "form.quick_access": "Accès rapide",
+          "form.customize": "Personnaliser",
           "ui.footer":
             "Inspiré d'enseignements publics sur Positive Intelligence® et PQ Reps® de Shirzad Chamine. Non affilié ni approuvé par Positive Intelligence LLC. À des fins éducatives uniquement.",
           "form.practice_type": "Type de pratique",
@@ -694,6 +903,13 @@
           "form.practice_type.still_eyes_open": "Immobile (yeux ouverts)",
           "form.practice_type.moving": "En mouvement",
           "form.practice_type.labeling": "Étiquetage",
+          "scenario.calm_me_now": "Calm me now",
+          "scenario.get_present_for_meeting": "Get present for a meeting",
+          "scenario.start_the_thing_im_avoiding": "Start the thing I’m avoiding",
+          "scenario.prepare_for_a_tough_conversation": "Prepare for a tough conversation",
+          "scenario.reset_after_feedback": "Reset after feedback",
+          "scenario.wind_down_for_sleep": "Wind down for sleep",
+          "scenario.daily_deep_reset": "Daily deep reset",
           "form.focus": "Focus",
           "form.focus.touch": "Toucher",
           "form.focus.hearing": "Ouïe",
@@ -747,6 +963,8 @@
           "ui.version.label": "Version: {version}",
           "ui.description": "Wähle die Art der PQ Reps, die du üben möchtest.",
           "ui.ai_notice": "Audio wird von KI erzeugt.",
+          "form.quick_access": "Schnellzugriff",
+          "form.customize": "Anpassen",
           "ui.footer":
             "Inspiriert von öffentlich verfügbaren Lehren zu Positive Intelligence® und PQ Reps® von Shirzad Chamine. Nicht verbunden oder unterstützt von Positive Intelligence LLC. Nur zu Bildungszwecken.",
           "form.practice_type": "Praxisart",
@@ -754,6 +972,13 @@
           "form.practice_type.still_eyes_open": "Still (Augen offen)",
           "form.practice_type.moving": "In Bewegung",
           "form.practice_type.labeling": "Benennen",
+          "scenario.calm_me_now": "Calm me now",
+          "scenario.get_present_for_meeting": "Get present for a meeting",
+          "scenario.start_the_thing_im_avoiding": "Start the thing I’m avoiding",
+          "scenario.prepare_for_a_tough_conversation": "Prepare for a tough conversation",
+          "scenario.reset_after_feedback": "Reset after feedback",
+          "scenario.wind_down_for_sleep": "Wind down for sleep",
+          "scenario.daily_deep_reset": "Daily deep reset",
           "form.focus": "Fokus",
           "form.focus.touch": "Berührung",
           "form.focus.hearing": "Hören",
@@ -814,6 +1039,45 @@
           link.href = href;
         } else {
           link.removeAttribute("href");
+        }
+      };
+
+      const clearScenarioSelection = () => {
+        scenarioCards.forEach((card) => card.classList.remove("is-selected"));
+        if (scenarioIdInput) {
+          scenarioIdInput.value = "";
+        }
+      };
+
+      const setActiveSection = (section, { preserveScenario = false } = {}) => {
+        const showQuick = section === "quick";
+        if (quickAccessSection) {
+          quickAccessSection.hidden = !showQuick;
+        }
+        if (customizeSection) {
+          customizeSection.hidden = showQuick;
+        }
+        if (quickAccessToggle) {
+          quickAccessToggle.classList.toggle("is-active", showQuick);
+        }
+        if (customizeToggle) {
+          customizeToggle.classList.toggle("is-active", !showQuick);
+        }
+        if (!showQuick && !preserveScenario) {
+          clearScenarioSelection();
+        }
+      };
+
+      const syncScenarioSelection = () => {
+        if (!scenarioIdInput) {
+          return;
+        }
+        const scenarioId = scenarioIdInput.value;
+        scenarioCards.forEach((card) => {
+          card.classList.toggle("is-selected", card.dataset.scenarioId === scenarioId);
+        });
+        if (scenarioId) {
+          setActiveSection("quick", { preserveScenario: true });
         }
       };
 
@@ -1299,6 +1563,28 @@
         updateFocusOptions(eyeState);
       };
 
+      const selectScenarioCard = (card) => {
+        const scenarioId = card.dataset.scenarioId;
+        const practiceType = card.dataset.practiceType;
+        const focus = card.dataset.focus;
+        const duration = card.dataset.durationMinutes;
+        if (!scenarioId || !practiceType || !focus || !duration) {
+          return;
+        }
+        clearScenarioSelection();
+        card.classList.add("is-selected");
+        if (scenarioIdInput) {
+          scenarioIdInput.value = scenarioId;
+        }
+        setFormValues({
+          practiceType,
+          focus,
+          durationMinutes: duration,
+        });
+        updateDerivedFields();
+        persistFormValues();
+      };
+
       const updateVoiceLabels = () => {
         const language = getSelectedValue("language") || "en";
         form.querySelectorAll("[data-voice-label]").forEach((label) => {
@@ -1354,6 +1640,23 @@
       updateDerivedFields();
       updateVoiceLabels();
       applyTranslations();
+      syncScenarioSelection();
+      if (quickAccessToggle) {
+        quickAccessToggle.addEventListener("click", () => {
+          setActiveSection("quick", { preserveScenario: true });
+        });
+      }
+      if (customizeToggle) {
+        customizeToggle.addEventListener("click", () => {
+          setActiveSection("customize");
+        });
+      }
+      scenarioCards.forEach((card) => {
+        card.addEventListener("click", () => {
+          setActiveSection("quick", { preserveScenario: true });
+          selectScenarioCard(card);
+        });
+      });
       durationInputs.forEach((input) => {
         input.addEventListener("change", updateDerivedFields);
       });
@@ -1503,6 +1806,8 @@
       loadVersion();
       resetButton.addEventListener("click", () => {
         setFormValues(defaultValues);
+        clearScenarioSelection();
+        setActiveSection("quick", { preserveScenario: true });
         updateDerivedFields();
         updateVoiceLabels();
         applyTranslations();
@@ -1551,6 +1856,7 @@
         const practiceType = formData.get("practiceType");
         const durationMinutes = Number(formData.get("durationMinutes"));
         const focus = formData.get("focus");
+        const scenarioId = formData.get("scenarioId");
         const practiceConfig = derivePracticeConfig(practiceType, durationMinutes);
         const durationConfig = deriveDurationConfig(durationMinutes);
         const primarySense = derivePrimarySense(focus, practiceConfig.eyeState);
@@ -1566,6 +1872,7 @@
           normalizationFrequency: durationConfig.normalizationFrequency,
           closingStyle: durationConfig.closingStyle,
           senseRotation,
+          ...(scenarioId ? { scenarioId } : {}),
           languages: [language],
           voiceStyle,
           ttsNewlinePauseSeconds: Number(formData.get("ttsNewlinePauseSeconds")) || 0,

@@ -146,4 +146,15 @@ describe("buildPrompt duration guidance", () => {
     expect(prompt).toContain("checkpoints or gentle resets every 2-3 minutes");
     expect(prompt).toContain("extended silences (15-30 seconds)");
   });
+
+  it("includes scenario-specific prompt guidance when provided", () => {
+    const prompt = buildPrompt({
+      ...baseConfig,
+      durationMinutes: 1,
+      scenarioId: "calm_me_now",
+    });
+
+    expect(prompt).toContain("Scenario: Calm me now.");
+    expect(prompt).toContain("Goal: settle the listener quickly with immediate grounding.");
+  });
 });
