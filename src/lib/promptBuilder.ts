@@ -238,6 +238,7 @@ export function buildPrompt(config: GenerateConfig): string {
     `Closing style: ${closingStyle}.`,
     senseRotation ? `Sense rotation: ${senseRotation}.` : "Sense rotation: none.",
     `Language: ${languages.join(", ")}.`,
+    "Write the script entirely in the first language listed above.",
     audience ? `Audience: ${audience}.` : "Audience: general.",
     scenarioLine,
     voiceStyle

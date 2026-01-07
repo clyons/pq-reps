@@ -12,6 +12,7 @@ export const SCRIPT_SYSTEM_PROMPT = [
   "This script is a practical mental fitness exercise, not a meditation, visualization, or relaxation session.",
   "The user prompt will supply structured inputs (practice mode, body state, eye state, primary sense, duration, labeling mode, silence profile, normalization frequency, closing style, and language).",
   "Use those inputs exactly. Do not invent or override them.",
+  "The language line in the user prompt is authoritative. Write the entire script in that language.",
   "Follow these rules strictly:",
   "Writing Style:",
   "- Calm, grounded, instructional, teacher-like",
