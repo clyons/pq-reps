@@ -1415,7 +1415,7 @@ export default function HomePage() {
         <details style={optionsDrawerStyle}>
           <summary style={optionsSummaryStyle}>
             <span>Options</span>
-            <span aria-hidden="true">▾</span>
+            <span aria-hidden="true">▼</span>
           </summary>
           <div style={optionsContentStyle}>
             <label style={{ display: "grid", gap: "0.5rem" }}>
