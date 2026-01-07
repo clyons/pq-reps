@@ -473,7 +473,7 @@ const optionsDrawerStyle: React.CSSProperties = {
   border: `1px solid ${BRAND_COLORS.neutral.black30}`,
   borderRadius: 12,
   padding: "0.5rem 0.75rem",
-  background: BRAND_COLORS.neutral.grayBase,
+  background: BRAND_COLORS.neutral.white,
 };
 
 const optionsSummaryStyle: React.CSSProperties = {
@@ -487,7 +487,8 @@ const optionsSummaryStyle: React.CSSProperties = {
   padding: "0.5rem 0.75rem",
   borderRadius: 10,
   background: BRAND_COLORS.neutral.white,
-  border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+  border: "none",
+  outline: "none",
 };
 
 const optionsContentStyle: React.CSSProperties = {
