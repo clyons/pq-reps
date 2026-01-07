@@ -30,13 +30,13 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Remove the Loading preview / playing preview text. Use a Play icon, Loading icon and Stop icon inside the Preview pill in place of the >.
 - [x] Allow the user to stop the voice Preview from playing by clicking the button a second time. Revert the button to show the play button once more.
 - [x] Add common scenarios for PQ Reps which have their own settings / prompts:
-  - Calm me now (Still, eyes open, touch, 1 min)
-  - Get present for a meeting (Still, eyes open, touch, 1 min)
-  - Start the thing I’m avoiding (Moving, touch, 1 min)
-  - Prepare for a tough conversation (Still, eyes open, sight, 2 mins)
-  - Reset after feedback (Labeling, hearing, 2 mins)
-  - Wind down for sleep (Still, eyes closed, breath, 5 mins)
-  - Daily deep reset (Still, eyes closed, touch, 12 mins)
+  - Calm me now (Still, eyes open, touch)
+  - Get present for a meeting (Still, eyes open, touch)
+  - Start the thing I’m avoiding (Moving, touch)
+  - Prepare for a tough conversation (Still, eyes open, sight)
+  - Reset after feedback (Labeling, hearing)
+  - Wind down for sleep (Still, eyes closed, breath)
+  - Daily deep reset (Still, eyes closed, touch)
 - [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog" (Notes: server-side guardrail validation exists, but UI input + validation wiring still pending.)
 - [ ] Improve prompt handling for custom scenario line before re-enabling UI input (Notes: prompt supports custom scenario line, but validation + UI input are not yet enabled.)
 - [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min) (Notes: pacing guidance exists in prompts, but no runtime timing calibration.)
