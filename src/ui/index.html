@@ -137,21 +137,28 @@
         display: flex;
         flex-wrap: wrap;
         gap: var(--space-3);
+        border-bottom: 1px solid var(--color-primary-orange);
       }
       .section-toggle button {
-        padding: 0.55rem 1.1rem;
-        border-radius: var(--radius-pill);
-        border: 1px solid var(--color-primary-orange);
-        background: var(--color-neutral-white);
-        color: var(--color-neutral-black);
+        padding: 0.55rem 1rem;
+        border-radius: 8px 8px 0 0;
+        border: 1px solid transparent;
+        border-bottom: 3px solid transparent;
+        background: transparent;
+        color: rgba(0, 0, 0, 0.75);
         font-weight: 600;
         cursor: pointer;
         font-size: var(--font-size-md);
         transition: all 0.15s ease;
       }
       .section-toggle button.is-active {
-        background: var(--color-primary-orange);
-        border-color: var(--color-primary-orange-dark);
+        background: var(--color-neutral-white);
+        border-bottom-color: var(--color-primary-orange-dark);
+        color: var(--color-neutral-black);
+      }
+      .section-toggle [role="tab"]:focus-visible {
+        outline: 2px solid var(--color-primary-blue);
+        outline-offset: 2px;
       }
       .section-toggle [role="tab"]:focus-visible {
         outline: 2px solid var(--color-primary-blue);

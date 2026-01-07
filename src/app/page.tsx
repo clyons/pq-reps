@@ -445,17 +445,19 @@ const infoTooltipStyle: React.CSSProperties = {
 
 const sectionToggleStyle: React.CSSProperties = {
   display: "flex",
-  gap: "0.75rem",
+  gap: "0.5rem",
   marginBottom: "1.5rem",
   flexWrap: "wrap",
+  borderBottom: `1px solid ${BRAND_COLORS.orange.base}`,
 };
 
 const getSectionToggleButtonStyle = (active: boolean): React.CSSProperties => ({
-  padding: "0.5rem 1rem",
-  borderRadius: 999,
-  border: `1px solid ${active ? BRAND_COLORS.orange.dark : BRAND_COLORS.orange.base}`,
-  background: active ? BRAND_COLORS.orange.dark : BRAND_COLORS.neutral.white,
-  color: BRAND_COLORS.neutral.black,
+  padding: "0.6rem 0.9rem",
+  borderRadius: "8px 8px 0 0",
+  border: "1px solid transparent",
+  borderBottom: `3px solid ${active ? BRAND_COLORS.orange.dark : "transparent"}`,
+  background: active ? BRAND_COLORS.neutral.white : "transparent",
+  color: active ? BRAND_COLORS.neutral.black : "#333333",
   fontWeight: 600,
   cursor: "pointer",
 });
