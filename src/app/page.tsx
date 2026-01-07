@@ -1,6 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  SCENARIOS,
+  type PracticeType,
+  type ScenarioId,
+} from "../lib/promptBuilder";
+import {
+  deriveDurationConfig,
+  derivePracticeConfig,
+  deriveSenseRotation,
+} from "../lib/practiceConfig";
 
 type GenerationResult = {
   audioStream?: MediaStream;
@@ -14,7 +24,7 @@ type GenerationResult = {
 };
 
 type FormState = {
-  practiceType: "still_eyes_closed" | "still_eyes_open" | "moving" | "labeling";
+  practiceType: PracticeType;
   focus: "touch" | "hearing" | "sight" | "breath";
   durationMinutes: 1 | 2 | 5 | 12;
   language: string;
@@ -22,6 +32,7 @@ type FormState = {
   ttsNewlinePauseSeconds: number;
   debugTtsPrompt: boolean;
   audioDelivery: "generate" | "stream";
+  scenarioId?: ScenarioId;
 };
 
 const DEFAULT_STATE: FormState = {
@@ -86,6 +97,15 @@ const DURATION_OPTIONS: FormState["durationMinutes"][] = [1, 2, 5, 12];
 
 const formatDurationLabel = (minutes: number) =>
   `${minutes} minute${minutes === 1 ? "" : "s"}`;
+
+const PRACTICE_TYPE_LABELS: Record<PracticeType, string> = {
+  still_eyes_closed: "Still (Eyes closed)",
+  still_eyes_open: "Still (Eyes open)",
+  moving: "Moving",
+  labeling: "Labeling",
+};
+
+const QUICK_ACCESS_SCENARIOS = SCENARIOS;
 
 const FEMALE_VOICES_BY_LANGUAGE: Record<string, string> = {
   es: "nova",
@@ -354,85 +374,6 @@ const buildScriptDownloadFilename = ({
   now?: Date;
 }) => buildDownloadFilename({ voice, durationMinutes, focus, now }).replace(/\.[^.]+$/, ".txt");
 
-const derivePracticeConfig = (
-  practiceType: FormState["practiceType"],
-  durationMinutes: FormState["durationMinutes"],
-) => {
-  if (practiceType === "still_eyes_closed") {
-    return {
-      practiceMode: "tactile" as const,
-      bodyState: "still_seated_closed_eyes" as const,
-      eyeState: "closed" as const,
-      labelingMode: "none" as const,
-    };
-  }
-
-  if (practiceType === "still_eyes_open") {
-    return {
-      practiceMode: "sitting" as const,
-      bodyState: "still_seated" as const,
-      eyeState: "open_diffused" as const,
-      labelingMode: "none" as const,
-    };
-  }
-
-  if (practiceType === "moving") {
-    return {
-      practiceMode: "moving" as const,
-      bodyState: "moving" as const,
-      eyeState: "open_focused" as const,
-      labelingMode: "none" as const,
-    };
-  }
-
-  const labelingMode = durationMinutes < 5 ? "breath_anchor" : "scan_and_label";
-  return {
-    practiceMode: durationMinutes < 5 ? "label_with_anchor" : "label_while_scanning",
-    bodyState: "still_seated_closed_eyes" as const,
-    eyeState: "closed" as const,
-    labelingMode,
-  };
-};
-
-const deriveDurationConfig = (durationMinutes: FormState["durationMinutes"]) => {
-  if (durationMinutes === 1) {
-    return {
-      silenceProfile: "none" as const,
-      normalizationFrequency: "once" as const,
-      closingStyle: "minimal" as const,
-    };
-  }
-  if (durationMinutes === 2) {
-    return {
-      silenceProfile: "short_pauses" as const,
-      normalizationFrequency: "once" as const,
-      closingStyle: "minimal" as const,
-    };
-  }
-  if (durationMinutes === 5) {
-    return {
-      silenceProfile: "short_pauses" as const,
-      normalizationFrequency: "periodic" as const,
-      closingStyle: "pq_framed" as const,
-    };
-  }
-  return {
-    silenceProfile: "extended_silence" as const,
-    normalizationFrequency: "periodic" as const,
-    closingStyle: "pq_framed_with_progression" as const,
-  };
-};
-
-const deriveSenseRotation = (
-  practiceType: FormState["practiceType"],
-  durationMinutes: FormState["durationMinutes"],
-) => {
-  if (durationMinutes >= 5 && practiceType !== "labeling") {
-    return "guided_rotation" as const;
-  }
-  return "none" as const;
-};
-
 type PillOption = {
   value: string;
   label: string;
@@ -487,6 +428,52 @@ const infoTooltipStyle: React.CSSProperties = {
   pointerEvents: "none",
   transition: "opacity 0.15s ease",
   zIndex: 10,
+};
+
+const sectionToggleStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "0.75rem",
+  marginBottom: "1.5rem",
+  flexWrap: "wrap",
+};
+
+const getSectionToggleButtonStyle = (active: boolean): React.CSSProperties => ({
+  padding: "0.5rem 1rem",
+  borderRadius: 999,
+  border: `1px solid ${active ? BRAND_COLORS.orange.dark : BRAND_COLORS.orange.base}`,
+  background: active ? BRAND_COLORS.orange.dark : BRAND_COLORS.neutral.white,
+  color: BRAND_COLORS.neutral.black,
+  fontWeight: 600,
+  cursor: "pointer",
+});
+
+const scenarioGridStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "0.75rem",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+  marginBottom: "1.5rem",
+};
+
+const getScenarioCardStyle = (active: boolean): React.CSSProperties => ({
+  border: `1px solid ${active ? BRAND_COLORS.orange.dark : BRAND_COLORS.orange.base}`,
+  borderRadius: 16,
+  padding: "0.9rem",
+  background: active ? BRAND_COLORS.orange.light : BRAND_COLORS.neutral.white,
+  textAlign: "left",
+  cursor: "pointer",
+  transition: "border 0.15s ease, box-shadow 0.15s ease",
+  boxShadow: active ? "0 6px 16px rgba(0,0,0,0.08)" : "none",
+});
+
+const scenarioTitleStyle: React.CSSProperties = {
+  fontWeight: 700,
+  marginBottom: "0.35rem",
+};
+
+const scenarioMetaStyle: React.CSSProperties = {
+  fontSize: "0.85rem",
+  color: "#333333",
+  lineHeight: 1.4,
 };
 
 const getPillStyle = (checked: boolean, disabled?: boolean): React.CSSProperties => ({
@@ -546,6 +533,7 @@ export default function HomePage() {
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showAudioInfo, setShowAudioInfo] = useState(false);
+  const [activeSection, setActiveSection] = useState<"quick" | "customize">("quick");
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
 
@@ -603,6 +591,27 @@ export default function HomePage() {
 
   const updateFormState = (updates: Partial<FormState>) => {
     setFormState((prev) => ({ ...prev, ...updates }));
+  };
+
+  const handleSectionToggle = (section: "quick" | "customize") => {
+    setActiveSection(section);
+    if (section === "customize") {
+      setFormState((prev) => ({ ...prev, scenarioId: undefined }));
+    }
+  };
+
+  const handleScenarioSelect = (scenarioId: ScenarioId) => {
+    const scenario = QUICK_ACCESS_SCENARIOS.find((entry) => entry.id === scenarioId);
+    if (!scenario) {
+      return;
+    }
+    setFormState((prev) => ({
+      ...prev,
+      scenarioId,
+      practiceType: scenario.practiceType,
+      focus: scenario.primarySense,
+      durationMinutes: scenario.durationMinutes,
+    }));
   };
 
   const practiceTypeOptions: PillOption[] = [
@@ -694,6 +703,7 @@ export default function HomePage() {
       normalizationFrequency: durationConfig.normalizationFrequency,
       closingStyle: durationConfig.closingStyle,
       senseRotation,
+      scenarioId: formState.scenarioId,
       languages: [formState.language],
       voiceStyle,
       ttsNewlinePauseSeconds: formState.ttsNewlinePauseSeconds,
@@ -1186,175 +1196,226 @@ export default function HomePage() {
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Practice type</span>
-          <PillRadioGroup
-            name="practiceType"
-            ariaLabel="Practice type"
-            options={practiceTypeOptions}
-            value={formState.practiceType}
-            onChange={(value) =>
-              updateFormState({
-                practiceType: value as FormState["practiceType"],
-              })
-            }
-          />
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Focus</span>
-          <PillRadioGroup
-            name="focus"
-            ariaLabel="Focus"
-            options={focusPillOptions}
-            value={formState.focus}
-            onChange={(value) =>
-              updateFormState({
-                focus: value as FormState["focus"],
-              })
-            }
-          />
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Duration</span>
-          <PillRadioGroup
-            name="durationMinutes"
-            ariaLabel="Duration"
-            options={durationPillOptions}
-            value={String(formState.durationMinutes)}
-            onChange={(value) =>
-              updateFormState({
-                durationMinutes: Number(value) as FormState["durationMinutes"],
-              })
-            }
-          />
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Language</span>
-          <PillRadioGroup
-            name="language"
-            ariaLabel="Language"
-            options={languagePillOptions}
-            value={formState.language}
-            onChange={(value) => updateFormState({ language: value })}
-          />
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600 }}>Voice</span>
-          <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
-            Choose the voice you prefer for guidance.
-          </span>
-          <PillRadioGroup
-            name="voiceGender"
-            ariaLabel="Voice"
-            options={voicePillOptions}
-            value={formState.voiceGender}
-            onChange={(value) =>
-              updateFormState({ voiceGender: value as FormState["voiceGender"] })
-            }
-          />
-          <button
-            type="button"
-            onClick={() => handleVoicePreview()}
-            disabled={previewLoading}
-            style={{
-              justifySelf: "start",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.4rem",
-              padding: "0.4rem 0.9rem",
-              borderRadius: 999,
-              border: `1px solid ${BRAND_COLORS.neutral.black30}`,
-              background: BRAND_COLORS.neutral.grayBase,
-              color: BRAND_COLORS.neutral.black,
-              fontWeight: 500,
-              lineHeight: 1.2,
-              cursor: previewLoading ? "not-allowed" : "pointer",
-            }}
-          >
-            <span>Preview</span>
-            <span aria-hidden="true">{previewIcon}</span>
-          </button>
-          <audio ref={previewAudioRef} hidden />
-          {previewError && (
-            <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.orange.dark }}>
-              {previewError}
-            </span>
-          )}
-        </label>
-
-        <label style={{ display: "grid", gap: "0.5rem" }}>
-          <span style={{ fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
-            Audio delivery
-            <span
-              style={infoIconStyle}
-              aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
-              tabIndex={0}
-              onMouseEnter={() => setShowAudioInfo(true)}
-              onMouseLeave={() => setShowAudioInfo(false)}
-              onFocus={() => setShowAudioInfo(true)}
-              onBlur={() => setShowAudioInfo(false)}
+        <div>
+          <div style={sectionToggleStyle}>
+            <button
+              type="button"
+              style={getSectionToggleButtonStyle(activeSection === "quick")}
+              onClick={() => handleSectionToggle("quick")}
             >
-              i
-              <span
-                style={{ ...infoTooltipStyle, opacity: showAudioInfo ? 1 : 0 }}
-                className="info-tooltip"
-                role="tooltip"
-              >
-                Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.
-              </span>
-            </span>
-          </span>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-            <PillRadioGroup
-              name="audioDelivery"
-              ariaLabel="Audio delivery"
-              options={audioDeliveryOptions}
-              value={formState.audioDelivery}
-              onChange={(value) =>
-                updateFormState({ audioDelivery: value as FormState["audioDelivery"] })
-              }
-            />
+              Quick Access
+            </button>
+            <button
+              type="button"
+              style={getSectionToggleButtonStyle(activeSection === "customize")}
+              onClick={() => handleSectionToggle("customize")}
+            >
+              Customize
+            </button>
           </div>
-        </label>
 
-        {isDevMode && (
+          {activeSection === "quick" && (
+            <div>
+              <div style={scenarioGridStyle}>
+                {QUICK_ACCESS_SCENARIOS.map((scenario) => (
+                  <button
+                    key={scenario.id}
+                    type="button"
+                    onClick={() => handleScenarioSelect(scenario.id)}
+                    style={getScenarioCardStyle(formState.scenarioId === scenario.id)}
+                  >
+                    <div style={scenarioTitleStyle}>{scenario.label}</div>
+                    <div style={scenarioMetaStyle}>
+                      {PRACTICE_TYPE_LABELS[scenario.practiceType]} •{" "}
+                      {capitalize(scenario.primarySense)} •{" "}
+                      {formatDurationLabel(scenario.durationMinutes)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {activeSection === "customize" && (
           <>
             <label style={{ display: "grid", gap: "0.5rem" }}>
-              <span style={{ fontWeight: 600 }}>TTS newline pause (seconds)</span>
-              <input
-                type="number"
-                min={0}
-                step={0.5}
-                value={formState.ttsNewlinePauseSeconds}
-                onChange={(event) =>
+              <span style={{ fontWeight: 600 }}>Practice type</span>
+              <PillRadioGroup
+                name="practiceType"
+                ariaLabel="Practice type"
+                options={practiceTypeOptions}
+                value={formState.practiceType}
+                onChange={(value) =>
                   updateFormState({
-                    ttsNewlinePauseSeconds: Number.parseFloat(event.target.value) || 0,
+                    practiceType: value as FormState["practiceType"],
+                    scenarioId: undefined,
                   })
                 }
-                style={{
-                  padding: "0.75rem",
-                  borderRadius: 6,
-                  border: `1px solid ${BRAND_COLORS.neutral.black30}`,
-                }}
               />
             </label>
 
             <label style={{ display: "grid", gap: "0.5rem" }}>
-              <span style={{ fontWeight: 600 }}>Debug TTS prompt</span>
-              <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
-                Shows the exact TTS payload used for OpenAI audio generation.
-              </span>
-              <input
-                type="checkbox"
-                checked={formState.debugTtsPrompt}
-                onChange={(event) => updateFormState({ debugTtsPrompt: event.target.checked })}
-                style={{ width: 18, height: 18 }}
+              <span style={{ fontWeight: 600 }}>Focus</span>
+              <PillRadioGroup
+                name="focus"
+                ariaLabel="Focus"
+                options={focusPillOptions}
+                value={formState.focus}
+                onChange={(value) =>
+                  updateFormState({
+                    focus: value as FormState["focus"],
+                    scenarioId: undefined,
+                  })
+                }
               />
             </label>
+
+            <label style={{ display: "grid", gap: "0.5rem" }}>
+              <span style={{ fontWeight: 600 }}>Duration</span>
+              <PillRadioGroup
+                name="durationMinutes"
+                ariaLabel="Duration"
+                options={durationPillOptions}
+                value={String(formState.durationMinutes)}
+                onChange={(value) =>
+                  updateFormState({
+                    durationMinutes: Number(value) as FormState["durationMinutes"],
+                    scenarioId: undefined,
+                  })
+                }
+              />
+            </label>
+
+            <label style={{ display: "grid", gap: "0.5rem" }}>
+              <span style={{ fontWeight: 600 }}>Language</span>
+              <PillRadioGroup
+                name="language"
+                ariaLabel="Language"
+                options={languagePillOptions}
+                value={formState.language}
+                onChange={(value) => updateFormState({ language: value })}
+              />
+            </label>
+
+            <label style={{ display: "grid", gap: "0.5rem" }}>
+              <span style={{ fontWeight: 600 }}>Voice</span>
+              <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
+                Choose the voice you prefer for guidance.
+              </span>
+              <PillRadioGroup
+                name="voiceGender"
+                ariaLabel="Voice"
+                options={voicePillOptions}
+                value={formState.voiceGender}
+                onChange={(value) =>
+                  updateFormState({ voiceGender: value as FormState["voiceGender"] })
+                }
+              />
+              <button
+                type="button"
+                onClick={() => handleVoicePreview()}
+                disabled={previewLoading}
+                style={{
+                  justifySelf: "start",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.4rem",
+                  padding: "0.4rem 0.9rem",
+                  borderRadius: 999,
+                  border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+                  background: BRAND_COLORS.neutral.grayBase,
+                  color: BRAND_COLORS.neutral.black,
+                  fontWeight: 500,
+                  lineHeight: 1.2,
+                  cursor: previewLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                <span>Preview</span>
+                <span aria-hidden="true">{previewIcon}</span>
+              </button>
+              <audio ref={previewAudioRef} hidden />
+              {previewError && (
+                <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.orange.dark }}>
+                  {previewError}
+                </span>
+              )}
+            </label>
+
+            <label style={{ display: "grid", gap: "0.5rem" }}>
+              <span style={{ fontWeight: 600, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+                Audio delivery
+                <span
+                  style={infoIconStyle}
+                  aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+                  tabIndex={0}
+                  onMouseEnter={() => setShowAudioInfo(true)}
+                  onMouseLeave={() => setShowAudioInfo(false)}
+                  onFocus={() => setShowAudioInfo(true)}
+                  onBlur={() => setShowAudioInfo(false)}
+                >
+                  i
+                  <span
+                    style={{ ...infoTooltipStyle, opacity: showAudioInfo ? 1 : 0 }}
+                    className="info-tooltip"
+                    role="tooltip"
+                  >
+                    Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.
+                  </span>
+                </span>
+              </span>
+              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                <PillRadioGroup
+                  name="audioDelivery"
+                  ariaLabel="Audio delivery"
+                  options={audioDeliveryOptions}
+                  value={formState.audioDelivery}
+                  onChange={(value) =>
+                    updateFormState({ audioDelivery: value as FormState["audioDelivery"] })
+                  }
+                />
+              </div>
+            </label>
+
+            {isDevMode && (
+              <>
+                <label style={{ display: "grid", gap: "0.5rem" }}>
+                  <span style={{ fontWeight: 600 }}>TTS newline pause (seconds)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.5}
+                    value={formState.ttsNewlinePauseSeconds}
+                    onChange={(event) =>
+                      updateFormState({
+                        ttsNewlinePauseSeconds:
+                          Number.parseFloat(event.target.value) || 0,
+                      })
+                    }
+                    style={{
+                      padding: "0.75rem",
+                      borderRadius: 6,
+                      border: `1px solid ${BRAND_COLORS.neutral.black30}`,
+                    }}
+                  />
+                </label>
+
+                <label style={{ display: "grid", gap: "0.5rem" }}>
+                  <span style={{ fontWeight: 600 }}>Debug TTS prompt</span>
+                  <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
+                    Shows the exact TTS payload used for OpenAI audio generation.
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={formState.debugTtsPrompt}
+                    onChange={(event) =>
+                      updateFormState({ debugTtsPrompt: event.target.checked })
+                    }
+                    style={{ width: 18, height: 18 }}
+                  />
+                </label>
+              </>
+            )}
           </>
         )}
 

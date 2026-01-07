@@ -7,10 +7,17 @@ import {
   NormalizationFrequency,
   PracticeMode,
   PrimarySense,
+  ScenarioId,
   SilenceProfile,
   SenseRotation,
   SUPPORTED_LANGUAGES,
+  getScenarioById,
 } from "./promptBuilder";
+import {
+  deriveDurationConfig,
+  derivePracticeConfig,
+  deriveSenseRotation,
+} from "./practiceConfig";
 import { DEFAULT_LOCALE, type Locale, translate } from "./i18n";
 
 export type ErrorResponse = {
@@ -117,6 +124,7 @@ export function validateGenerateConfig(
   const config = payload as Partial<GenerateConfig> & {
     outputMode?: OutputMode;
     debugTtsPrompt?: boolean;
+    scenarioId?: ScenarioId;
   };
 
   const newlinePauseSecondsValue = config.ttsNewlinePauseSeconds;
@@ -127,7 +135,48 @@ export function validateGenerateConfig(
         ? Number.parseFloat(newlinePauseSecondsValue)
         : undefined;
 
-  if (!config.practiceMode || !ALLOWED_PRACTICE_MODES.includes(config.practiceMode)) {
+  const scenario = config.scenarioId ? getScenarioById(config.scenarioId) : undefined;
+  if (config.scenarioId && !scenario) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_scenario",
+          message: translate(locale, "errors.invalid_scenario"),
+        },
+      },
+    };
+  }
+
+  const scenarioPracticeConfig = scenario
+    ? derivePracticeConfig(scenario.practiceType, scenario.durationMinutes)
+    : undefined;
+  const scenarioDurationConfig = scenario
+    ? deriveDurationConfig(scenario.durationMinutes)
+    : undefined;
+  const scenarioSenseRotation = scenario
+    ? deriveSenseRotation(scenario.practiceType, scenario.durationMinutes)
+    : undefined;
+
+  const resolvedConfig = {
+    ...config,
+    practiceMode: scenarioPracticeConfig?.practiceMode ?? config.practiceMode,
+    bodyState: scenarioPracticeConfig?.bodyState ?? config.bodyState,
+    eyeState: scenarioPracticeConfig?.eyeState ?? config.eyeState,
+    primarySense: scenario?.primarySense ?? config.primarySense,
+    durationMinutes: scenario?.durationMinutes ?? config.durationMinutes,
+    labelingMode: scenarioPracticeConfig?.labelingMode ?? config.labelingMode,
+    silenceProfile: scenarioDurationConfig?.silenceProfile ?? config.silenceProfile,
+    normalizationFrequency:
+      scenarioDurationConfig?.normalizationFrequency ?? config.normalizationFrequency,
+    closingStyle: scenarioDurationConfig?.closingStyle ?? config.closingStyle,
+    senseRotation: scenarioSenseRotation ?? config.senseRotation,
+  } as Partial<GenerateConfig> & { scenarioId?: ScenarioId };
+
+  if (
+    !resolvedConfig.practiceMode ||
+    !ALLOWED_PRACTICE_MODES.includes(resolvedConfig.practiceMode)
+  ) {
     return {
       ok: false,
       error: {
@@ -140,7 +189,7 @@ export function validateGenerateConfig(
     };
   }
 
-  if (!config.bodyState || !ALLOWED_BODY_STATES.includes(config.bodyState)) {
+  if (!resolvedConfig.bodyState || !ALLOWED_BODY_STATES.includes(resolvedConfig.bodyState)) {
     return {
       ok: false,
       error: {
@@ -153,7 +202,7 @@ export function validateGenerateConfig(
     };
   }
 
-  if (!config.eyeState || !ALLOWED_EYE_STATES.includes(config.eyeState)) {
+  if (!resolvedConfig.eyeState || !ALLOWED_EYE_STATES.includes(resolvedConfig.eyeState)) {
     return {
       ok: false,
       error: {
@@ -166,7 +215,10 @@ export function validateGenerateConfig(
     };
   }
 
-  if (!config.primarySense || !ALLOWED_PRIMARY_SENSES.includes(config.primarySense)) {
+  if (
+    !resolvedConfig.primarySense ||
+    !ALLOWED_PRIMARY_SENSES.includes(resolvedConfig.primarySense)
+  ) {
     return {
       ok: false,
       error: {
@@ -179,7 +231,10 @@ export function validateGenerateConfig(
     };
   }
 
-  if (!config.durationMinutes || !ALLOWED_DURATIONS.includes(config.durationMinutes)) {
+  if (
+    !resolvedConfig.durationMinutes ||
+    !ALLOWED_DURATIONS.includes(resolvedConfig.durationMinutes)
+  ) {
     return {
       ok: false,
       error: {
@@ -192,7 +247,10 @@ export function validateGenerateConfig(
     };
   }
 
-  if (!config.labelingMode || !ALLOWED_LABELING_MODES.includes(config.labelingMode)) {
+  if (
+    !resolvedConfig.labelingMode ||
+    !ALLOWED_LABELING_MODES.includes(resolvedConfig.labelingMode)
+  ) {
     return {
       ok: false,
       error: {
@@ -205,7 +263,10 @@ export function validateGenerateConfig(
     };
   }
 
-  if (!config.silenceProfile || !ALLOWED_SILENCE_PROFILES.includes(config.silenceProfile)) {
+  if (
+    !resolvedConfig.silenceProfile ||
+    !ALLOWED_SILENCE_PROFILES.includes(resolvedConfig.silenceProfile)
+  ) {
     return {
       ok: false,
       error: {
@@ -219,8 +280,8 @@ export function validateGenerateConfig(
   }
 
   if (
-    !config.normalizationFrequency ||
-    !ALLOWED_NORMALIZATION_FREQUENCY.includes(config.normalizationFrequency)
+    !resolvedConfig.normalizationFrequency ||
+    !ALLOWED_NORMALIZATION_FREQUENCY.includes(resolvedConfig.normalizationFrequency)
   ) {
     return {
       ok: false,
@@ -234,7 +295,10 @@ export function validateGenerateConfig(
     };
   }
 
-  if (!config.closingStyle || !ALLOWED_CLOSING_STYLES.includes(config.closingStyle)) {
+  if (
+    !resolvedConfig.closingStyle ||
+    !ALLOWED_CLOSING_STYLES.includes(resolvedConfig.closingStyle)
+  ) {
     return {
       ok: false,
       error: {
@@ -247,7 +311,10 @@ export function validateGenerateConfig(
     };
   }
 
-  if (config.senseRotation && !ALLOWED_SENSE_ROTATIONS.includes(config.senseRotation)) {
+  if (
+    resolvedConfig.senseRotation &&
+    !ALLOWED_SENSE_ROTATIONS.includes(resolvedConfig.senseRotation)
+  ) {
     return {
       ok: false,
       error: {
@@ -275,7 +342,7 @@ export function validateGenerateConfig(
     };
   }
 
-  if (!isStringArray(config.languages) || config.languages.length === 0) {
+  if (!isStringArray(resolvedConfig.languages) || resolvedConfig.languages.length === 0) {
     return {
       ok: false,
       error: {
@@ -287,7 +354,7 @@ export function validateGenerateConfig(
     };
   }
 
-  const unsupported = config.languages.filter(
+  const unsupported = resolvedConfig.languages.filter(
     (lang) => !SUPPORTED_LANGUAGES.includes(lang),
   );
 
@@ -304,8 +371,8 @@ export function validateGenerateConfig(
     };
   }
 
-  if (config.practiceMode === "moving") {
-    if (config.bodyState !== "moving") {
+  if (resolvedConfig.practiceMode === "moving") {
+    if (resolvedConfig.bodyState !== "moving") {
       return {
         ok: false,
         error: {
@@ -316,7 +383,7 @@ export function validateGenerateConfig(
       },
     };
   }
-  if (config.eyeState === "closed") {
+  if (resolvedConfig.eyeState === "closed") {
       return {
         ok: false,
         error: {
@@ -329,8 +396,8 @@ export function validateGenerateConfig(
   }
   }
 
-  if (config.practiceMode === "tactile") {
-    if (config.bodyState !== "still_seated_closed_eyes") {
+  if (resolvedConfig.practiceMode === "tactile") {
+    if (resolvedConfig.bodyState !== "still_seated_closed_eyes") {
       return {
         ok: false,
         error: {
@@ -341,7 +408,7 @@ export function validateGenerateConfig(
       },
     };
   }
-  if (config.eyeState !== "closed") {
+  if (resolvedConfig.eyeState !== "closed") {
       return {
         ok: false,
         error: {
@@ -354,7 +421,7 @@ export function validateGenerateConfig(
   }
   }
 
-  if (config.practiceMode === "sitting" && config.eyeState === "closed") {
+  if (resolvedConfig.practiceMode === "sitting" && resolvedConfig.eyeState === "closed") {
     return {
       ok: false,
       error: {
@@ -366,7 +433,7 @@ export function validateGenerateConfig(
     };
   }
 
-  if (config.bodyState === "moving" && config.practiceMode !== "moving") {
+  if (resolvedConfig.bodyState === "moving" && resolvedConfig.practiceMode !== "moving") {
     return {
       ok: false,
       error: {
@@ -379,8 +446,8 @@ export function validateGenerateConfig(
   }
 
   if (
-    config.practiceMode === "label_with_anchor" &&
-    config.labelingMode !== "breath_anchor"
+    resolvedConfig.practiceMode === "label_with_anchor" &&
+    resolvedConfig.labelingMode !== "breath_anchor"
   ) {
     return {
       ok: false,
@@ -394,8 +461,8 @@ export function validateGenerateConfig(
   }
 
   if (
-    config.practiceMode === "label_while_scanning" &&
-    config.labelingMode !== "scan_and_label"
+    resolvedConfig.practiceMode === "label_while_scanning" &&
+    resolvedConfig.labelingMode !== "scan_and_label"
   ) {
     return {
       ok: false,
@@ -409,9 +476,9 @@ export function validateGenerateConfig(
   }
 
   if (
-    config.practiceMode !== "label_with_anchor" &&
-    config.practiceMode !== "label_while_scanning" &&
-    config.labelingMode !== "none"
+    resolvedConfig.practiceMode !== "label_with_anchor" &&
+    resolvedConfig.practiceMode !== "label_while_scanning" &&
+    resolvedConfig.labelingMode !== "none"
   ) {
     return {
       ok: false,
@@ -425,8 +492,8 @@ export function validateGenerateConfig(
   }
 
   if (
-    (config.durationMinutes === 1 || config.durationMinutes === 2) &&
-    config.silenceProfile === "extended_silence"
+    (resolvedConfig.durationMinutes === 1 || resolvedConfig.durationMinutes === 2) &&
+    resolvedConfig.silenceProfile === "extended_silence"
   ) {
     return {
       ok: false,
@@ -440,8 +507,8 @@ export function validateGenerateConfig(
   }
 
   if (
-    (config.durationMinutes === 1 || config.durationMinutes === 2) &&
-    config.normalizationFrequency !== "once"
+    (resolvedConfig.durationMinutes === 1 || resolvedConfig.durationMinutes === 2) &&
+    resolvedConfig.normalizationFrequency !== "once"
   ) {
     return {
       ok: false,
@@ -454,7 +521,10 @@ export function validateGenerateConfig(
     };
   }
 
-  if (config.durationMinutes === 5 && config.normalizationFrequency !== "periodic") {
+  if (
+    resolvedConfig.durationMinutes === 5 &&
+    resolvedConfig.normalizationFrequency !== "periodic"
+  ) {
     return {
       ok: false,
       error: {
@@ -466,7 +536,10 @@ export function validateGenerateConfig(
     };
   }
 
-  if (config.durationMinutes === 12 && config.normalizationFrequency !== "repeated") {
+  if (
+    resolvedConfig.durationMinutes === 12 &&
+    resolvedConfig.normalizationFrequency !== "repeated"
+  ) {
     return {
       ok: false,
       error: {
@@ -479,8 +552,8 @@ export function validateGenerateConfig(
   }
 
   if (
-    (config.durationMinutes === 1 || config.durationMinutes === 2) &&
-    config.closingStyle !== "minimal"
+    (resolvedConfig.durationMinutes === 1 || resolvedConfig.durationMinutes === 2) &&
+    resolvedConfig.closingStyle !== "minimal"
   ) {
     return {
       ok: false,
@@ -493,7 +566,7 @@ export function validateGenerateConfig(
     };
   }
 
-  if (config.durationMinutes === 5 && config.closingStyle !== "pq_framed") {
+  if (resolvedConfig.durationMinutes === 5 && resolvedConfig.closingStyle !== "pq_framed") {
     return {
       ok: false,
       error: {
@@ -506,8 +579,8 @@ export function validateGenerateConfig(
   }
 
   if (
-    config.durationMinutes === 12 &&
-    config.closingStyle !== "pq_framed_with_progression"
+    resolvedConfig.durationMinutes === 12 &&
+    resolvedConfig.closingStyle !== "pq_framed_with_progression"
   ) {
     return {
       ok: false,
@@ -524,19 +597,20 @@ export function validateGenerateConfig(
     ok: true,
     value: {
       config: {
-        practiceMode: config.practiceMode,
-        bodyState: config.bodyState,
-        eyeState: config.eyeState,
-        primarySense: config.primarySense,
-        durationMinutes: config.durationMinutes,
-        labelingMode: config.labelingMode,
-        silenceProfile: config.silenceProfile,
-        normalizationFrequency: config.normalizationFrequency,
-        closingStyle: config.closingStyle,
-        senseRotation: config.senseRotation,
-        languages: config.languages,
-        audience: config.audience,
-        voiceStyle: config.voiceStyle,
+        practiceMode: resolvedConfig.practiceMode,
+        bodyState: resolvedConfig.bodyState,
+        eyeState: resolvedConfig.eyeState,
+        primarySense: resolvedConfig.primarySense,
+        durationMinutes: resolvedConfig.durationMinutes,
+        labelingMode: resolvedConfig.labelingMode,
+        silenceProfile: resolvedConfig.silenceProfile,
+        normalizationFrequency: resolvedConfig.normalizationFrequency,
+        closingStyle: resolvedConfig.closingStyle,
+        senseRotation: resolvedConfig.senseRotation,
+        scenarioId: resolvedConfig.scenarioId,
+        languages: resolvedConfig.languages,
+        audience: resolvedConfig.audience,
+        voiceStyle: resolvedConfig.voiceStyle,
         ttsNewlinePauseSeconds:
           parsedNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
       },
