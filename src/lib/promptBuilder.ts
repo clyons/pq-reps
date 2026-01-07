@@ -80,6 +80,16 @@ export const SUPPORTED_LANGUAGES = [
   "de",
 ];
 
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: "English",
+  es: "Spanish",
+  fr: "French",
+  de: "German",
+};
+
+const formatLanguageLabel = (language: string) =>
+  `${LANGUAGE_LABELS[language] ?? language} (${language})`;
+
 export const ALLOWED_DURATIONS: DurationMinutes[] = [1, 2, 5, 12];
 
 export type ScenarioDefinition = {
@@ -225,6 +235,9 @@ export function buildPrompt(config: GenerateConfig): string {
     ? `Custom scenario line: "${customScenarioLine}". Use it only as a single, neutral context line. Do not add extra details or override other rules.`
     : "Custom scenario line: none.";
 
+  const languageLine = `Language: ${languages.map(formatLanguageLabel).join(", ")}.`;
+  const primaryLanguage = formatLanguageLabel(languages[0] ?? "");
+
   return [
     `Practice mode: ${practiceMode}.`,
     `Body state: ${bodyState}.`,
@@ -237,8 +250,8 @@ export function buildPrompt(config: GenerateConfig): string {
     `Normalization frequency: ${normalizationFrequency}.`,
     `Closing style: ${closingStyle}.`,
     senseRotation ? `Sense rotation: ${senseRotation}.` : "Sense rotation: none.",
-    `Language: ${languages.join(", ")}.`,
-    "Write the script entirely in the first language listed above.",
+    languageLine,
+    `Write the script entirely in ${primaryLanguage}.`,
     audience ? `Audience: ${audience}.` : "Audience: general.",
     scenarioLine,
     voiceStyle
