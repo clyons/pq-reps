@@ -200,21 +200,19 @@
       .scenario-card {
         text-align: left;
         border-radius: var(--radius-card);
-        border: 1px solid rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--color-primary-orange);
         padding: var(--space-4);
-        background: linear-gradient(180deg, #ffffff 0%, #fff6ef 100%);
+        background: #ffffff;
         color: var(--color-neutral-black);
         cursor: pointer;
-        transition: transform 0.15s ease, border 0.15s ease, box-shadow 0.15s ease;
-        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+        transition: transform 0.15s ease, border 0.15s ease;
       }
       .scenario-card:hover {
         transform: translateY(-1px);
       }
       .scenario-card.is-selected {
         border-color: var(--color-primary-orange);
-        background: linear-gradient(180deg, #ffffff 0%, #ffe7d8 100%);
-        box-shadow: 0 10px 28px rgba(255, 142, 79, 0.25);
+        background: var(--color-primary-orange);
       }
       .scenario-title {
         font-weight: 700;
