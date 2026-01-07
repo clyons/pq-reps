@@ -33,3 +33,6 @@ This file documents how humans and automated agents should work in this repo.
 ## PR/commit guidance
 - Use concise, imperative commit messages (e.g., "Add AGENTS guidance").
 - Summarize user-visible changes in PR descriptions.
+
+## Code clarity
+- Prefer self-describing code and markup; avoid normalizing to the point of illegibility.
