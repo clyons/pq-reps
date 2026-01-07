@@ -505,18 +505,23 @@ const getScenarioCardStyle = (active: boolean): React.CSSProperties => ({
   background: active ? BRAND_COLORS.orange.base : BRAND_COLORS.neutral.white,
   textAlign: "left",
   cursor: "pointer",
+  display: "flex",
+  flexDirection: "column",
   transition: "border 0.15s ease",
 });
 
 const scenarioTitleStyle: React.CSSProperties = {
   fontWeight: 700,
   marginBottom: "0.35rem",
+  lineHeight: 1.3,
+  minHeight: "calc(1.3em * 2)",
 };
 
 const scenarioMetaStyle: React.CSSProperties = {
   fontSize: "0.85rem",
   color: "#333333",
-  lineHeight: 1.4,
+  lineHeight: 1.5,
+  minHeight: "calc(1.5em * 2)",
 };
 
 const getPillStyle = (checked: boolean, disabled?: boolean): React.CSSProperties => ({
