@@ -107,7 +107,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     label: "Calm me now",
     practiceType: "still_eyes_open",
     primarySense: "touch",
-    durationMinutes: 1,
+    durationMinutes: 2,
     promptLines: [
       "Goal: settle the listener quickly with immediate grounding.",
       "Use soothing language that lowers intensity fast and feels reassuring.",
@@ -118,7 +118,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     label: "Get present for a meeting",
     practiceType: "still_eyes_open",
     primarySense: "touch",
-    durationMinutes: 1,
+    durationMinutes: 2,
     promptLines: [
       "Frame this as a brief arrival ritual before a meeting.",
       "Invite steady posture, feet contact, and readiness to engage.",
@@ -129,7 +129,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     label: "Start the thing I’m avoiding",
     practiceType: "moving",
     primarySense: "touch",
-    durationMinutes: 1,
+    durationMinutes: 2,
     promptLines: [
       "Build gentle momentum and emphasize the first tiny step.",
       "Keep the tone encouraging and action-oriented without pressure.",
@@ -140,7 +140,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     label: "Prepare for a tough conversation",
     practiceType: "still_eyes_open",
     primarySense: "sight",
-    durationMinutes: 2,
+    durationMinutes: 5,
     promptLines: [
       "Support emotional steadiness and clear focus before speaking.",
       "Use visual anchoring to keep attention stable and composed.",
@@ -151,7 +151,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     label: "Reset after feedback",
     practiceType: "labeling",
     primarySense: "hearing",
-    durationMinutes: 2,
+    durationMinutes: 5,
     promptLines: [
       "Acknowledge lingering reactions and gently name what arises.",
       "Anchor with nearby sounds to let the nervous system reset.",
@@ -162,7 +162,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     label: "Wind down for sleep",
     practiceType: "still_eyes_closed",
     primarySense: "breath",
-    durationMinutes: 5,
+    durationMinutes: 12,
     promptLines: [
       "Create a low-energy, sleep-ready tone that slows everything down.",
       "Favor soft phrasing and longer exhales to prepare for rest.",
@@ -222,7 +222,7 @@ export function buildPrompt(config: GenerateConfig): string {
       : "Do not mention exact rep counts because the duration is under 5 minutes.";
   const durationPacing =
     durationMinutes === 1
-      ? "Pacing for 1 minute: use 2-3 short instruction beats, keep sentences compact, and avoid long silences (pause cues should be 3-5 seconds max)."
+      ? "Pacing for 1 minute: use 1 or 2 short instruction beats, keep sentences compact, and avoid long silences (pause cues should be 3-5 seconds max)."
       : durationMinutes === 12
         ? "Pacing for 12 minutes: build a clear arc with checkpoints or gentle resets every 2-3 minutes, and include occasional extended silences (15-30 seconds) with brief reminders between."
         : null;
