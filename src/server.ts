@@ -35,15 +35,67 @@ const getRateLimitKey = (req: http.IncomingMessage) => {
     typeof forwardedFor === "string" ? forwardedFor.split(",")[0]?.trim() : undefined;
   const remoteAddress = req.socket.remoteAddress ?? "unknown";
   return `ip:${forwardedIp || remoteAddress}`;
+const apiKey = process.env.API_KEY;
+
+const isUiRoute = (pathname: string) => pathname === "/" || /^\/(en|es|fr|de)\/?$/.test(pathname);
+
+const getAuthToken = (req: http.IncomingMessage) => {
+  const authHeader = req.headers.authorization;
+  if (typeof authHeader === "string") {
+    const [scheme, value] = authHeader.split(" ");
+    if (scheme?.toLowerCase() === "bearer" && value) {
+      return value;
+    }
+  }
+
+  const apiKeyHeader = req.headers["x-api-key"];
+  if (typeof apiKeyHeader === "string") {
+    return apiKeyHeader;
+  }
+
+  return undefined;
+};
+
+const isAuthorized = (req: http.IncomingMessage) => {
+  const token = getAuthToken(req);
+  return Boolean(apiKey && token && token === apiKey);
+};
+
+const sendJson = (res: http.ServerResponse, status: number, payload: unknown) => {
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(payload));
 };
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+  const requiresAuth =
+    url.pathname === "/version" || url.pathname.startsWith("/api/");
 
-  if (url.pathname === "/") {
-    res.statusCode = 302;
-    res.setHeader("Location", `/en/${url.search}`);
-    res.end();
+  if (isUiRoute(url.pathname)) {
+    if (url.pathname === "/") {
+      res.statusCode = 302;
+      res.setHeader("Location", `/en/${url.search}`);
+      res.end();
+      return;
+    }
+
+    if (/^\/(en|es|fr|de)\/?$/.test(url.pathname)) {
+      const html = await readFile(uiPath, "utf-8");
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.end(html);
+      return;
+    }
+  }
+
+  if (requiresAuth && !isAuthorized(req)) {
+    sendJson(res, 401, {
+      error: {
+        code: "unauthorized",
+        message: translate(DEFAULT_LOCALE, "errors.unauthorized"),
+      },
+    });
     return;
   }
 
@@ -101,14 +153,6 @@ const server = http.createServer(async (req, res) => {
         }),
       );
     }
-    return;
-  }
-
-  if (/^\/(en|es|fr|de)\/?$/.test(url.pathname)) {
-    const html = await readFile(uiPath, "utf-8");
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.end(html);
     return;
   }
 
