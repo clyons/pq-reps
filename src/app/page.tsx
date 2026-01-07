@@ -5,12 +5,19 @@ import {
   SCENARIOS,
   type PracticeType,
   type ScenarioId,
+  SUPPORTED_LANGUAGES,
 } from "../lib/promptBuilder";
 import {
   deriveDurationConfig,
   derivePracticeConfig,
   deriveSenseRotation,
 } from "../lib/practiceConfig";
+import {
+  formatMinutes,
+  resolveLocale,
+  translate,
+  type Locale,
+} from "../lib/i18n";
 
 type GenerationResult = {
   audioStream?: MediaStream;
@@ -91,32 +98,28 @@ const useAudioSync = (
   }, [audioRef, audioStream, audioUrl]);
 };
 
-const LANGUAGE_OPTIONS = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-  { value: "fr", label: "French" },
-  { value: "de", label: "German" },
-];
-
 const DURATION_OPTIONS: FormState["durationMinutes"][] = [1, 2, 5, 12];
-const CUSTOM_SCENARIO_MAX_LENGTH = 120;
-
-const formatDurationLabel = (minutes: number) =>
-  `${minutes} minute${minutes === 1 ? "" : "s"}`;
-
-const PRACTICE_TYPE_LABELS: Record<PracticeType, string> = {
-  still_eyes_closed: "Still (Eyes closed)",
-  still_eyes_open: "Still (Eyes open)",
-  moving: "Moving",
-  labeling: "Labeling",
-};
 
 const QUICK_ACCESS_SCENARIOS = SCENARIOS;
 
-const SECTION_TABS: { id: SectionId; label: string }[] = [
-  { id: "quick", label: "Quick Access" },
-  { id: "customize", label: "Customize" },
+const SECTION_TABS: { id: SectionId; labelKey: string }[] = [
+  { id: "quick", labelKey: "form.quick_access" },
+  { id: "customize", labelKey: "form.customize" },
 ];
+
+const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
+  still_eyes_closed: "form.practice_type.still_eyes_closed",
+  still_eyes_open: "form.practice_type.still_eyes_open",
+  moving: "form.practice_type.moving",
+  labeling: "form.practice_type.labeling",
+};
+
+const FOCUS_LABEL_KEYS: Record<FormState["focus"], string> = {
+  touch: "form.focus.touch",
+  hearing: "form.focus.hearing",
+  sight: "form.focus.sight",
+  breath: "form.focus.breath",
+};
 
 const FEMALE_VOICES_BY_LANGUAGE: Record<string, string> = {
   es: "nova",
@@ -580,6 +583,13 @@ export default function HomePage() {
 
   const [isDevMode, setIsDevMode] = useState(process.env.NODE_ENV !== "production");
   const isLoading = status === "loading";
+  const locale = useMemo<Locale>(() => resolveLocale(formState.language), [formState.language]);
+  const t = useMemo(
+    () => (key: string, params?: Record<string, string | number>) =>
+      translate(locale, key, params),
+    [locale],
+  );
+  const formatDurationLabel = (minutes: number) => formatMinutes(locale, minutes);
 
   useAudioSync(audioRef, result?.audioStream, result?.audioUrl);
 
@@ -680,22 +690,21 @@ export default function HomePage() {
   };
 
   const practiceTypeOptions: PillOption[] = [
-    { value: "still_eyes_closed", label: "Still (Eyes closed)" },
-    { value: "still_eyes_open", label: "Still (Eyes open)" },
-    { value: "moving", label: "Moving" },
-    { value: "labeling", label: "Labeling" },
+    {
+      value: "still_eyes_closed",
+      label: t(PRACTICE_TYPE_LABEL_KEYS.still_eyes_closed),
+    },
+    {
+      value: "still_eyes_open",
+      label: t(PRACTICE_TYPE_LABEL_KEYS.still_eyes_open),
+    },
+    { value: "moving", label: t(PRACTICE_TYPE_LABEL_KEYS.moving) },
+    { value: "labeling", label: t(PRACTICE_TYPE_LABEL_KEYS.labeling) },
   ];
 
   const focusPillOptions: PillOption[] = focusOptions.map((option) => ({
     value: option,
-    label:
-      option === "touch"
-        ? "Touch"
-        : option === "hearing"
-          ? "Hearing"
-          : option === "sight"
-            ? "Sight"
-            : "Breath",
+    label: t(FOCUS_LABEL_KEYS[option]),
   }));
 
   const durationPillOptions: PillOption[] = DURATION_OPTIONS.map((option) => ({
@@ -703,9 +712,9 @@ export default function HomePage() {
     label: formatDurationLabel(option),
   }));
 
-  const languagePillOptions: PillOption[] = LANGUAGE_OPTIONS.map((option) => ({
-    value: option.value,
-    label: option.label,
+  const languagePillOptions: PillOption[] = SUPPORTED_LANGUAGES.map((language) => ({
+    value: language,
+    label: t(`form.language.${language}`),
   }));
 
   const voicePillOptions: PillOption[] = [
@@ -719,15 +728,15 @@ export default function HomePage() {
     },
   ];
   const audioDeliveryOptions: PillOption[] = [
-    { value: "generate", label: "Generate" },
-    { value: "stream", label: "Stream" },
+    { value: "generate", label: t("form.audio_delivery.generate") },
+    { value: "stream", label: t("form.audio_delivery.stream") },
   ];
 
   const validate = (state: FormState) => {
     const nextErrors: string[] = [];
 
     if (!state.language) {
-      nextErrors.push("Please select a language.");
+      nextErrors.push(t("errors.language_required"));
     }
 
     return nextErrors;
@@ -794,7 +803,9 @@ export default function HomePage() {
 
       if (!response.ok) {
         const errorBody = (await response.json()) as { error?: { message?: string } };
-        throw new Error(errorBody.error?.message ?? "The generator failed to respond.");
+        throw new Error(
+          errorBody.error?.message ?? t("errors.generator_failed"),
+        );
       }
 
       return (await response.json()) as { script: string; ttsPrompt?: Record<string, unknown> };
@@ -829,9 +840,13 @@ export default function HomePage() {
         const errorContentType = response.headers.get("content-type") ?? "";
         if (errorContentType.includes("application/json")) {
           const errorBody = (await response.json()) as { error?: { message?: string } };
-          throw new Error(errorBody.error?.message ?? "The generator failed to respond.");
+          throw new Error(
+            errorBody.error?.message ?? t("errors.generator_failed"),
+          );
         }
-        throw new Error(`The generator failed to respond. (${response.status})`);
+        throw new Error(
+          t("errors.generator_failed_status", { status: response.status }),
+        );
       }
 
       const contentType = response.headers.get("content-type") ?? "audio/wav";
@@ -875,7 +890,7 @@ export default function HomePage() {
         try {
           notifyStreamStart();
           await new Promise<void>((resolve, reject) => {
-            const handleError = () => reject(new Error("Audio stream failed."));
+            const handleError = () => reject(new Error(t("errors.audio_stream_failed")));
 
             mediaSource.addEventListener("error", handleError, { once: true });
             mediaSource.addEventListener(
@@ -885,7 +900,8 @@ export default function HomePage() {
                   const sourceBuffer = mediaSource.addSourceBuffer(streamingMimeType);
                   const appendChunk = (chunk: Uint8Array) =>
                     new Promise<void>((appendResolve, appendReject) => {
-                      const onError = () => appendReject(new Error("Failed to append audio chunk."));
+                      const onError = () =>
+                        appendReject(new Error(t("errors.append_audio_chunk_failed")));
                       const onUpdateEnd = () => appendResolve();
                       sourceBuffer.addEventListener("error", onError, { once: true });
                       sourceBuffer.addEventListener("updateend", onUpdateEnd, { once: true });
@@ -894,7 +910,7 @@ export default function HomePage() {
 
                   const firstRead = await reader.read();
                   if (firstRead.done || !firstRead.value) {
-                    throw new Error("Audio stream ended before data arrived.");
+                    throw new Error(t("errors.audio_stream_no_data"));
                   }
                   chunks.push(firstRead.value);
                   onChunk?.(firstRead.value, { contentType });
@@ -1173,11 +1189,7 @@ export default function HomePage() {
       setStatus("success");
     } catch (error) {
       setStatus("error");
-      setErrors([
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while generating the audio.",
-      ]);
+      setErrors([error instanceof Error ? error.message : t("errors.unknown")]);
     }
   };
 
@@ -1213,7 +1225,9 @@ export default function HomePage() {
         }),
       });
       if (!response.ok) {
-        throw new Error(`Preview failed (${response.status}).`);
+        throw new Error(
+          t("errors.preview_failed_status", { status: response.status }),
+        );
       }
       const contentType = response.headers.get("content-type") ?? "audio/wav";
       const audioBuffer = await response.arrayBuffer();
@@ -1234,7 +1248,9 @@ export default function HomePage() {
       await previewAudio.play();
       setPreviewPlaying(true);
     } catch (error) {
-      setPreviewError(error instanceof Error ? error.message : "Preview failed.");
+      setPreviewError(
+        error instanceof Error ? error.message : t("errors.preview_failed"),
+      );
       setPreviewPlaying(false);
     } finally {
       setPreviewLoading(false);
@@ -1254,17 +1270,23 @@ export default function HomePage() {
         borderRadius: 16,
       }}
     >
-      <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>PQ Reps Generator</h1>
+      <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+        {t("ui.title")}
+      </h1>
       <p style={{ marginBottom: "2rem", color: BRAND_COLORS.neutral.black }}>
-        Choose the type of PQ Reps you'd like to practice.
+        {t("ui.description")}
       </p>
       <p style={{ marginBottom: "2rem", color: BRAND_COLORS.neutral.black }}>
-        Audio is AI-generated.
+        {t("ui.ai_notice")}
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
         <div>
-          <div role="tablist" aria-label="Scenario controls" style={sectionToggleStyle}>
+          <div
+            role="tablist"
+            aria-label={t("form.scenario_controls")}
+            style={sectionToggleStyle}
+          >
             {SECTION_TABS.map((tab, index) => (
               <button
                 key={tab.id}
@@ -1281,7 +1303,7 @@ export default function HomePage() {
                 onClick={() => handleSectionToggle(tab.id)}
                 onKeyDown={(event) => handleSectionTabKeyDown(event, index)}
               >
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             ))}
           </div>
@@ -1300,10 +1322,12 @@ export default function HomePage() {
                   onClick={() => handleScenarioSelect(scenario.id)}
                   style={getScenarioCardStyle(formState.scenarioId === scenario.id)}
                 >
-                  <div style={scenarioTitleStyle}>{scenario.label}</div>
+                  <div style={scenarioTitleStyle}>
+                    {t(`scenario.${scenario.id}`)}
+                  </div>
                   <div style={scenarioMetaStyle}>
-                    {PRACTICE_TYPE_LABELS[scenario.practiceType]} •{" "}
-                    {capitalize(scenario.primarySense)} •{" "}
+                    {t(PRACTICE_TYPE_LABEL_KEYS[scenario.practiceType])} •{" "}
+                    {t(FOCUS_LABEL_KEYS[scenario.primarySense as FormState["focus"]])} •{" "}
                     {formatDurationLabel(scenario.durationMinutes)}
                   </div>
                 </button>
@@ -1320,10 +1344,10 @@ export default function HomePage() {
           style={{ display: "grid", gap: "1.5rem" }}
         >
           <label style={{ display: "grid", gap: "0.5rem" }}>
-            <span style={{ fontWeight: 600 }}>Practice type</span>
+            <span style={{ fontWeight: 600 }}>{t("form.practice_type")}</span>
             <PillRadioGroup
               name="practiceType"
-              ariaLabel="Practice type"
+              ariaLabel={t("form.practice_type")}
               options={practiceTypeOptions}
               value={formState.practiceType}
               onChange={(value) =>
@@ -1336,10 +1360,10 @@ export default function HomePage() {
           </label>
 
           <label style={{ display: "grid", gap: "0.5rem" }}>
-            <span style={{ fontWeight: 600 }}>Focus</span>
+            <span style={{ fontWeight: 600 }}>{t("form.focus")}</span>
             <PillRadioGroup
               name="focus"
-              ariaLabel="Focus"
+              ariaLabel={t("form.focus")}
               options={focusPillOptions}
               value={formState.focus}
               onChange={(value) =>
@@ -1352,10 +1376,10 @@ export default function HomePage() {
           </label>
 
           <label style={{ display: "grid", gap: "0.5rem" }}>
-            <span style={{ fontWeight: 600 }}>Duration</span>
+            <span style={{ fontWeight: 600 }}>{t("form.duration")}</span>
             <PillRadioGroup
               name="durationMinutes"
-              ariaLabel="Duration"
+              ariaLabel={t("form.duration")}
               options={durationPillOptions}
               value={String(formState.durationMinutes)}
               onChange={(value) =>
@@ -1371,15 +1395,15 @@ export default function HomePage() {
 
         <details style={optionsDrawerStyle}>
           <summary style={optionsSummaryStyle}>
-            <span>Options</span>
+            <span>{t("form.options")}</span>
             <span aria-hidden="true">▼</span>
           </summary>
           <div style={optionsContentStyle}>
             <label style={{ display: "grid", gap: "0.5rem" }}>
-              <span style={{ fontWeight: 600 }}>Language</span>
+              <span style={{ fontWeight: 600 }}>{t("form.language")}</span>
               <PillRadioGroup
                 name="language"
-                ariaLabel="Language"
+                ariaLabel={t("form.language")}
                 options={languagePillOptions}
                 value={formState.language}
                 onChange={(value) => updateFormState({ language: value })}
@@ -1387,13 +1411,13 @@ export default function HomePage() {
             </label>
 
             <label style={{ display: "grid", gap: "0.5rem" }}>
-              <span style={{ fontWeight: 600 }}>Voice</span>
+              <span style={{ fontWeight: 600 }}>{t("form.voice")}</span>
               <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.neutral.black }}>
-                Choose the voice you prefer for guidance.
+                {t("form.voice.help")}
               </span>
               <PillRadioGroup
                 name="voiceGender"
-                ariaLabel="Voice"
+                ariaLabel={t("form.voice")}
                 options={voicePillOptions}
                 value={formState.voiceGender}
                 onChange={(value) =>
@@ -1419,7 +1443,7 @@ export default function HomePage() {
                   cursor: previewLoading ? "not-allowed" : "pointer",
                 }}
               >
-                <span>Preview</span>
+                <span>{t("form.voice.preview")}</span>
                 <span aria-hidden="true">{previewIcon}</span>
               </button>
               <audio ref={previewAudioRef} hidden />
@@ -1439,10 +1463,10 @@ export default function HomePage() {
                   gap: "0.35rem",
                 }}
               >
-                Audio delivery
+                {t("form.audio_delivery")}
                 <span
                   style={infoIconStyle}
-                  aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+                  aria-label={t("form.audio_delivery.help")}
                   tabIndex={0}
                   onMouseEnter={() => setShowAudioInfo(true)}
                   onMouseLeave={() => setShowAudioInfo(false)}
@@ -1455,14 +1479,14 @@ export default function HomePage() {
                     className="info-tooltip"
                     role="tooltip"
                   >
-                    Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay.
+                    {t("form.audio_delivery.help")}
                   </span>
                 </span>
               </span>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
                 <PillRadioGroup
                   name="audioDelivery"
-                  ariaLabel="Audio delivery"
+                  ariaLabel={t("form.audio_delivery")}
                   options={audioDeliveryOptions}
                   value={formState.audioDelivery}
                   onChange={(value) =>
@@ -1503,7 +1527,9 @@ export default function HomePage() {
               color: BRAND_COLORS.orange.dark,
             }}
           >
-            <strong style={{ display: "block", marginBottom: "0.5rem" }}>Please fix the following:</strong>
+            <strong style={{ display: "block", marginBottom: "0.5rem" }}>
+              {t("errors.fix_form")}
+            </strong>
             <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
               {errors.map((error) => (
                 <li key={error}>{error}</li>
@@ -1526,13 +1552,13 @@ export default function HomePage() {
             fontSize: "1.05rem",
           }}
         >
-          {isLoading ? "Preparing PQ Reps…" : "Prepare PQ Reps"}
+          {isLoading ? t("form.submit.loading") : t("form.submit")}
         </button>
       </form>
 
       {status === "loading" && (
         <p style={{ marginTop: "1.5rem", color: BRAND_COLORS.neutral.black }}>
-          Preparing your PQ Reps session. This can take a few seconds.
+          {t("status.preparing")}
         </p>
       )}
 
@@ -1546,7 +1572,7 @@ export default function HomePage() {
           }}
         >
           <h2 style={{ marginTop: 0 }}>
-            {isLoading ? "Streaming audio…" : "Your session is ready"}
+            {isLoading ? t("status.streaming_audio") : t("result.title")}
           </h2>
           {(result.audioStream || result.audioUrl) && (
             <audio
@@ -1555,7 +1581,7 @@ export default function HomePage() {
               src={result.audioUrl}
               style={{ width: "100%", marginBottom: "1rem" }}
             >
-              Your browser does not support the audio element.
+              {t("errors.audio_unsupported")}
             </audio>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "1rem" }}>
@@ -1572,7 +1598,7 @@ export default function HomePage() {
                 textDecoration: "none",
               }}
             >
-              Download the audio
+              {t("result.download_audio")}
             </a>
             <span style={{ color: BRAND_COLORS.neutral.black }} aria-hidden="true">
               {" "}
@@ -1591,7 +1617,7 @@ export default function HomePage() {
                 textDecoration: "none",
               }}
             >
-              Download the text
+              {t("result.download_text")}
             </a>
           </div>
           {result.script && (
@@ -1601,7 +1627,9 @@ export default function HomePage() {
           )}
           {result.ttsPrompt && (
             <div style={{ marginTop: "1.5rem" }}>
-              <h3 style={{ marginBottom: "0.5rem" }}>TTS prompt (debug)</h3>
+              <h3 style={{ marginBottom: "0.5rem" }}>
+                {t("result.debug_title")}
+              </h3>
               <pre
                 style={{
                   background: BRAND_COLORS.neutral.black,

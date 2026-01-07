@@ -454,7 +454,7 @@
       <form id="generator-form">
         <input type="hidden" name="scenarioId" id="scenario-id" value="" />
 
-        <div class="section-toggle" role="tablist" aria-label="Scenario controls">
+        <div class="section-toggle" id="section-tablist" role="tablist" aria-label="">
           <button
             type="button"
             id="quick-access-toggle"
@@ -605,7 +605,7 @@
         <div id="panel-customize" role="tabpanel" aria-labelledby="customize-toggle" hidden>
         <label>
           <span id="label-practice-type">Practice type</span>
-          <div class="pill-group" role="radiogroup" aria-label="Practice type" id="group-practice-type">
+          <div class="pill-group" role="radiogroup" aria-label="" id="group-practice-type">
             <label class="pill-option">
               <input type="radio" name="practiceType" value="still_eyes_closed" checked required />
               <span class="pill" data-i18n="form.practice_type.still_eyes_closed">Still (Eyes closed)</span>
@@ -627,7 +627,7 @@
 
         <label>
           <span id="label-focus">Focus</span>
-          <div class="pill-group" role="radiogroup" aria-label="Focus" id="group-focus">
+          <div class="pill-group" role="radiogroup" aria-label="" id="group-focus">
             <label class="pill-option">
               <input type="radio" name="focus" value="touch" checked required />
               <span class="pill" data-i18n="form.focus.touch">Touch</span>
@@ -649,7 +649,7 @@
 
         <label>
           <span id="label-duration">Duration</span>
-          <div class="pill-group" role="radiogroup" aria-label="Duration" id="group-duration">
+          <div class="pill-group" role="radiogroup" aria-label="" id="group-duration">
             <label class="pill-option">
               <input type="radio" name="durationMinutes" value="1" checked required />
               <span class="pill" data-duration="1">1 minute</span>
@@ -679,7 +679,7 @@
           <div class="options-content">
             <label>
               <span id="label-language">Language</span>
-              <div class="pill-group" role="radiogroup" aria-label="Language" id="group-language">
+              <div class="pill-group" role="radiogroup" aria-label="" id="group-language">
                 <label class="pill-option">
                   <input type="radio" name="language" value="en" checked required />
                   <span class="pill" data-language="en">English</span>
@@ -701,7 +701,7 @@
 
             <label>
               <span id="label-voice">Voice</span>
-              <div class="pill-group" role="radiogroup" aria-label="Voice" id="group-voice">
+              <div class="pill-group" role="radiogroup" aria-label="" id="group-voice">
                 <label class="pill-option">
                   <input type="radio" name="voiceGender" value="female" checked />
                   <span class="pill" data-voice-label="female">Alloy</span>
@@ -728,8 +728,8 @@
                 <span
                   class="info-icon"
                   id="audio-delivery-info"
-                  aria-label="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
-                  data-tooltip="Streaming starts playback sooner but can be less reliable on spotty connections and may limit seeking or offline replay."
+                  aria-label=""
+                  data-tooltip=""
                   tabindex="0"
                 >
                   i
@@ -739,7 +739,7 @@
                 <div
                   class="pill-group"
                   role="radiogroup"
-                  aria-label="Audio delivery"
+                  aria-label=""
                   id="group-audio-delivery"
                 >
                   <label class="pill-option">
@@ -823,8 +823,8 @@
         </p>
         <div class="footer-locale">
           <span class="footer-locale-icon" aria-hidden="true">🌐</span>
-          <span class="footer-locale-label">Language:</span>
-          <select id="footer-locale-select" aria-label="Language">
+          <span class="footer-locale-label" data-i18n="form.language_label">Language:</span>
+          <select id="footer-locale-select" aria-label="">
             <option value="en" data-language="en">English</option>
             <option value="es" data-language="es">Spanish</option>
             <option value="fr" data-language="fr">French</option>
@@ -839,6 +839,7 @@
       const authHeaders = apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
       const form = document.getElementById("generator-form");
       const scenarioIdInput = document.getElementById("scenario-id");
+      const sectionTablist = document.getElementById("section-tablist");
       const quickAccessToggle = document.getElementById("quick-access-toggle");
       const customizeToggle = document.getElementById("customize-toggle");
       const quickAccessSection = document.getElementById("panel-quick");
@@ -915,6 +916,7 @@
           "ui.version.label": "Version: {version}",
           "ui.description": "Choose the type of PQ Reps you'd like to practice.",
           "ui.ai_notice": "Audio is AI-generated.",
+          "form.scenario_controls": "Scenario controls",
           "form.quick_access": "Quick access",
           "form.customize": "Customize",
           "form.options": "Options",
@@ -940,6 +942,7 @@
           "form.duration": "Duration",
           "form.duration.minutes": "{count} minute{suffix}",
           "form.language": "Language",
+          "form.language_label": "Language:",
           "form.language.en": "English",
           "form.language.es": "Spanish",
           "form.language.fr": "French",
@@ -984,6 +987,7 @@
           "ui.version.label": "Versión: {version}",
           "ui.description": "Elige el tipo de PQ Reps que quieres practicar.",
           "ui.ai_notice": "El audio está generado por IA.",
+          "form.scenario_controls": "Controles de escenarios",
           "form.quick_access": "Acceso rápido",
           "form.customize": "Personalizar",
           "form.options": "Opciones",
@@ -1009,6 +1013,7 @@
           "form.duration": "Duración",
           "form.duration.minutes": "{count} minuto{suffix}",
           "form.language": "Idioma",
+          "form.language_label": "Idioma:",
           "form.language.en": "Inglés",
           "form.language.es": "Español",
           "form.language.fr": "Francés",
@@ -1056,6 +1061,7 @@
           "ui.version.label": "Version : {version}",
           "ui.description": "Choisissez le type de PQ Reps que vous souhaitez pratiquer.",
           "ui.ai_notice": "L'audio est généré par IA.",
+          "form.scenario_controls": "Commandes de scénario",
           "form.quick_access": "Accès rapide",
           "form.customize": "Personnaliser",
           "form.options": "Options",
@@ -1081,6 +1087,7 @@
           "form.duration": "Durée",
           "form.duration.minutes": "{count} minute{suffix}",
           "form.language": "Langue",
+          "form.language_label": "Langue :",
           "form.language.en": "Anglais",
           "form.language.es": "Espagnol",
           "form.language.fr": "Français",
@@ -1128,6 +1135,7 @@
           "ui.version.label": "Version: {version}",
           "ui.description": "Wähle die Art der PQ Reps, die du üben möchtest.",
           "ui.ai_notice": "Audio wird von KI erzeugt.",
+          "form.scenario_controls": "Szenario-Steuerung",
           "form.quick_access": "Schnellzugriff",
           "form.customize": "Anpassen",
           "form.options": "Optionen",
@@ -1153,6 +1161,7 @@
           "form.duration": "Dauer",
           "form.duration.minutes": "{count} Minute{suffix}",
           "form.language": "Sprache",
+          "form.language_label": "Sprache:",
           "form.language.en": "Englisch",
           "form.language.es": "Spanisch",
           "form.language.fr": "Französisch",
@@ -1411,6 +1420,12 @@
       const applyTranslations = () => {
         const locale = getCurrentLocale();
         document.documentElement.lang = locale;
+        if (sectionTablist) {
+          sectionTablist.setAttribute(
+            "aria-label",
+            translate("form.scenario_controls", {}, locale),
+          );
+        }
         if (appTitle) {
           appTitle.textContent = translate("ui.title", {}, locale);
         }
