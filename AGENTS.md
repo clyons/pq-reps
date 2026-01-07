@@ -23,6 +23,8 @@ This file documents how humans and automated agents should work in this repo.
 - TypeScript with ES module syntax (`"type": "module"` in `package.json`).
 - Prefer small, focused modules in `src/` with clear exports.
 - Keep API request/response shapes in sync with tests under `tests/`.
+- Keep static UI (`src/ui`) and dynamic UI (`src/app`) changes in sync when adjusting shared user-facing controls.
+- Use localization strings for user-visible text and add translations for all supported locales when introducing new copy.
 
 ## Common pitfalls
 - `npm run dev` uses `tsx watch`, so TypeScript changes are picked up live.
