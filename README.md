@@ -54,9 +54,10 @@ npm install
 ```
 
 ### Configure environment
-Create a `.env.local` file with your OpenAI API key (auto-loaded on startup):
+Create a `.env.local` file with your OpenAI API key and API auth secret (auto-loaded on startup):
 ```bash
 OPENAI_API_KEY=your_api_key_here
+API_KEY=your_api_key_here
 ```
 
 ### Run the API locally
@@ -67,10 +68,12 @@ npm run dev
 The server starts on `http://localhost:3000`.
 
 ### Try the API
+Provide the API key via `Authorization: Bearer <token>` or `x-api-key`.
 ```bash
 curl -X POST http://localhost:3000/api/generate \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
+  -H "Authorization: Bearer $API_KEY" \
   -d '{
     "practiceMode": "sitting",
     "bodyState": "still_seated",
