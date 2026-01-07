@@ -470,10 +470,10 @@ const scenarioGridStyle: React.CSSProperties = {
 };
 
 const getScenarioCardStyle = (active: boolean): React.CSSProperties => ({
-  border: `1px solid ${active ? BRAND_COLORS.orange.dark : BRAND_COLORS.orange.base}`,
+  border: `1px solid ${BRAND_COLORS.orange.base}`,
   borderRadius: 16,
   padding: "0.9rem",
-  background: active ? BRAND_COLORS.orange.light : BRAND_COLORS.neutral.white,
+  background: active ? BRAND_COLORS.orange.base : BRAND_COLORS.neutral.white,
   textAlign: "left",
   cursor: "pointer",
   transition: "border 0.15s ease",
