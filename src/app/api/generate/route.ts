@@ -9,8 +9,10 @@ import {
   NormalizationFrequency,
   PracticeMode,
   PrimarySense,
+  ScenarioId,
   SilenceProfile,
   SenseRotation,
+  getScenarioById,
 } from "../../../lib/promptBuilder";
 import { OutputMode, validateGenerateConfig } from "../../../lib/generateValidation";
 import { generateScript, SCRIPT_SYSTEM_PROMPT } from "../../../services/script";
@@ -57,6 +59,8 @@ type SuccessResponse = {
     normalizationFrequency: NormalizationFrequency;
     closingStyle: ClosingStyle;
     senseRotation?: SenseRotation;
+    scenarioId?: ScenarioId;
+    scenarioLabel?: string;
     languages: string[];
     ttsNewlinePauseSeconds?: number;
     prompt: string;
@@ -117,6 +121,7 @@ export async function POST(request: Request) {
   }
 
   const { config, outputMode: requestedMode, debugTtsPrompt } = validation.value;
+  const scenario = getScenarioById(config.scenarioId);
   const prompt = buildPrompt(config);
   const acceptHeader = request.headers.get("accept") ?? "";
   const wantsAudioStream = request.headers.get("x-tts-streaming") === "1";
@@ -153,6 +158,8 @@ export async function POST(request: Request) {
           normalizationFrequency: config.normalizationFrequency,
           closingStyle: config.closingStyle,
           senseRotation: config.senseRotation,
+          scenarioId: scenario?.id,
+          scenarioLabel: scenario?.label,
           languages: config.languages,
           ttsNewlinePauseSeconds: config.ttsNewlinePauseSeconds,
           prompt,
@@ -212,6 +219,8 @@ export async function POST(request: Request) {
           normalizationFrequency: config.normalizationFrequency,
           closingStyle: config.closingStyle,
           senseRotation: config.senseRotation,
+          scenarioId: scenario?.id,
+          scenarioLabel: scenario?.label,
           languages: config.languages,
           ttsNewlinePauseSeconds: config.ttsNewlinePauseSeconds,
           prompt,
