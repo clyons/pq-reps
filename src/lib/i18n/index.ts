@@ -122,6 +122,7 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.invalid_tts_payload": "Request body must include script, language, and voice.",
     "errors.script_too_large": "Script exceeds the maximum length supported for TTS.",
     "errors.method_not_allowed": "Only POST requests are supported.",
+    "errors.unauthorized": "Missing or invalid credentials.",
     "errors.payload_too_large": "Request body exceeds the maximum allowed size.",
     "errors.voice_preview_failure": "Unable to generate preview.",
     "errors.generate_failure": "Failed to generate a response.",
@@ -253,6 +254,7 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.script_too_large":
       "El guion supera la longitud máxima admitida para TTS.",
     "errors.method_not_allowed": "Solo se admiten solicitudes POST.",
+    "errors.unauthorized": "Faltan credenciales o no son válidas.",
     "errors.payload_too_large":
       "El cuerpo de la solicitud supera el tamaño máximo permitido.",
     "errors.voice_preview_failure": "No se pudo generar la vista previa.",
@@ -385,6 +387,7 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.script_too_large":
       "Le script dépasse la longueur maximale prise en charge pour le TTS.",
     "errors.method_not_allowed": "Seules les requêtes POST sont prises en charge.",
+    "errors.unauthorized": "Identifiants manquants ou invalides.",
     "errors.payload_too_large":
       "Le corps de la requête dépasse la taille maximale autorisée.",
     "errors.voice_preview_failure": "Impossible de générer l'aperçu.",
@@ -516,6 +519,7 @@ const MESSAGES: Record<Locale, Messages> = {
       "Der Anfragetext muss script, language und voice enthalten.",
     "errors.script_too_large": "Das Skript überschreitet die maximale TTS-Länge.",
     "errors.method_not_allowed": "Nur POST-Anfragen werden unterstützt.",
+    "errors.unauthorized": "Fehlende oder ungültige Anmeldedaten.",
     "errors.payload_too_large":
       "Der Anfragetext überschreitet die maximal zulässige Größe.",
     "errors.voice_preview_failure": "Vorschau konnte nicht erstellt werden.",
