@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import dotenv from "dotenv";
 import { readFile } from "fs/promises";
 import http from "http";
@@ -7,6 +8,7 @@ import generateHandler from "./pages/api/generate";
 import ttsHandler from "./pages/api/tts";
 import voicePreviewHandler from "./pages/api/voice-preview";
 import { DEFAULT_LOCALE, translate } from "./lib/i18n";
+import { logger } from "./lib/logger";
 import { createRateLimiter } from "./lib/rateLimiter";
 
 dotenv.config({ path: ".env.local" });
@@ -69,9 +71,24 @@ const sendJson = (res: http.ServerResponse, status: number, payload: unknown) =>
 };
 
 const server = http.createServer(async (req, res) => {
+  const requestId = randomUUID();
+  const startTime = Date.now();
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const requiresAuth =
     url.pathname === "/version" || url.pathname.startsWith("/api/");
+  res.setHeader("X-Request-Id", requestId);
+  res.on("finish", () => {
+    if (url.pathname.startsWith("/api/")) {
+      logger.info("api_request", {
+        requestId,
+        method: req.method ?? "UNKNOWN",
+        path: url.pathname,
+        statusCode: res.statusCode,
+        durationMs: Date.now() - startTime,
+        remoteAddress: req.socket.remoteAddress ?? "unknown",
+      });
+    }
+  });
 
   if (isUiRoute(url.pathname)) {
     if (url.pathname === "/") {
@@ -174,5 +191,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`PQ Reps API running on http://localhost:${port}`);
+  logger.info("server_listening", { port });
 });

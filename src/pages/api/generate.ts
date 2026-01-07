@@ -27,6 +27,7 @@ import {
   resolveLocaleFromPayload,
   translate,
 } from "../../lib/i18n";
+import { logger } from "../../lib/logger";
 
 type SuccessResponse = {
   script: string;
@@ -239,7 +240,9 @@ export default async function handler(
     }
     const scriptStart = Date.now();
     const { script } = await generateScript({ prompt });
-    console.info(`Script generation took ${Date.now() - scriptStart}ms.`);
+    logger.info("generate_script_completed", {
+      durationMs: Date.now() - scriptStart,
+    });
     if (outputMode === "text") {
       const response = {
         script,
@@ -277,7 +280,9 @@ export default async function handler(
     if (wantsStream) {
       sendEvent(res, "status", translate(locale, "status.synthesizing_audio"));
     }
-    console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
+    logger.info("ai_generated_audio_notice", {
+      endpoint: "generate",
+    });
     const ttsStart = Date.now();
     const ttsResult = wantsAudioStream && outputMode === "audio"
       ? await synthesizeSpeechStream({
@@ -292,7 +297,9 @@ export default async function handler(
           voice: config.voiceStyle,
           newlinePauseSeconds: config.ttsNewlinePauseSeconds,
         });
-    console.info(`Audio synthesis took ${Date.now() - ttsStart}ms.`);
+    logger.info("synthesize_audio_completed", {
+      durationMs: Date.now() - ttsStart,
+    });
     const ttsPrompt = debugTtsPrompt
       ? {
           model: "gpt-4o-mini-tts",
@@ -403,6 +410,9 @@ export default async function handler(
     res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
     res.end(ttsResult.audio);
   } catch (error) {
+    logger.error("generate_request_failed", {
+      error: logger.formatError(error).message,
+    });
     if (res.headersSent || res.writableEnded) {
       res.end();
       return;
