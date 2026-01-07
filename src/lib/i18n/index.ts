@@ -123,6 +123,12 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.generate_failure": "Failed to generate a response.",
     "errors.not_found": "Route not found.",
     "errors.version_unavailable": "Unable to load version.",
+    "errors.invalid_custom_scenario_line":
+      "Custom scenario line must be a short, single-line sentence with allowed characters.",
+    "errors.custom_scenario_line_too_long":
+      "Custom scenario line must be {max} characters or fewer.",
+    "errors.custom_scenario_line_disallowed":
+      "Custom scenario line contains disallowed content.",
   },
   es: {
     "ui.title": "Generador de audio de PQ Reps",
@@ -245,6 +251,12 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.generate_failure": "No se pudo generar una respuesta.",
     "errors.not_found": "Ruta no encontrada.",
     "errors.version_unavailable": "No se pudo cargar la versión.",
+    "errors.invalid_custom_scenario_line":
+      "La línea de escenario personalizada debe ser una frase corta de una sola línea con caracteres permitidos.",
+    "errors.custom_scenario_line_too_long":
+      "La línea de escenario personalizada debe tener {max} caracteres o menos.",
+    "errors.custom_scenario_line_disallowed":
+      "La línea de escenario personalizada contiene contenido no permitido.",
   },
   fr: {
     "ui.title": "Générateur audio PQ Reps",
@@ -367,6 +379,12 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.generate_failure": "Impossible de générer une réponse.",
     "errors.not_found": "Route introuvable.",
     "errors.version_unavailable": "Impossible de charger la version.",
+    "errors.invalid_custom_scenario_line":
+      "La ligne de scénario personnalisée doit être une phrase courte sur une seule ligne avec des caractères autorisés.",
+    "errors.custom_scenario_line_too_long":
+      "La ligne de scénario personnalisée doit contenir {max} caractères ou moins.",
+    "errors.custom_scenario_line_disallowed":
+      "La ligne de scénario personnalisée contient du contenu interdit.",
   },
   de: {
     "ui.title": "PQ Reps Audio-Generator",
@@ -488,6 +506,12 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.generate_failure": "Antwort konnte nicht erzeugt werden.",
     "errors.not_found": "Route nicht gefunden.",
     "errors.version_unavailable": "Version konnte nicht geladen werden.",
+    "errors.invalid_custom_scenario_line":
+      "Die benutzerdefinierte Szenariozeile muss ein kurzer, einzeiliger Satz mit erlaubten Zeichen sein.",
+    "errors.custom_scenario_line_too_long":
+      "Die benutzerdefinierte Szenariozeile darf höchstens {max} Zeichen lang sein.",
+    "errors.custom_scenario_line_disallowed":
+      "Die benutzerdefinierte Szenariozeile enthält unzulässige Inhalte.",
   },
 };
 

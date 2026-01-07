@@ -36,6 +36,20 @@ type ValidationResult = {
 };
 
 const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
+const MAX_CUSTOM_SCENARIO_LENGTH = 120;
+const CUSTOM_SCENARIO_INVALID_CHAR_PATTERN = /[^\p{L}\p{N} .,'’"?!:;()&-]/u;
+const CUSTOM_SCENARIO_URL_PATTERN = /(https?:\/\/|www\.)/i;
+const CUSTOM_SCENARIO_DISALLOWED_TERMS = [
+  /\b(?:sex|sexual|nude|porn|erotic)\b/i,
+  /\b(?:violence|violent|kill|killing|murder|suicide|assault)\b/i,
+  /\b(?:weapon|gun|knife|bomb)\b/i,
+  /\b(?:drugs|cocaine|heroin|meth|opioid|marijuana|weed)\b/i,
+  /\b(?:alcohol|drunk|gambling|casino|betting)\b/i,
+  /\b(?:politics|political|election|vote|government)\b/i,
+  /\b(?:religion|religious|church|mosque|temple|god|jesus|allah)\b/i,
+  /\b(?:hate|racist|bigot)\b/i,
+  /\b(?:medical|therapy|diagnose|treatment|prescription)\b/i,
+];
 
 const ALLOWED_PRACTICE_MODES: PracticeMode[] = [
   "tactile",
@@ -304,6 +318,88 @@ export function validateGenerateConfig(
     };
   }
 
+  const trimmedCustomScenario =
+    typeof config.customScenarioLine === "string"
+      ? config.customScenarioLine.trim()
+      : undefined;
+
+  if (config.customScenarioLine !== undefined && typeof config.customScenarioLine !== "string") {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_custom_scenario_line",
+          message: translate(locale, "errors.invalid_custom_scenario_line"),
+        },
+      },
+    };
+  }
+
+  if (trimmedCustomScenario && trimmedCustomScenario.length > MAX_CUSTOM_SCENARIO_LENGTH) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "custom_scenario_line_too_long",
+          message: translate(locale, "errors.custom_scenario_line_too_long", {
+            max: MAX_CUSTOM_SCENARIO_LENGTH,
+          }),
+        },
+      },
+    };
+  }
+
+  if (trimmedCustomScenario && /[\r\n]/.test(trimmedCustomScenario)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_custom_scenario_line",
+          message: translate(locale, "errors.invalid_custom_scenario_line"),
+        },
+      },
+    };
+  }
+
+  if (trimmedCustomScenario && CUSTOM_SCENARIO_INVALID_CHAR_PATTERN.test(trimmedCustomScenario)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "invalid_custom_scenario_line",
+          message: translate(locale, "errors.invalid_custom_scenario_line"),
+        },
+      },
+    };
+  }
+
+  if (trimmedCustomScenario && CUSTOM_SCENARIO_URL_PATTERN.test(trimmedCustomScenario)) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "custom_scenario_line_disallowed",
+          message: translate(locale, "errors.custom_scenario_line_disallowed"),
+        },
+      },
+    };
+  }
+
+  if (
+    trimmedCustomScenario &&
+    CUSTOM_SCENARIO_DISALLOWED_TERMS.some((pattern) => pattern.test(trimmedCustomScenario))
+  ) {
+    return {
+      ok: false,
+      error: {
+        error: {
+          code: "custom_scenario_line_disallowed",
+          message: translate(locale, "errors.custom_scenario_line_disallowed"),
+        },
+      },
+    };
+  }
+
   if (config.practiceMode === "moving") {
     if (config.bodyState !== "moving") {
       return {
@@ -537,6 +633,7 @@ export function validateGenerateConfig(
         languages: config.languages,
         audience: config.audience,
         voiceStyle: config.voiceStyle,
+        customScenarioLine: trimmedCustomScenario || undefined,
         ttsNewlinePauseSeconds:
           parsedNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
       },
