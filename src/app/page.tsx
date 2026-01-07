@@ -472,7 +472,7 @@ const scenarioGridStyle: React.CSSProperties = {
 const optionsDrawerStyle: React.CSSProperties = {
   border: `1px solid ${BRAND_COLORS.neutral.black30}`,
   borderRadius: 12,
-  padding: "0.75rem 1rem",
+  padding: "0.5rem 0.75rem",
   background: BRAND_COLORS.neutral.grayBase,
 };
 
@@ -480,9 +480,14 @@ const optionsSummaryStyle: React.CSSProperties = {
   cursor: "pointer",
   fontWeight: 600,
   listStyle: "none",
-  display: "inline-flex",
+  display: "flex",
   alignItems: "center",
-  gap: "0.5rem",
+  justifyContent: "space-between",
+  gap: "0.75rem",
+  padding: "0.5rem 0.75rem",
+  borderRadius: 10,
+  background: BRAND_COLORS.neutral.white,
+  border: `1px solid ${BRAND_COLORS.neutral.black30}`,
 };
 
 const optionsContentStyle: React.CSSProperties = {
@@ -1407,7 +1412,10 @@ export default function HomePage() {
         </div>
 
         <details style={optionsDrawerStyle}>
-          <summary style={optionsSummaryStyle}>Options</summary>
+          <summary style={optionsSummaryStyle}>
+            <span>Options</span>
+            <span aria-hidden="true">▾</span>
+          </summary>
           <div style={optionsContentStyle}>
             <label style={{ display: "grid", gap: "0.5rem" }}>
               <span style={{ fontWeight: 600 }}>Language</span>

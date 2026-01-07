@@ -174,9 +174,14 @@
         cursor: pointer;
         font-weight: 600;
         list-style: none;
-        display: inline-flex;
+        display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border-radius: 10px;
+        background: var(--color-neutral-white);
+        border: 1px solid var(--color-neutral-black-30);
       }
       .options-drawer summary::-webkit-details-marker {
         display: none;
@@ -680,7 +685,10 @@
         </div>
 
         <details class="options-drawer">
-          <summary id="options-summary" data-i18n="form.options">Options</summary>
+          <summary id="options-summary" data-i18n="form.options">
+            Options
+            <span aria-hidden="true">▾</span>
+          </summary>
           <div class="options-content">
             <label>
               <span id="label-language">Language</span>
