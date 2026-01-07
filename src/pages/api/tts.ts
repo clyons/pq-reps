@@ -9,6 +9,7 @@ import {
   resolveLocaleFromPayload,
   translate,
 } from "../../lib/i18n";
+import { logger } from "../../lib/logger";
 
 type TtsPayload = {
   script: string;
@@ -133,7 +134,9 @@ export default async function handler(
   const wantsAudioStream = req.headers["x-tts-streaming"] === "1";
 
   try {
-    console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
+    logger.info("ai_generated_audio_notice", {
+      endpoint: "tts",
+    });
     const ttsResult = wantsAudioStream
       ? await synthesizeSpeechStream({
           script: payload.script,
@@ -173,6 +176,9 @@ export default async function handler(
     res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
     res.end(ttsResult.audio);
   } catch (error) {
+    logger.error("tts_request_failed", {
+      error: logger.formatError(error).message,
+    });
     if (error instanceof TtsScriptTooLargeError) {
       sendJson(res, 400, {
         error: {

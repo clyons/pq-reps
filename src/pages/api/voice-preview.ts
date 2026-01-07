@@ -9,6 +9,7 @@ import {
   resolveLocaleFromPayload,
   translate,
 } from "../../lib/i18n";
+import { logger } from "../../lib/logger";
 
 type VoicePreviewRequest = {
   language?: string;
@@ -66,6 +67,7 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
 
     try {
       const cachedAudio = await fs.readFile(cachePath);
+      logger.info("voice_preview_cache_hit", { language, voice });
       sendAudioResponse(res, cachedAudio);
       return;
     } catch (error) {
@@ -74,10 +76,14 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
       }
     }
 
+    logger.info("voice_preview_cache_miss", { language, voice });
     const ttsResult = await synthesizeSpeech({ script, language, voice });
     await fs.writeFile(cachePath, ttsResult.audio);
     sendAudioResponse(res, ttsResult.audio);
   } catch (error) {
+    logger.error("voice_preview_failed", {
+      error: logger.formatError(error).message,
+    });
     res.statusCode = 500;
     res.setHeader("Content-Type", "application/json");
     res.end(
