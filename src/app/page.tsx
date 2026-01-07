@@ -36,6 +36,9 @@ type FormState = {
   customScenarioLine: string;
 };
 
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
+const AUTH_HEADERS = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
+
 const DEFAULT_STATE: FormState = {
   practiceType: "still_eyes_closed",
   focus: "touch",
@@ -733,6 +736,7 @@ export default function HomePage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          ...AUTH_HEADERS,
         },
         body: JSON.stringify({ ...basePayload, outputMode }),
       });
@@ -765,6 +769,7 @@ export default function HomePage() {
           "Content-Type": "application/json",
           Accept: "audio/wav",
           "x-tts-streaming": "1",
+          ...AUTH_HEADERS,
         },
         body: JSON.stringify(ttsPayload(script)),
       });
@@ -1149,6 +1154,7 @@ export default function HomePage() {
         headers: {
           "Content-Type": "application/json",
           Accept: "audio/wav",
+          ...AUTH_HEADERS,
         },
         body: JSON.stringify({
           language,

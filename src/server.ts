@@ -83,9 +83,13 @@ const server = http.createServer(async (req, res) => {
 
     if (/^\/(en|es|fr|de)\/?$/.test(url.pathname)) {
       const html = await readFile(uiPath, "utf-8");
+      const hydratedHtml = html.replaceAll(
+        "__API_KEY__",
+        JSON.stringify(apiKey ?? ""),
+      );
       res.statusCode = 200;
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.end(html);
+      res.end(hydratedHtml);
       return;
     }
   }

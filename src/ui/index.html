@@ -770,6 +770,8 @@
     </main>
 
     <script>
+      const apiKey = __API_KEY__;
+      const authHeaders = apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
       const form = document.getElementById("generator-form");
       const scenarioIdInput = document.getElementById("scenario-id");
       const quickAccessToggle = document.getElementById("quick-access-toggle");
@@ -1875,6 +1877,7 @@
             headers: {
               "Content-Type": "application/json",
               Accept: "audio/wav",
+              ...authHeaders,
             },
             body: JSON.stringify({
               language,
@@ -1929,7 +1932,11 @@
         versionState = "loading";
         updateVersionText();
         try {
-          const response = await fetch("/version");
+          const response = await fetch("/version", {
+            headers: {
+              ...authHeaders,
+            },
+          });
           if (!response.ok) {
             throw new Error("version_unavailable");
           }
@@ -2040,6 +2047,7 @@
             headers: {
               "Content-Type": "application/json",
               Accept: "application/json",
+              ...authHeaders,
             },
             body: JSON.stringify({ ...basePayload, outputMode }),
           });
@@ -2060,6 +2068,7 @@
             headers: {
               "Content-Type": "application/json",
               Accept: "text/event-stream",
+              ...authHeaders,
             },
             body: JSON.stringify({ ...basePayload, outputMode: effectiveOutputMode }),
           });
@@ -2137,6 +2146,7 @@
               "Content-Type": "application/json",
               Accept: "audio/wav",
               "x-tts-streaming": "1",
+              ...authHeaders,
             },
             body: JSON.stringify(buildTtsPayload(script)),
           });
