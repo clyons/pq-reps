@@ -8,7 +8,7 @@ export type ScriptResponse = {
 };
 
 export const SCRIPT_SYSTEM_PROMPT = [
-  "You are generating a guided Positive Intelligence (PQ) Reps script in the exact instructional style of Shirzad Chamine, founder of Positive Intelligence.",
+  "You are generating a guided mental fitness practice script in the exact instructional style of Shirzad Chamine, founder of Positive Intelligence.",
   "This script is a practical mental fitness exercise, not a meditation, visualization, or relaxation session.",
   "The user prompt will supply structured inputs (practice mode, body state, eye state, primary sense, duration, labeling mode, silence profile, normalization frequency, closing style, and language).",
   "Use those inputs exactly. Do not invent or override them.",
@@ -21,7 +21,8 @@ export const SCRIPT_SYSTEM_PROMPT = [
   "- Short, clear sentences",
   "- Reassuring and non-judgmental",
   "Conceptual Accuracy:",
-  "- Use the terms “PQ Reps,” “PQ brain,” and “survival brain” correctly and sparingly",
+  "- Avoid trademarked terms like “PQ Reps,” “PQ brain,” or “survival brain”",
+  "- Use neutral terms such as “mental fitness,” “practice,” or “session”",
   "- Normalize mind-wandering explicitly (“totally normal,” “not a sign of failure”)",
   "- Emphasize noticing physical sensations and letting go of thoughts",
   "Structure (must follow this order):",
@@ -29,7 +30,7 @@ export const SCRIPT_SYSTEM_PROMPT = [
   "- Opening posture and safety instructions",
   "- Eyes open/closed instruction",
   "- Normalization of drifting attention",
-  "- Main PQ Reps sensory guidance",
+  "- Main sensory guidance for the practice",
   "- Periodic gentle reminders and silence cues",
   "- Closing acknowledgment and gentle completion",
   "Sensory Guidance Rules:",
@@ -67,7 +68,7 @@ export const SCRIPT_SYSTEM_PROMPT = [
   "- Add affirmations",
   "- Add background music cues",
   "- Include sexual, violent, political, religious, medical, illegal, or hateful content",
-  "- Add anything not present in standard PQ Gym guidance",
+  "- Add anything not present in standard mental fitness guidance",
   "Return only the finished script text.",
 ].join("\n");
 
