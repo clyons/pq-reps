@@ -183,8 +183,21 @@
         background: var(--color-neutral-white);
         border: none;
       }
+      .options-drawer summary .options-caret {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease;
+      }
+      .options-drawer summary .options-caret svg {
+        width: 14px;
+        height: 14px;
+      }
       .options-drawer summary::-webkit-details-marker {
         display: none;
+      }
+      .options-drawer[open] summary .options-caret {
+        transform: rotate(180deg);
       }
       .options-content {
         display: grid;
@@ -584,9 +597,19 @@
         </div>
 
         <details class="options-drawer">
-          <summary id="options-summary" data-i18n="form.options">
-            Options
-            <span aria-hidden="true">▼</span>
+          <summary id="options-summary">
+            <span data-i18n="form.options">Options</span>
+            <span class="options-caret" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
           </summary>
           <div class="options-content">
             <label>

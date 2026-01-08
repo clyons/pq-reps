@@ -492,6 +492,22 @@ const optionsSummaryStyle: React.CSSProperties = {
   outline: "none",
 };
 
+const optionsCaretStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  transition: "transform 0.2s ease",
+};
+
+const optionsCaretOpenStyle: React.CSSProperties = {
+  transform: "rotate(180deg)",
+};
+
+const optionsCaretSvgStyle: React.CSSProperties = {
+  width: "14px",
+  height: "14px",
+};
+
 const optionsContentStyle: React.CSSProperties = {
   display: "grid",
   gap: "1.5rem",
@@ -582,6 +598,7 @@ export default function HomePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showAudioInfo, setShowAudioInfo] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionId>("quick");
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
   const sectionTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -1398,10 +1415,29 @@ export default function HomePage() {
 
         </div>
 
-        <details style={optionsDrawerStyle}>
+        <details
+          style={optionsDrawerStyle}
+          onToggle={(event) => setOptionsOpen(event.currentTarget.open)}
+        >
           <summary style={optionsSummaryStyle}>
             <span>{t("form.options")}</span>
-            <span aria-hidden="true">▼</span>
+            <span
+              aria-hidden="true"
+              style={{
+                ...optionsCaretStyle,
+                ...(optionsOpen ? optionsCaretOpenStyle : null),
+              }}
+            >
+              <svg viewBox="0 0 20 20" fill="none" style={optionsCaretSvgStyle}>
+                <path
+                  d="M5 7.5L10 12.5L15 7.5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
           </summary>
           <div style={optionsContentStyle}>
             <label style={{ display: "grid", gap: "0.5rem" }}>
