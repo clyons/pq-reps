@@ -1278,11 +1278,11 @@ export default function HomePage() {
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
         {t("ui.title")}
       </h1>
-      <p style={{ marginBottom: "2rem", color: BRAND_COLORS.neutral.black }}>
-        {t("ui.description")}
+      <p style={{ marginBottom: "1rem", color: BRAND_COLORS.neutral.black }}>
+        {t("ui.intro")}
       </p>
       <p style={{ marginBottom: "2rem", color: BRAND_COLORS.neutral.black }}>
-        {t("ui.ai_notice")}
+        {t("ui.description")}
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
@@ -1652,6 +1652,10 @@ export default function HomePage() {
           )}
         </section>
       )}
+      <footer style={{ marginTop: "2rem", color: BRAND_COLORS.neutral.black }}>
+        <p style={{ marginBottom: "0.75rem" }}>{t("ui.ai_notice")}</p>
+        <p style={{ marginBottom: 0 }}>{t("ui.footer")}</p>
+      </footer>
     </main>
   );
 }
