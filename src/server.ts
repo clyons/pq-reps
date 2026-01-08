@@ -26,6 +26,14 @@ const rateLimiter = createRateLimiter({
   capacity: rateLimitMaxRequests,
   refillPerSecond: rateLimitMaxRequests / rateLimitWindowSeconds,
 });
+const isDev = process.env.NODE_ENV !== "production";
+const devFaviconEmoji = "🧘";
+const buildFaviconEmoji = "🧘‍♂️";
+
+const buildEmojiFaviconDataUrl = (emoji: string) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">${emoji}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
 
 const getRateLimitKey = (req: http.IncomingMessage) => {
   const apiKeyHeader = req.headers["x-api-key"];
@@ -103,10 +111,12 @@ const server = http.createServer(async (req, res) => {
 
     if (/^\/(en|es|fr|de)\/?$/.test(url.pathname)) {
       const html = await readFile(uiPath, "utf-8");
+      const faviconEmoji = isDev ? devFaviconEmoji : buildFaviconEmoji;
+      const faviconDataUrl = buildEmojiFaviconDataUrl(faviconEmoji);
       const hydratedHtml = html.replaceAll(
         "__API_KEY__",
         JSON.stringify(apiKey ?? ""),
-      );
+      ).replaceAll("__FAVICON__", faviconDataUrl);
       res.statusCode = 200;
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.end(hydratedHtml);
