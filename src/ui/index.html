@@ -2188,6 +2188,15 @@
         const customScenarioLineRaw = formData.get("customScenarioLine");
         const customScenarioLine =
           typeof customScenarioLineRaw === "string" ? customScenarioLineRaw.trim() : "";
+        const ttsNewlinePauseSecondsRaw = formData.get("ttsNewlinePauseSeconds");
+        const parsedTtsNewlinePauseSeconds =
+          typeof ttsNewlinePauseSecondsRaw === "string" &&
+          ttsNewlinePauseSecondsRaw.trim() !== ""
+            ? Number.parseFloat(ttsNewlinePauseSecondsRaw)
+            : undefined;
+        const ttsNewlinePauseSeconds = Number.isFinite(parsedTtsNewlinePauseSeconds)
+          ? parsedTtsNewlinePauseSeconds
+          : 1.5;
         const practiceConfig = derivePracticeConfig(practiceType, durationMinutes);
         const durationConfig = deriveDurationConfig(durationMinutes);
         const primarySense = derivePrimarySense(focus, practiceConfig.eyeState);
@@ -2214,6 +2223,7 @@
           script,
           language,
           voice: voiceStyle,
+          ttsNewlinePauseSeconds,
         });
         submitButton.disabled = true;
         statusPanel.hidden = false;
