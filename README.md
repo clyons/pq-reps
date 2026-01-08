@@ -1,6 +1,6 @@
 # PQ Reps Guided Audio Generator
 
-**Version:** 0.2.0
+**Version:** 0.5.0
 
 Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sense, eye position, duration, and language.
 
@@ -9,6 +9,42 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - A minimal HTTP API server exposing `POST /api/generate`
 - OpenAI TTS integration that returns audio bytes directly
 - Server-sent events for generation status updates via `Accept: text/event-stream`
+
+## Changelog
+
+### 0.5.0
+- Centralize TTS newline pause defaults.
+- Split long TTS scripts to avoid 401/500 errors.
+- Document Cloud Run deployment and the logs helper script.
+- Localize UI strings and scenario labels.
+- Add API key auth checks plus in-memory rate limiting.
+
+### 0.4.0
+- Ensure streaming pauses emit silence for WAV responses.
+- Fix newline pause insertion and update newline pause defaults.
+- Replace dropdowns with pill radios and update preview controls.
+- Apply PQ palette styling updates across the UI.
+- Preserve pause tokens in prompts.
+
+### 0.3.0
+- Force streaming WAV output and enable WAV streaming MIME types.
+- Stream TTS audio as segments arrive for progressive playback.
+- Enable MP3 streaming for generated audio.
+- Fix WAV streaming alignment.
+
+### 0.2.0
+- Add streaming audio support for generation.
+- Add a UI toggle for streaming audio playback.
+- Add script download links to the UI.
+- Log script and audio generation timing.
+- Add UI disclosures for AI-generated audio.
+
+### 0.1.0
+- Add prompt config types and the prompt builder.
+- Add the `POST /api/generate` API route with validation and TTS.
+- Add localized prompt templates.
+- Add the main page form-based UI for generation.
+- Add local dev server setup guidance.
 
 ## Spec task list
 - [x] Define core prompt builder types and templates.
