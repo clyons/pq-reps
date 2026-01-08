@@ -10,12 +10,16 @@ type Messages = Record<string, string>;
 
 const MESSAGES: Record<Locale, Messages> = {
   en: {
-    "ui.title": "PQ Reps Audio Generator",
+    "ui.title": "Mental Fitness Practice Generator",
     "ui.version.loading": "Version: loading...",
     "ui.version.unavailable": "Version: unavailable",
     "ui.version.label": "Version: {version}",
-    "ui.description": "Choose the type of PQ Reps you'd like to practice.",
-    "ui.ai_notice": "Audio is AI-generated.",
+    "ui.intro":
+      "This tool generates short, guided mental fitness practices by focusing on physical sensations such as touch, sound, sight, or breathing.",
+    "ui.description":
+      "Choose the type of guided mental fitness practice you’d like to create.",
+    "ui.ai_notice":
+      "Audio is generated using artificial intelligence based on your selections.",
     "form.scenario_controls": "Scenario controls",
     "form.quick_access": "Quick access",
     "form.customize": "Customize",
@@ -152,12 +156,16 @@ const MESSAGES: Record<Locale, Messages> = {
       "Custom scenario line contains disallowed content.",
   },
   es: {
-    "ui.title": "Generador de audio de PQ Reps",
+    "ui.title": "Generador de prácticas de fitness mental",
     "ui.version.loading": "Versión: cargando...",
     "ui.version.unavailable": "Versión: no disponible",
     "ui.version.label": "Versión: {version}",
-    "ui.description": "Elige el tipo de PQ Reps que quieres practicar.",
-    "ui.ai_notice": "El audio está generado por IA.",
+    "ui.intro":
+      "Esta herramienta genera prácticas breves y guiadas de fitness mental al centrarse en sensaciones físicas como el tacto, el sonido, la vista o la respiración.",
+    "ui.description":
+      "Elige el tipo de práctica guiada de fitness mental que te gustaría crear.",
+    "ui.ai_notice":
+      "El audio se genera usando inteligencia artificial en función de tus selecciones.",
     "form.scenario_controls": "Controles de escenarios",
     "form.quick_access": "Acceso rápido",
     "form.customize": "Personalizar",
@@ -301,12 +309,16 @@ const MESSAGES: Record<Locale, Messages> = {
       "La línea de escenario personalizada contiene contenido no permitido.",
   },
   fr: {
-    "ui.title": "Générateur audio PQ Reps",
+    "ui.title": "Générateur de pratiques de forme mentale",
     "ui.version.loading": "Version : chargement...",
     "ui.version.unavailable": "Version : indisponible",
     "ui.version.label": "Version : {version}",
-    "ui.description": "Choisissez le type de PQ Reps que vous souhaitez pratiquer.",
-    "ui.ai_notice": "L'audio est généré par IA.",
+    "ui.intro":
+      "Cet outil génère de courtes pratiques guidées de forme mentale en se concentrant sur des sensations physiques telles que le toucher, le son, la vue ou la respiration.",
+    "ui.description":
+      "Choisissez le type de pratique guidée de forme mentale que vous souhaitez créer.",
+    "ui.ai_notice":
+      "L’audio est généré à l’aide de l’intelligence artificielle en fonction de vos choix.",
     "form.scenario_controls": "Commandes de scénario",
     "form.quick_access": "Accès rapide",
     "form.customize": "Personnaliser",
@@ -450,12 +462,16 @@ const MESSAGES: Record<Locale, Messages> = {
       "La ligne de scénario personnalisée contient du contenu interdit.",
   },
   de: {
-    "ui.title": "PQ Reps Audio-Generator",
+    "ui.title": "Generator für mentale Fitnessübungen",
     "ui.version.loading": "Version: wird geladen...",
     "ui.version.unavailable": "Version: nicht verfügbar",
     "ui.version.label": "Version: {version}",
-    "ui.description": "Wähle die Art der PQ Reps, die du üben möchtest.",
-    "ui.ai_notice": "Audio wird von KI erzeugt.",
+    "ui.intro":
+      "Dieses Tool erstellt kurze, geführte mentale Fitnessübungen, die sich auf körperliche Empfindungen wie Berührung, Geräusche, Sehen oder Atmung konzentrieren.",
+    "ui.description":
+      "Wähle die Art der geführten mentalen Fitnessübung, die du erstellen möchtest.",
+    "ui.ai_notice":
+      "Audio wird auf Grundlage deiner Auswahl mithilfe künstlicher Intelligenz erzeugt.",
     "form.scenario_controls": "Szenario-Steuerung",
     "form.quick_access": "Schnellzugriff",
     "form.customize": "Anpassen",
