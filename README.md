@@ -222,6 +222,11 @@ npm start
   ```bash
   gcloud run services logs read pq-reps --region us-east1
   ```
+- For a friendlier log viewer, use the helper script:
+  ```bash
+  ./scripts/logs.sh 2h pq-reps
+  ```
+  Pass a custom freshness window or revision if needed (see `scripts/logs.sh`).
 - Logs may interleave across multiple instances.
 
 ### Operational Assumptions
