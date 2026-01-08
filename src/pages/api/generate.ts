@@ -13,21 +13,21 @@ import {
   SilenceProfile,
   SenseRotation,
   getScenarioById,
-} from "../../lib/promptBuilder";
-import { OutputMode, validateGenerateConfig } from "../../lib/generateValidation";
-import { generateScript, SCRIPT_SYSTEM_PROMPT } from "../../services/script";
+} from "../../lib/promptBuilder.js";
+import { OutputMode, validateGenerateConfig } from "../../lib/generateValidation.js";
+import { generateScript, SCRIPT_SYSTEM_PROMPT } from "../../services/script.js";
 import {
   synthesizeSpeech,
   synthesizeSpeechStream,
   TtsScriptTooLargeError,
   TTS_SYSTEM_PROMPT,
-} from "../../services/tts";
+} from "../../services/tts.js";
 import {
   DEFAULT_LOCALE,
   resolveLocaleFromPayload,
   translate,
-} from "../../lib/i18n";
-import { logger } from "../../lib/logger";
+} from "../../lib/i18n.js";
+import { logger } from "../../lib/logger.js";
 
 type SuccessResponse = {
   script: string;
