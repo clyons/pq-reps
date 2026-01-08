@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
-import test from "node:test";
-import { synthesizeSpeechStream } from "../src/services/tts";
+import http from "node:http";
+import type { AddressInfo } from "node:net";
+import test, { type TestContext } from "node:test";
+import handler from "../src/pages/api/tts";
+import {
+  DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
+  synthesizeSpeechStream,
+} from "../src/services/tts";
 
 type WavFormat = {
   sampleRate: number;
@@ -31,17 +37,18 @@ const buildWav = (format: WavFormat, audioData: Buffer): Buffer => {
   return Buffer.concat([header, audioData]);
 };
 
-test("streaming TTS preserves pause markers and newline pauses", async (t) => {
+const format: WavFormat = {
+  sampleRate: 8000,
+  channels: 1,
+  bitsPerSample: 16,
+};
+const audioData = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
+const wavBuffer = buildWav(format, audioData);
+const bytesPerSample = format.bitsPerSample / 8;
+
+const mockTtsFetch = (t: TestContext) => {
   const originalFetch = globalThis.fetch;
   const originalApiKey = process.env.OPENAI_API_KEY;
-
-  const format: WavFormat = {
-    sampleRate: 8000,
-    channels: 1,
-    bitsPerSample: 16,
-  };
-  const audioData = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
-  const wavBuffer = buildWav(format, audioData);
 
   process.env.OPENAI_API_KEY = "test-key";
   globalThis.fetch = async () =>
@@ -58,6 +65,45 @@ test("streaming TTS preserves pause markers and newline pauses", async (t) => {
       process.env.OPENAI_API_KEY = originalApiKey;
     }
   });
+};
+
+const fetchStreamingTts = async (t: TestContext, payload: Record<string, unknown>) => {
+  const server = http.createServer((req, res) => {
+    handler(req, res).catch(() => {
+      res.statusCode = 500;
+      res.end();
+    });
+  });
+
+  await new Promise<void>((resolve) => {
+    server.listen(0, resolve);
+  });
+
+  t.after(() => {
+    server.close();
+  });
+
+  const { port } = server.address() as AddressInfo;
+  const response = await fetch(`http://127.0.0.1:${port}/api/tts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-tts-streaming": "1",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return {
+    response,
+    output: Buffer.from(await response.arrayBuffer()),
+  };
+};
+
+const pauseBytesFor = (seconds: number) =>
+  Math.round(seconds * format.sampleRate) * format.channels * bytesPerSample;
+
+test("streaming TTS preserves pause markers and newline pauses", async (t) => {
+  mockTtsFetch(t);
 
   const ttsResult = await synthesizeSpeechStream({
     script: "[pause:0.25]Hello\nWorld",
@@ -75,11 +121,8 @@ test("streaming TTS preserves pause markers and newline pauses", async (t) => {
   assert.equal(output.toString("ascii", 0, 4), "RIFF");
 
   const data = output.subarray(44);
-  const bytesPerSample = format.bitsPerSample / 8;
-  const firstPauseBytes =
-    Math.round(0.25 * format.sampleRate) * format.channels * bytesPerSample;
-  const newlinePauseBytes =
-    Math.round(0.5 * format.sampleRate) * format.channels * bytesPerSample;
+  const firstPauseBytes = pauseBytesFor(0.25);
+  const newlinePauseBytes = pauseBytesFor(0.5);
   const expectedLength = firstPauseBytes + audioData.length + newlinePauseBytes + audioData.length;
 
   assert.equal(data.length, expectedLength);
@@ -96,5 +139,83 @@ test("streaming TTS preserves pause markers and newline pauses", async (t) => {
   assert.ok(secondPause.equals(Buffer.alloc(newlinePauseBytes, 0)));
 
   const secondAudio = data.subarray(secondPauseStart + newlinePauseBytes);
+  assert.ok(secondAudio.equals(audioData));
+});
+
+test("streaming /api/tts applies default newline pause when omitted", async (t) => {
+  mockTtsFetch(t);
+
+  const { response, output } = await fetchStreamingTts(t, {
+    script: "Hello\nWorld",
+    language: "en",
+    voice: "alloy",
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(output.toString("ascii", 0, 4), "RIFF");
+
+  const data = output.subarray(44);
+  const newlinePauseBytes = pauseBytesFor(DEFAULT_TTS_NEWLINE_PAUSE_SECONDS);
+  const expectedLength = audioData.length + newlinePauseBytes + audioData.length;
+
+  assert.equal(data.length, expectedLength);
+
+  const firstAudio = data.subarray(0, audioData.length);
+  assert.ok(firstAudio.equals(audioData));
+
+  const pauseStart = audioData.length;
+  const pauseSegment = data.subarray(pauseStart, pauseStart + newlinePauseBytes);
+  assert.ok(pauseSegment.equals(Buffer.alloc(newlinePauseBytes, 0)));
+
+  const secondAudio = data.subarray(pauseStart + newlinePauseBytes);
+  assert.ok(secondAudio.equals(audioData));
+});
+
+test("streaming /api/tts with newline pause set to 0 inserts no pause", async (t) => {
+  mockTtsFetch(t);
+
+  const { response, output } = await fetchStreamingTts(t, {
+    script: "Hello\nWorld",
+    language: "en",
+    voice: "alloy",
+    ttsNewlinePauseSeconds: 0,
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(output.toString("ascii", 0, 4), "RIFF");
+
+  const data = output.subarray(44);
+
+  assert.equal(data.length, audioData.length);
+  assert.ok(data.equals(audioData));
+});
+
+test("streaming /api/tts respects custom newline pause length", async (t) => {
+  mockTtsFetch(t);
+
+  const { response, output } = await fetchStreamingTts(t, {
+    script: "Hello\nWorld",
+    language: "en",
+    voice: "alloy",
+    ttsNewlinePauseSeconds: 0.5,
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(output.toString("ascii", 0, 4), "RIFF");
+
+  const data = output.subarray(44);
+  const newlinePauseBytes = pauseBytesFor(0.5);
+  const expectedLength = audioData.length + newlinePauseBytes + audioData.length;
+
+  assert.equal(data.length, expectedLength);
+
+  const firstAudio = data.subarray(0, audioData.length);
+  assert.ok(firstAudio.equals(audioData));
+
+  const pauseStart = audioData.length;
+  const pauseSegment = data.subarray(pauseStart, pauseStart + newlinePauseBytes);
+  assert.ok(pauseSegment.equals(Buffer.alloc(newlinePauseBytes, 0)));
+
+  const secondAudio = data.subarray(pauseStart + newlinePauseBytes);
   assert.ok(secondAudio.equals(audioData));
 });

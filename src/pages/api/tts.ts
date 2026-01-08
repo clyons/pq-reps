@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import {
+  DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
   synthesizeSpeech,
   synthesizeSpeechStream,
   TtsScriptTooLargeError,
@@ -136,6 +137,8 @@ export default async function handler(
   }
 
   const wantsAudioStream = req.headers["x-tts-streaming"] === "1";
+  const newlinePauseSeconds =
+    payload.ttsNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS;
 
   try {
     logger.info("ai_generated_audio_notice", {
@@ -146,13 +149,13 @@ export default async function handler(
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
-          newlinePauseSeconds: payload.ttsNewlinePauseSeconds,
+          newlinePauseSeconds,
         })
       : await synthesizeSpeech({
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
-          newlinePauseSeconds: payload.ttsNewlinePauseSeconds,
+          newlinePauseSeconds,
         });
 
     if ("stream" in ttsResult) {

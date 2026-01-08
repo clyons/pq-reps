@@ -25,6 +25,7 @@ export type TtsStreamResponse = {
 
 export const MAX_TTS_SEGMENTS = 64;
 export const MAX_TTS_CHARS = 4000;
+export const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
 export const TTS_SYSTEM_PROMPT = [
   "You are delivering a Positive Intelligence (PQ) Reps script as a trained PQ Coach.",
   "The goal is to sound like Shirzad Chamine's instructional style: calm, grounded, and practical.",

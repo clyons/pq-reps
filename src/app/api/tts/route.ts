@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
   synthesizeSpeech,
   synthesizeSpeechStream,
   TtsScriptTooLargeError,
@@ -107,6 +108,8 @@ export async function POST(request: Request) {
   }
 
   const wantsAudioStream = request.headers.get("x-tts-streaming") === "1";
+  const newlinePauseSeconds =
+    payload.ttsNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS;
 
   try {
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
@@ -115,13 +118,13 @@ export async function POST(request: Request) {
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
-          newlinePauseSeconds: payload.ttsNewlinePauseSeconds,
+          newlinePauseSeconds,
         })
       : await synthesizeSpeech({
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
-          newlinePauseSeconds: payload.ttsNewlinePauseSeconds,
+          newlinePauseSeconds,
         });
 
     const downloadFilename = buildDownloadFilename({
