@@ -107,6 +107,8 @@ const SECTION_TABS: { id: SectionId; labelKey: string }[] = [
   { id: "customize", labelKey: "form.customize" },
 ];
 
+const SECTION_STORAGE_KEY = "pq-reps-active-section";
+
 const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
   still_eyes_closed: "form.practice_type.still_eyes_closed",
   still_eyes_open: "form.practice_type.still_eyes_open",
@@ -641,6 +643,17 @@ export default function HomePage() {
     const devParamEnabled = params.get("dev") === "1";
     setIsDevMode(devParamEnabled || process.env.NODE_ENV !== "production");
   }, []);
+
+  useEffect(() => {
+    const storedSection = window.localStorage.getItem(SECTION_STORAGE_KEY);
+    if (storedSection === "quick" || storedSection === "customize") {
+      setActiveSection(storedSection);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(SECTION_STORAGE_KEY, activeSection);
+  }, [activeSection]);
 
   useEffect(() => {
     return () => {

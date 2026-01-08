@@ -847,6 +847,7 @@
       let downloadUrl = null;
       let scriptDownloadUrl = null;
       const storageKey = "pq-reps-form";
+      const sectionStorageKey = "pq-reps-active-section";
       const femaleVoiceByLanguage = { es: "nova", fr: "nova" };
       const maleVoiceByLanguage = { es: "onyx", fr: "onyx" };
       const PRACTICE_TYPE_LABEL_KEYS = {
@@ -1226,6 +1227,7 @@
         if (!showQuick && !preserveScenario) {
           clearScenarioSelection();
         }
+        localStorage.setItem(sectionStorageKey, section);
       };
 
       const focusSectionTab = (index) => {
@@ -1918,6 +1920,7 @@
         const defaultValues = getFormValues();
 
         const storedValuesRaw = localStorage.getItem(storageKey);
+        const storedSection = localStorage.getItem(sectionStorageKey);
         let storedValues = null;
         if (storedValuesRaw) {
           try {
@@ -1948,6 +1951,9 @@
         updateVoiceLabels();
         applyTranslations();
         syncScenarioSelection();
+        if (storedSection === "quick" || storedSection === "customize") {
+          setActiveSection(storedSection, { preserveScenario: true });
+        }
         if (quickAccessToggle) {
           quickAccessToggle.addEventListener("click", () => {
             setActiveSection("quick", { preserveScenario: true });
