@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
+import { once } from "node:events";
+import type { IncomingMessage, ServerResponse } from "node:http";
+import { PassThrough } from "node:stream";
 import test from "node:test";
-import { synthesizeSpeechStream } from "../src/services/tts";
+import handler from "../src/pages/api/tts";
+import {
+  DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
+  synthesizeSpeechStream,
+} from "../src/services/tts";
 
 type WavFormat = {
   sampleRate: number;
@@ -31,17 +38,28 @@ const buildWav = (format: WavFormat, audioData: Buffer): Buffer => {
   return Buffer.concat([header, audioData]);
 };
 
-test("streaming TTS preserves pause markers and newline pauses", async (t) => {
+const WAV_FORMAT: WavFormat = {
+  sampleRate: 8000,
+  channels: 1,
+  bitsPerSample: 16,
+};
+
+const buildFixtureWav = () =>
+  buildWav(WAV_FORMAT, Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]));
+
+const getPauseBytes = (seconds: number) =>
+  Math.round(seconds * WAV_FORMAT.sampleRate) *
+  WAV_FORMAT.channels *
+  (WAV_FORMAT.bitsPerSample / 8);
+
+const parseWavData = (output: Buffer) => {
+  assert.equal(output.toString("ascii", 0, 4), "RIFF");
+  return output.subarray(44);
+};
+
+const setupTtsFixture = (t: { after: (fn: () => void) => void }, wavBuffer: Buffer) => {
   const originalFetch = globalThis.fetch;
   const originalApiKey = process.env.OPENAI_API_KEY;
-
-  const format: WavFormat = {
-    sampleRate: 8000,
-    channels: 1,
-    bitsPerSample: 16,
-  };
-  const audioData = Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]);
-  const wavBuffer = buildWav(format, audioData);
 
   process.env.OPENAI_API_KEY = "test-key";
   globalThis.fetch = async () =>
@@ -58,6 +76,42 @@ test("streaming TTS preserves pause markers and newline pauses", async (t) => {
       process.env.OPENAI_API_KEY = originalApiKey;
     }
   });
+};
+
+const createMockRequest = (payload: unknown, headers: Record<string, string>) => {
+  const req = new PassThrough() as IncomingMessage;
+  req.method = "POST";
+  req.headers = headers;
+  process.nextTick(() => {
+    req.end(JSON.stringify(payload));
+  });
+  return req;
+};
+
+const createMockResponse = () => {
+  const res = new PassThrough() as ServerResponse;
+  const headers = new Map<string, string>();
+  res.statusCode = 200;
+  res.setHeader = (name: string, value: number | string | string[]) => {
+    headers.set(name.toLowerCase(), Array.isArray(value) ? value.join(",") : String(value));
+  };
+  res.getHeader = (name: string) => headers.get(name.toLowerCase());
+  return { res, headers };
+};
+
+const readResponseBody = async (res: PassThrough) => {
+  const chunks: Buffer[] = [];
+  res.on("data", (chunk) => {
+    chunks.push(Buffer.from(chunk));
+  });
+  await once(res, "finish");
+  return Buffer.concat(chunks);
+};
+
+test("streaming TTS preserves pause markers and newline pauses", async (t) => {
+  const wavBuffer = buildFixtureWav();
+  const audioData = wavBuffer.subarray(44);
+  setupTtsFixture(t, wavBuffer);
 
   const ttsResult = await synthesizeSpeechStream({
     script: "[pause:0.25]Hello\nWorld",
@@ -72,14 +126,9 @@ test("streaming TTS preserves pause markers and newline pauses", async (t) => {
   }
 
   const output = Buffer.concat(chunks);
-  assert.equal(output.toString("ascii", 0, 4), "RIFF");
-
-  const data = output.subarray(44);
-  const bytesPerSample = format.bitsPerSample / 8;
-  const firstPauseBytes =
-    Math.round(0.25 * format.sampleRate) * format.channels * bytesPerSample;
-  const newlinePauseBytes =
-    Math.round(0.5 * format.sampleRate) * format.channels * bytesPerSample;
+  const data = parseWavData(output);
+  const firstPauseBytes = getPauseBytes(0.25);
+  const newlinePauseBytes = getPauseBytes(0.5);
   const expectedLength = firstPauseBytes + audioData.length + newlinePauseBytes + audioData.length;
 
   assert.equal(data.length, expectedLength);
@@ -97,4 +146,81 @@ test("streaming TTS preserves pause markers and newline pauses", async (t) => {
 
   const secondAudio = data.subarray(secondPauseStart + newlinePauseBytes);
   assert.ok(secondAudio.equals(audioData));
+});
+
+test("streaming API applies default newline pauses when omitted", async (t) => {
+  const wavBuffer = buildFixtureWav();
+  const audioData = wavBuffer.subarray(44);
+  setupTtsFixture(t, wavBuffer);
+
+  const payload = {
+    script: "Hello\nWorld",
+    language: "en",
+    voice: "alloy",
+  };
+
+  const req = createMockRequest(payload, { "x-tts-streaming": "1" });
+  const { res } = createMockResponse();
+
+  await handler(req, res);
+  const output = await readResponseBody(res);
+  const data = parseWavData(output);
+
+  const pauseBytes = getPauseBytes(DEFAULT_TTS_NEWLINE_PAUSE_SECONDS);
+  const expectedLength = audioData.length * 2 + pauseBytes * 2;
+  assert.equal(data.length, expectedLength);
+
+  const firstAudio = data.subarray(0, audioData.length);
+  assert.ok(firstAudio.equals(audioData));
+
+  const firstPauseStart = audioData.length;
+  const firstPause = data.subarray(firstPauseStart, firstPauseStart + pauseBytes);
+  assert.ok(firstPause.equals(Buffer.alloc(pauseBytes, 0)));
+});
+
+test("streaming API respects an explicit zero newline pause", async (t) => {
+  const wavBuffer = buildFixtureWav();
+  const audioData = wavBuffer.subarray(44);
+  setupTtsFixture(t, wavBuffer);
+
+  const payload = {
+    script: "Hello\nWorld",
+    language: "en",
+    voice: "alloy",
+    ttsNewlinePauseSeconds: 0,
+  };
+
+  const req = createMockRequest(payload, { "x-tts-streaming": "1" });
+  const { res } = createMockResponse();
+
+  await handler(req, res);
+  const output = await readResponseBody(res);
+  const data = parseWavData(output);
+
+  assert.equal(data.length, audioData.length);
+  assert.ok(data.equals(audioData));
+});
+
+test("streaming API applies a custom newline pause value", async (t) => {
+  const wavBuffer = buildFixtureWav();
+  const audioData = wavBuffer.subarray(44);
+  setupTtsFixture(t, wavBuffer);
+
+  const payload = {
+    script: "Hello\nWorld",
+    language: "en",
+    voice: "alloy",
+    ttsNewlinePauseSeconds: 0.75,
+  };
+
+  const req = createMockRequest(payload, { "x-tts-streaming": "1" });
+  const { res } = createMockResponse();
+
+  await handler(req, res);
+  const output = await readResponseBody(res);
+  const data = parseWavData(output);
+
+  const pauseBytes = getPauseBytes(0.75);
+  const expectedLength = audioData.length * 2 + pauseBytes * 2;
+  assert.equal(data.length, expectedLength);
 });

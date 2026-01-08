@@ -9,7 +9,7 @@ import {
   resolveLocaleFromPayload,
   translate,
 } from "../../lib/i18n/index.js";
-import { DEFAULT_TTS_NEWLINE_PAUSE_SECONDS } from "../../lib/generateValidation.js";
+import { DEFAULT_TTS_NEWLINE_PAUSE_SECONDS } from "../../services/tts.js";
 import { logger } from "../../lib/logger.js";
 
 type TtsPayload = {
@@ -142,20 +142,20 @@ export default async function handler(
     logger.info("ai_generated_audio_notice", {
       endpoint: "tts",
     });
+    const newlinePauseSeconds =
+      payload.ttsNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS;
     const ttsResult = wantsAudioStream
       ? await synthesizeSpeechStream({
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
-          newlinePauseSeconds:
-            payload.ttsNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
+          newlinePauseSeconds,
         })
       : await synthesizeSpeech({
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
-          newlinePauseSeconds:
-            payload.ttsNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
+          newlinePauseSeconds,
         });
 
     if ("stream" in ttsResult) {
