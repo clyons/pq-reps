@@ -496,125 +496,7 @@
         </div>
 
         <div id="panel-quick" role="tabpanel" aria-labelledby="quick-access-toggle">
-          <div class="scenario-grid">
-            <button
-              type="button"
-              class="scenario-card"
-              data-scenario-id="calm_me_now"
-              data-practice-type="still_eyes_open"
-              data-focus="touch"
-              data-duration-minutes="1"
-            >
-              <div class="scenario-title" data-i18n="scenario.calm_me_now">Calm me now</div>
-              <div class="scenario-meta">
-                <span data-i18n="form.practice_type.still_eyes_open">Still (Eyes open)</span> •
-                <span data-i18n="form.focus.touch">Touch</span> •
-                <span data-duration="1">1 minute</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="scenario-card"
-              data-scenario-id="get_present_for_meeting"
-              data-practice-type="still_eyes_open"
-              data-focus="touch"
-              data-duration-minutes="1"
-            >
-              <div class="scenario-title" data-i18n="scenario.get_present_for_meeting">
-                Get present for a meeting
-              </div>
-              <div class="scenario-meta">
-                <span data-i18n="form.practice_type.still_eyes_open">Still (Eyes open)</span> •
-                <span data-i18n="form.focus.touch">Touch</span> •
-                <span data-duration="1">1 minute</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="scenario-card"
-              data-scenario-id="start_the_thing_im_avoiding"
-              data-practice-type="moving"
-              data-focus="touch"
-              data-duration-minutes="1"
-            >
-              <div class="scenario-title" data-i18n="scenario.start_the_thing_im_avoiding">
-                Start the thing I’m avoiding
-              </div>
-              <div class="scenario-meta">
-                <span data-i18n="form.practice_type.moving">Moving</span> •
-                <span data-i18n="form.focus.touch">Touch</span> •
-                <span data-duration="1">1 minute</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="scenario-card"
-              data-scenario-id="prepare_for_a_tough_conversation"
-              data-practice-type="still_eyes_open"
-              data-focus="sight"
-              data-duration-minutes="2"
-            >
-              <div class="scenario-title" data-i18n="scenario.prepare_for_a_tough_conversation">
-                Prepare for a tough conversation
-              </div>
-              <div class="scenario-meta">
-                <span data-i18n="form.practice_type.still_eyes_open">Still (Eyes open)</span> •
-                <span data-i18n="form.focus.sight">Sight</span> •
-                <span data-duration="2">2 minutes</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="scenario-card"
-              data-scenario-id="reset_after_feedback"
-              data-practice-type="labeling"
-              data-focus="hearing"
-              data-duration-minutes="2"
-            >
-              <div class="scenario-title" data-i18n="scenario.reset_after_feedback">
-                Reset after feedback
-              </div>
-              <div class="scenario-meta">
-                <span data-i18n="form.practice_type.labeling">Labeling</span> •
-                <span data-i18n="form.focus.hearing">Hearing</span> •
-                <span data-duration="2">2 minutes</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="scenario-card"
-              data-scenario-id="wind_down_for_sleep"
-              data-practice-type="still_eyes_closed"
-              data-focus="breath"
-              data-duration-minutes="5"
-            >
-              <div class="scenario-title" data-i18n="scenario.wind_down_for_sleep">
-                Wind down for sleep
-              </div>
-              <div class="scenario-meta">
-                <span data-i18n="form.practice_type.still_eyes_closed">Still (Eyes closed)</span> •
-                <span data-i18n="form.focus.breath">Breath</span> •
-                <span data-duration="5">5 minutes</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="scenario-card"
-              data-scenario-id="daily_deep_reset"
-              data-practice-type="still_eyes_closed"
-              data-focus="touch"
-              data-duration-minutes="12"
-            >
-              <div class="scenario-title" data-i18n="scenario.daily_deep_reset">
-                Daily deep reset
-              </div>
-              <div class="scenario-meta">
-                <span data-i18n="form.practice_type.still_eyes_closed">Still (Eyes closed)</span> •
-                <span data-i18n="form.focus.touch">Touch</span> •
-                <span data-duration="12">12 minutes</span>
-              </div>
-            </button>
-          </div>
+          <div class="scenario-grid" id="scenario-grid"></div>
         </div>
 
         <div id="panel-customize" role="tabpanel" aria-labelledby="customize-toggle" hidden>
@@ -888,7 +770,8 @@
       const quickAccessSection = document.getElementById("panel-quick");
       const customizeSection = document.getElementById("panel-customize");
       const sectionTabs = [quickAccessToggle, customizeToggle].filter(Boolean);
-      const scenarioCards = form.querySelectorAll(".scenario-card");
+      const scenarioGrid = document.getElementById("scenario-grid");
+      let scenarioCards = [];
       const practiceTypeInputs = form.querySelectorAll("input[name='practiceType']");
       const durationInputs = form.querySelectorAll("input[name='durationMinutes']");
       const getSelectedValue = (name) =>
@@ -942,6 +825,18 @@
       const storageKey = "pq-reps-form";
       const femaleVoiceByLanguage = { es: "nova", fr: "nova" };
       const maleVoiceByLanguage = { es: "onyx", fr: "onyx" };
+      const PRACTICE_TYPE_LABEL_KEYS = {
+        still_eyes_closed: "form.practice_type.still_eyes_closed",
+        still_eyes_open: "form.practice_type.still_eyes_open",
+        moving: "form.practice_type.moving",
+        labeling: "form.practice_type.labeling",
+      };
+      const FOCUS_LABEL_KEYS = {
+        touch: "form.focus.touch",
+        hearing: "form.focus.hearing",
+        sight: "form.focus.sight",
+        breath: "form.focus.breath",
+      };
       const previewButton = document.getElementById("voice-preview-button");
       const previewAudio = document.getElementById("voice-preview-audio");
       const previewStatus = document.getElementById("voice-preview-status");
@@ -1457,6 +1352,90 @@
         return translate("form.duration.minutes", { count: minutes, suffix }, locale);
       };
 
+      const fetchScenarioDefinitions = async () => {
+        try {
+          const response = await fetch("/api/scenarios", { headers: authHeaders });
+          if (!response.ok) {
+            return [];
+          }
+          const payload = await response.json();
+          return Array.isArray(payload?.scenarios) ? payload.scenarios : [];
+        } catch (error) {
+          return [];
+        }
+      };
+
+      const renderScenarioCards = (scenarios) => {
+        if (!scenarioGrid) {
+          scenarioCards = [];
+          return;
+        }
+        const locale = getCurrentLocale();
+        scenarioGrid.innerHTML = "";
+        scenarios.forEach((scenario) => {
+          const practiceTypeKey = PRACTICE_TYPE_LABEL_KEYS[scenario.practiceType];
+          const focusKey = FOCUS_LABEL_KEYS[scenario.primarySense];
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "scenario-card";
+          button.dataset.scenarioId = scenario.id;
+          button.dataset.practiceType = scenario.practiceType;
+          button.dataset.focus = scenario.primarySense;
+          button.dataset.durationMinutes = String(scenario.durationMinutes);
+
+          const title = document.createElement("div");
+          title.className = "scenario-title";
+          const titleKey = `scenario.${scenario.id}`;
+          const translatedTitle = translate(titleKey, {}, locale);
+          title.dataset.i18n = titleKey;
+          title.textContent = translatedTitle === titleKey ? scenario.label : translatedTitle;
+
+          const meta = document.createElement("div");
+          meta.className = "scenario-meta";
+
+          const practiceSpan = document.createElement("span");
+          if (practiceTypeKey) {
+            practiceSpan.dataset.i18n = practiceTypeKey;
+            practiceSpan.textContent = translate(practiceTypeKey, {}, locale);
+          } else {
+            practiceSpan.textContent = scenario.practiceType;
+          }
+
+          const focusSpan = document.createElement("span");
+          if (focusKey) {
+            focusSpan.dataset.i18n = focusKey;
+            focusSpan.textContent = translate(focusKey, {}, locale);
+          } else {
+            focusSpan.textContent = scenario.primarySense;
+          }
+
+          const durationSpan = document.createElement("span");
+          durationSpan.dataset.duration = String(scenario.durationMinutes);
+          durationSpan.textContent = formatDurationLabel(scenario.durationMinutes, locale);
+
+          meta.append(
+            practiceSpan,
+            document.createTextNode(" • "),
+            focusSpan,
+            document.createTextNode(" • "),
+            durationSpan,
+          );
+
+          button.append(title, meta);
+          scenarioGrid.append(button);
+        });
+        scenarioCards = Array.from(scenarioGrid.querySelectorAll(".scenario-card"));
+      };
+
+      const bindScenarioCardEvents = () => {
+        scenarioCards.forEach((card) => {
+          card.addEventListener("click", () => {
+            setActiveSection("quick", { preserveScenario: true });
+            selectScenarioCard(card);
+          });
+        });
+      };
+
       const updateVersionText = () => {
         if (!appVersion) {
           return;
@@ -1907,89 +1886,91 @@
         });
       };
 
-      const defaultValues = getFormValues();
-
-      const storedValuesRaw = localStorage.getItem(storageKey);
-      let storedValues = null;
-      if (storedValuesRaw) {
-        try {
-          storedValues = JSON.parse(storedValuesRaw);
-        } catch (err) {
-          localStorage.removeItem(storageKey);
-        }
-      }
-
       const persistFormValues = () => {
         localStorage.setItem(storageKey, JSON.stringify(getFormValues()));
       };
 
-      const pathLocale = getLocaleFromPath();
-      const mergedValues = {
-        ...defaultValues,
-        ...(storedValues && typeof storedValues === "object" ? storedValues : {}),
-        ...(pathLocale && !(storedValues && storedValues.language)
-          ? { language: pathLocale }
-          : {}),
-      };
-      setFormValues(mergedValues);
-      if (pathLocale) {
-        persistFormValues();
-      }
+      const initializeForm = async () => {
+        const defaultValues = getFormValues();
 
-      updateDerivedFields();
-      updateVoiceLabels();
-      applyTranslations();
-      syncScenarioSelection();
-      if (quickAccessToggle) {
-        quickAccessToggle.addEventListener("click", () => {
-          setActiveSection("quick", { preserveScenario: true });
-        });
-        quickAccessToggle.addEventListener("keydown", handleSectionTabKeyDown);
-      }
-      if (customizeToggle) {
-        customizeToggle.addEventListener("click", () => {
-          setActiveSection("customize");
-        });
-        customizeToggle.addEventListener("keydown", handleSectionTabKeyDown);
-      }
-      scenarioCards.forEach((card) => {
-        card.addEventListener("click", () => {
-          setActiveSection("quick", { preserveScenario: true });
-          selectScenarioCard(card);
-        });
-      });
-      durationInputs.forEach((input) => {
-        input.addEventListener("change", updateDerivedFields);
-      });
-      practiceTypeInputs.forEach((input) => {
-        input.addEventListener("change", updateDerivedFields);
-      });
-      form.querySelectorAll("input[name='language']").forEach((input) => {
-        input.addEventListener("change", () => {
-          updateVoiceLabels();
-          applyTranslations();
+        const storedValuesRaw = localStorage.getItem(storageKey);
+        let storedValues = null;
+        if (storedValuesRaw) {
+          try {
+            storedValues = JSON.parse(storedValuesRaw);
+          } catch (err) {
+            localStorage.removeItem(storageKey);
+          }
+        }
+
+        const pathLocale = getLocaleFromPath();
+        const mergedValues = {
+          ...defaultValues,
+          ...(storedValues && typeof storedValues === "object" ? storedValues : {}),
+          ...(pathLocale && !(storedValues && storedValues.language)
+            ? { language: pathLocale }
+            : {}),
+        };
+        setFormValues(mergedValues);
+        if (pathLocale) {
           persistFormValues();
+        }
+
+        const scenarios = await fetchScenarioDefinitions();
+        renderScenarioCards(scenarios);
+        bindScenarioCardEvents();
+
+        updateDerivedFields();
+        updateVoiceLabels();
+        applyTranslations();
+        syncScenarioSelection();
+        if (quickAccessToggle) {
+          quickAccessToggle.addEventListener("click", () => {
+            setActiveSection("quick", { preserveScenario: true });
+          });
+          quickAccessToggle.addEventListener("keydown", handleSectionTabKeyDown);
+        }
+        if (customizeToggle) {
+          customizeToggle.addEventListener("click", () => {
+            setActiveSection("customize");
+          });
+          customizeToggle.addEventListener("keydown", handleSectionTabKeyDown);
+        }
+        durationInputs.forEach((input) => {
+          input.addEventListener("change", updateDerivedFields);
         });
-      });
-      if (footerLocaleSelect) {
-        footerLocaleSelect.addEventListener("change", (event) => {
-          const target = event.target;
-          if (!(target instanceof HTMLSelectElement)) {
-            return;
-          }
-          const nextLocale = resolveLocale(target.value);
-          if (nextLocale === getCurrentLocale()) {
-            return;
-          }
-          const nextPath = buildLocalePath(nextLocale);
-          window.history.replaceState(
-            {},
-            "",
-            `${nextPath}${window.location.search}${window.location.hash}`,
-          );
-          applyTranslations();
+        practiceTypeInputs.forEach((input) => {
+          input.addEventListener("change", updateDerivedFields);
         });
-      }
+        form.querySelectorAll("input[name='language']").forEach((input) => {
+          input.addEventListener("change", () => {
+            updateVoiceLabels();
+            applyTranslations();
+            persistFormValues();
+          });
+        });
+        if (footerLocaleSelect) {
+          footerLocaleSelect.addEventListener("change", (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLSelectElement)) {
+              return;
+            }
+            const nextLocale = resolveLocale(target.value);
+            if (nextLocale === getCurrentLocale()) {
+              return;
+            }
+            const nextPath = buildLocalePath(nextLocale);
+            window.history.replaceState(
+              {},
+              "",
+              `${nextPath}${window.location.search}${window.location.hash}`,
+            );
+            applyTranslations();
+          });
+        }
+      };
+
+      void initializeForm();
 
       const setPreviewIcon = (state) => {
         if (!previewIcon) {
