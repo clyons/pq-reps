@@ -4,7 +4,7 @@ import {
   synthesizeSpeechStream,
   TtsScriptTooLargeError,
 } from "../../../services/tts.js";
-import { DEFAULT_TTS_NEWLINE_PAUSE_SECONDS } from "../../../lib/generateValidation.js";
+import { DEFAULT_TTS_NEWLINE_PAUSE_SECONDS } from "../../../services/tts.js";
 
 export const runtime = "nodejs";
 
@@ -111,20 +111,20 @@ export async function POST(request: Request) {
 
   try {
     console.info("AI-generated audio notice: This endpoint returns AI-generated speech.");
+    const newlinePauseSeconds =
+      payload.ttsNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS;
     const ttsResult = wantsAudioStream
       ? await synthesizeSpeechStream({
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
-          newlinePauseSeconds:
-            payload.ttsNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
+          newlinePauseSeconds,
         })
       : await synthesizeSpeech({
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
-          newlinePauseSeconds:
-            payload.ttsNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
+          newlinePauseSeconds,
         });
 
     const downloadFilename = buildDownloadFilename({
