@@ -76,8 +76,9 @@ const server = http.createServer(async (req, res) => {
   const startTime = Date.now();
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const requiresAuth =
-    url.pathname === "/version" ||
-    (url.pathname.startsWith("/api/") && url.pathname !== "/api/scenarios");
+    Boolean(apiKey) &&
+    (url.pathname === "/version" ||
+      (url.pathname.startsWith("/api/") && url.pathname !== "/api/scenarios"));
   res.setHeader("X-Request-Id", requestId);
   res.on("finish", () => {
     if (url.pathname.startsWith("/api/")) {
