@@ -139,6 +139,7 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.invalid_json": "Request body must be valid JSON.",
     "errors.invalid_output_mode": "Output mode must be one of: text, audio, text-audio.",
     "errors.tts_failure": "Failed to synthesize audio.",
+    "errors.missing_openai_key": "OpenAI API key is not configured.",
     "errors.invalid_tts_payload": "Request body must include script, language, and voice.",
     "errors.script_too_large": "Script exceeds the maximum length supported for TTS.",
     "errors.method_not_allowed": "Only POST requests are supported.",
@@ -289,6 +290,7 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.invalid_output_mode":
       "El modo de salida debe ser uno de: text, audio, text-audio.",
     "errors.tts_failure": "No se pudo sintetizar el audio.",
+    "errors.missing_openai_key": "La clave de API de OpenAI no está configurada.",
     "errors.invalid_tts_payload":
       "El cuerpo de la solicitud debe incluir script, language y voice.",
     "errors.script_too_large":
@@ -442,6 +444,7 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.invalid_output_mode":
       "Le mode de sortie doit être l'un de : text, audio, text-audio.",
     "errors.tts_failure": "Échec de la synthèse audio.",
+    "errors.missing_openai_key": "La clé API OpenAI n’est pas configurée.",
     "errors.invalid_tts_payload":
       "Le corps de la requête doit inclure script, language et voice.",
     "errors.script_too_large":
@@ -595,6 +598,7 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.invalid_output_mode":
       "Der Ausgabemodus muss einer der folgenden sein: text, audio, text-audio.",
     "errors.tts_failure": "Audio konnte nicht synthetisiert werden.",
+    "errors.missing_openai_key": "Der OpenAI-API-Schlüssel ist nicht konfiguriert.",
     "errors.invalid_tts_payload":
       "Der Anfragetext muss script, language und voice enthalten.",
     "errors.script_too_large": "Das Skript überschreitet die maximale TTS-Länge.",

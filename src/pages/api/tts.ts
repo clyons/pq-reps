@@ -91,6 +91,10 @@ const isValidPayload = (payload: unknown): payload is TtsPayload => {
   return true;
 };
 
+const isMissingOpenAiKeyError = (error: unknown) =>
+  error instanceof Error &&
+  error.message.includes("Missing OPENAI_API_KEY environment variable.");
+
 export default async function handler(
   req: IncomingMessage,
   res: ServerResponse,
@@ -190,6 +194,15 @@ export default async function handler(
             segmentCount: error.segmentCount,
             charCount: error.charCount,
           },
+        },
+      });
+      return;
+    }
+    if (isMissingOpenAiKeyError(error)) {
+      sendJson(res, 500, {
+        error: {
+          code: "missing_openai_key",
+          message: translate(locale, "errors.missing_openai_key"),
         },
       });
       return;
