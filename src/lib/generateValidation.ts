@@ -149,6 +149,15 @@ export function validateGenerateConfig(
       : typeof newlinePauseSecondsValue === "string" && newlinePauseSecondsValue.trim() !== ""
         ? Number.parseFloat(newlinePauseSecondsValue)
         : undefined;
+  const customScenarioLineValue = (payload as Record<string, unknown>).customScenarioLine;
+  const parsedCustomScenarioLine =
+    typeof customScenarioLineValue === "string"
+      ? customScenarioLineValue.trim()
+      : undefined;
+  const normalizedCustomScenarioLine =
+    parsedCustomScenarioLine && parsedCustomScenarioLine.length > 0
+      ? parsedCustomScenarioLine
+      : undefined;
 
   const scenario = config.scenarioId ? getScenarioById(config.scenarioId) : undefined;
   if (config.scenarioId && !scenario) {
@@ -186,6 +195,7 @@ export function validateGenerateConfig(
       scenarioDurationConfig?.normalizationFrequency ?? config.normalizationFrequency,
     closingStyle: scenarioDurationConfig?.closingStyle ?? config.closingStyle,
     senseRotation: scenarioSenseRotation ?? config.senseRotation,
+    customScenarioLine: normalizedCustomScenarioLine ?? config.customScenarioLine,
   } as Partial<GenerateConfig> & { scenarioId?: ScenarioId };
 
   if (
@@ -506,6 +516,52 @@ export function validateGenerateConfig(
     };
   }
 
+  if (resolvedConfig.customScenarioLine !== undefined) {
+    if (
+      CUSTOM_SCENARIO_URL_PATTERN.test(resolvedConfig.customScenarioLine) ||
+      CUSTOM_SCENARIO_DISALLOWED_TERMS.some((pattern) =>
+        pattern.test(resolvedConfig.customScenarioLine ?? ""),
+      )
+    ) {
+      return {
+        ok: false,
+        error: {
+          error: {
+            code: "custom_scenario_line_disallowed",
+            message: translate(locale, "errors.custom_scenario_line_disallowed"),
+          },
+        },
+      };
+    }
+
+    if (CUSTOM_SCENARIO_INVALID_CHAR_PATTERN.test(resolvedConfig.customScenarioLine)) {
+      return {
+        ok: false,
+        error: {
+          error: {
+            code: "invalid_custom_scenario_line",
+            message: translate(locale, "errors.invalid_custom_scenario_line"),
+          },
+        },
+      };
+    }
+
+    if (resolvedConfig.customScenarioLine.length > MAX_CUSTOM_SCENARIO_LENGTH) {
+      return {
+        ok: false,
+        error: {
+          error: {
+            code: "custom_scenario_line_too_long",
+            message: translate(locale, "errors.custom_scenario_line_too_long", {
+              max: MAX_CUSTOM_SCENARIO_LENGTH,
+            }),
+            details: { max: MAX_CUSTOM_SCENARIO_LENGTH },
+          },
+        },
+      };
+    }
+  }
+
   if (
     (resolvedConfig.durationMinutes === 1 || resolvedConfig.durationMinutes === 2) &&
     resolvedConfig.silenceProfile === "extended_silence"
@@ -626,6 +682,7 @@ export function validateGenerateConfig(
         languages: resolvedConfig.languages,
         audience: resolvedConfig.audience,
         voiceStyle: resolvedConfig.voiceStyle,
+        customScenarioLine: resolvedConfig.customScenarioLine,
         ttsNewlinePauseSeconds:
           parsedNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
       },
