@@ -23,7 +23,7 @@ export type TtsStreamResponse = {
   inputScript: string;
 };
 
-export const MAX_TTS_SEGMENTS = 32;
+export const MAX_TTS_SEGMENTS = 64;
 export const MAX_TTS_CHARS = 4000;
 export const TTS_SYSTEM_PROMPT = [
   "You are delivering a Positive Intelligence (PQ) Reps script as a trained PQ Coach.",
@@ -126,6 +126,41 @@ const tokenizeScript = (script: string) => {
   }
 
   return tokens;
+};
+
+const splitTextToken = (text: string, maxChars: number) => {
+  if (text.length <= maxChars) {
+    return [text];
+  }
+
+  const words = text.split(/\s+/).filter(Boolean);
+  const chunks: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= maxChars) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) {
+      chunks.push(current);
+      current = word;
+      continue;
+    }
+
+    for (let index = 0; index < word.length; index += maxChars) {
+      chunks.push(word.slice(index, index + maxChars));
+    }
+    current = "";
+  }
+
+  if (current) {
+    chunks.push(current);
+  }
+
+  return chunks;
 };
 
 const parseWav = (audio: Buffer): WavFormat => {
@@ -347,17 +382,26 @@ const prepareTtsRequest = (request: TtsRequest) => {
     throw new Error("Script is empty after parsing pause markers.");
   }
 
-  const textSegments = tokens.filter(
+  const expandedTokens = tokens.flatMap((token) => {
+    if (token.type !== "text") {
+      return [token];
+    }
+    return splitTextToken(token.value, MAX_TTS_CHARS).map((value) => ({
+      type: "text" as const,
+      value,
+    }));
+  });
+
+  const textSegments = expandedTokens.filter(
     (token): token is { type: "text"; value: string } => token.type === "text",
   );
-  const totalChars = textSegments.reduce((sum, token) => sum + token.value.length, 0);
 
-  if (textSegments.length > MAX_TTS_SEGMENTS || totalChars > MAX_TTS_CHARS) {
+  if (textSegments.length > MAX_TTS_SEGMENTS) {
     throw new TtsScriptTooLargeError({
       maxSegments: MAX_TTS_SEGMENTS,
       maxChars: MAX_TTS_CHARS,
       segmentCount: textSegments.length,
-      charCount: totalChars,
+      charCount: Math.max(0, ...textSegments.map((segment) => segment.value.length)),
     });
   }
 
@@ -365,7 +409,7 @@ const prepareTtsRequest = (request: TtsRequest) => {
     apiKey,
     voice,
     inputScript,
-    tokens,
+    tokens: expandedTokens,
   };
 };
 
