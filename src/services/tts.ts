@@ -92,6 +92,15 @@ const resolveVoice = (voice: string | undefined, language?: string): string => {
   return LANGUAGE_VOICE_MAP[language ?? ""] ?? DEFAULT_VOICE;
 };
 
+type ScriptToken = { type: "text"; value: string } | { type: "pause"; value: number };
+
+type PreparedTtsRequest = {
+  apiKey: string;
+  voice: string;
+  inputScript: string;
+  tokens: ScriptToken[];
+};
+
 const PAUSE_MARKER_REGEX = /\[pause:(\d+(?:\.\d+)?)\]/gi;
 
 const insertNewlinePauses = (script: string, pauseSeconds?: number): string => {
@@ -102,8 +111,8 @@ const insertNewlinePauses = (script: string, pauseSeconds?: number): string => {
   return normalizedScript.replace(/\r?\n+/g, `\n[pause:${pauseSeconds}]\n`);
 };
 
-const tokenizeScript = (script: string) => {
-  const tokens: Array<{ type: "text"; value: string } | { type: "pause"; value: number }> = [];
+const tokenizeScript = (script: string): ScriptToken[] => {
+  const tokens: ScriptToken[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -357,7 +366,7 @@ const synthesizeTtsSegment = async (
   throw lastError ?? new Error("OpenAI request failed.");
 };
 
-const prepareTtsRequest = (request: TtsRequest) => {
+const prepareTtsRequest = (request: TtsRequest): PreparedTtsRequest => {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     throw new Error("Missing OPENAI_API_KEY environment variable.");
@@ -382,14 +391,16 @@ const prepareTtsRequest = (request: TtsRequest) => {
     throw new Error("Script is empty after parsing pause markers.");
   }
 
-  const expandedTokens = tokens.flatMap((token) => {
+  const expandedTokens: ScriptToken[] = tokens.flatMap((token): ScriptToken[] => {
     if (token.type !== "text") {
       return [token];
     }
-    return splitTextToken(token.value, MAX_TTS_CHARS).map((value) => ({
-      type: "text" as const,
-      value,
-    }));
+    return splitTextToken(token.value, MAX_TTS_CHARS).map(
+      (value): ScriptToken => ({
+        type: "text",
+        value,
+      }),
+    );
   });
 
   const textSegments = expandedTokens.filter(
