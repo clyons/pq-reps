@@ -70,6 +70,7 @@ type WavFormat = {
   bitsPerSample: number;
 };
 
+export const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
 const DEFAULT_VOICE = "alloy";
 const SUPPORTED_VOICES = new Set(["alloy", "ash", "nova", "onyx"]);
 

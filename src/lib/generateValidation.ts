@@ -18,6 +18,7 @@ import {
   derivePracticeConfig,
   deriveSenseRotation,
 } from "./practiceConfig.js";
+import { DEFAULT_TTS_NEWLINE_PAUSE_SECONDS } from "../services/tts.js";
 import { DEFAULT_LOCALE, type Locale, translate } from "./i18n/index.js";
 
 export type ErrorResponse = {
@@ -29,6 +30,7 @@ export type ErrorResponse = {
 };
 
 export type OutputMode = "text" | "audio" | "text-audio";
+export { DEFAULT_TTS_NEWLINE_PAUSE_SECONDS };
 
 type ValidationResult = {
   ok: true;
@@ -42,7 +44,6 @@ type ValidationResult = {
   error: ErrorResponse;
 };
 
-export const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
 const MAX_CUSTOM_SCENARIO_LENGTH = 120;
 const CUSTOM_SCENARIO_INVALID_CHAR_PATTERN = /[^\p{L}\p{N} .,'’"?!:;()&-]/u;
 const CUSTOM_SCENARIO_URL_PATTERN = /(https?:\/\/|www\.)/i;
