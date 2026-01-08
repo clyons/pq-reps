@@ -8,7 +8,7 @@ import {
   DEFAULT_LOCALE,
   resolveLocaleFromPayload,
   translate,
-} from "../../lib/i18n.js";
+} from "../../lib/i18n/index.js";
 import { logger } from "../../lib/logger.js";
 
 type TtsPayload = {

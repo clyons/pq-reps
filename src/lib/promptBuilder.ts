@@ -326,6 +326,45 @@ const templates: Record<Language, Template> = {
     },
     closingLine: "Notice how your body feels before ending the practice.",
   },
+  es: {
+    sectionTitles: {
+      setup: "Preparación",
+      practice: "Práctica",
+      closing: "Cierre",
+    },
+    senseFocus: (sense) => {
+      const labels: Record<Sense, string> = {
+        sight: "la vista",
+        sound: "el sonido",
+        touch: "el tacto",
+        smell: "el olfato",
+        taste: "el gusto",
+      };
+      return `Enfoca tu atención en ${labels[sense]}.`;
+    },
+    eyesInstruction: (eyes) => {
+      if (eyes === "closed") {
+        return "Cierra los ojos suavemente.";
+      }
+      if (eyes === "soft") {
+        return "Mantén una mirada suave.";
+      }
+      return "Mantén los ojos abiertos.";
+    },
+    durationLine: (duration) => {
+      if (duration.mode === "repetitions") {
+        const pause = duration.pauseSeconds
+          ? ` Haz una pausa de ${duration.pauseSeconds} segundos entre repeticiones.`
+          : "";
+        return `Repite esto ${duration.count} veces.${pause}`;
+      }
+      const pause = duration.pauseSeconds
+        ? ` Haz una pausa de ${duration.pauseSeconds} segundos entre rondas.`
+        : "";
+      return `Continúa durante ${duration.seconds} segundos.${pause}`;
+    },
+    closingLine: "Observa cómo se siente tu cuerpo antes de terminar la práctica.",
+  },
 };
 
 export const buildPromptOutline = (config: PromptConfig): PromptOutline => {

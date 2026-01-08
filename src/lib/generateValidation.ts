@@ -18,7 +18,7 @@ import {
   derivePracticeConfig,
   deriveSenseRotation,
 } from "./practiceConfig.js";
-import { DEFAULT_LOCALE, type Locale, translate } from "./i18n.js";
+import { DEFAULT_LOCALE, type Locale, translate } from "./i18n/index.js";
 
 export type ErrorResponse = {
   error: {
@@ -141,7 +141,7 @@ export function validateGenerateConfig(
     scenarioId?: ScenarioId;
   };
 
-  const newlinePauseSecondsValue = config.ttsNewlinePauseSeconds;
+  const newlinePauseSecondsValue = (payload as Record<string, unknown>).ttsNewlinePauseSeconds;
   const parsedNewlinePauseSeconds =
     typeof newlinePauseSecondsValue === "number"
       ? newlinePauseSecondsValue

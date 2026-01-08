@@ -6,18 +6,18 @@ import {
   type PracticeType,
   type ScenarioId,
   SUPPORTED_LANGUAGES,
-} from "../lib/promptBuilder";
+} from "../lib/promptBuilder.js";
 import {
   deriveDurationConfig,
   derivePracticeConfig,
   deriveSenseRotation,
-} from "../lib/practiceConfig";
+} from "../lib/practiceConfig.js";
 import {
   formatMinutes,
   resolveLocale,
   translate,
   type Locale,
-} from "../lib/i18n";
+} from "../lib/i18n/index.js";
 
 type GenerationResult = {
   audioStream?: MediaStream;

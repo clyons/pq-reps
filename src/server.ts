@@ -8,7 +8,7 @@ import generateHandler from "./pages/api/generate.js";
 import scenariosHandler from "./pages/api/scenarios.js";
 import ttsHandler from "./pages/api/tts.js";
 import voicePreviewHandler from "./pages/api/voice-preview.js";
-import { DEFAULT_LOCALE, translate } from "./lib/i18n.js";
+import { DEFAULT_LOCALE, translate } from "./lib/i18n/index.js";
 import { logger } from "./lib/logger.js";
 import { createRateLimiter } from "./lib/rateLimiter.js";
 
