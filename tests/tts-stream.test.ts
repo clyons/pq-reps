@@ -129,7 +129,8 @@ test("streaming TTS preserves pause markers and newline pauses", async (t) => {
   const data = parseWavData(output);
   const firstPauseBytes = getPauseBytes(0.25);
   const newlinePauseBytes = getPauseBytes(0.5);
-  const expectedLength = firstPauseBytes + audioData.length + newlinePauseBytes + audioData.length;
+  const expectedLength =
+    firstPauseBytes + audioData.length + newlinePauseBytes + audioData.length + newlinePauseBytes;
 
   assert.equal(data.length, expectedLength);
 
@@ -146,6 +147,87 @@ test("streaming TTS preserves pause markers and newline pauses", async (t) => {
 
   const secondAudio = data.subarray(secondPauseStart + newlinePauseBytes);
   assert.ok(secondAudio.equals(audioData));
+
+  const trailingPauseStart = secondPauseStart + newlinePauseBytes + audioData.length;
+  const trailingPause = data.subarray(trailingPauseStart);
+  assert.ok(trailingPause.equals(Buffer.alloc(newlinePauseBytes, 0)));
+});
+
+test("streaming API applies default newline pauses when omitted", async (t) => {
+  const wavBuffer = buildFixtureWav();
+  const audioData = wavBuffer.subarray(44);
+  setupTtsFixture(t, wavBuffer);
+
+  const payload = {
+    script: "Hello\nWorld",
+    language: "en",
+    voice: "alloy",
+  };
+
+  const req = createMockRequest(payload, { "x-tts-streaming": "1" });
+  const { res } = createMockResponse();
+
+  await handler(req, res);
+  const output = await readResponseBody(res);
+  const data = parseWavData(output);
+
+  const pauseBytes = getPauseBytes(DEFAULT_TTS_NEWLINE_PAUSE_SECONDS);
+  const expectedLength = audioData.length * 2 + pauseBytes * 2;
+  assert.equal(data.length, expectedLength);
+
+  const firstAudio = data.subarray(0, audioData.length);
+  assert.ok(firstAudio.equals(audioData));
+
+  const firstPauseStart = audioData.length;
+  const firstPause = data.subarray(firstPauseStart, firstPauseStart + pauseBytes);
+  assert.ok(firstPause.equals(Buffer.alloc(pauseBytes, 0)));
+});
+
+test("streaming API respects an explicit zero newline pause", async (t) => {
+  const wavBuffer = buildFixtureWav();
+  const audioData = wavBuffer.subarray(44);
+  setupTtsFixture(t, wavBuffer);
+
+  const payload = {
+    script: "Hello\nWorld",
+    language: "en",
+    voice: "alloy",
+    ttsNewlinePauseSeconds: 0,
+  };
+
+  const req = createMockRequest(payload, { "x-tts-streaming": "1" });
+  const { res } = createMockResponse();
+
+  await handler(req, res);
+  const output = await readResponseBody(res);
+  const data = parseWavData(output);
+
+  assert.equal(data.length, audioData.length);
+  assert.ok(data.equals(audioData));
+});
+
+test("streaming API applies a custom newline pause value", async (t) => {
+  const wavBuffer = buildFixtureWav();
+  const audioData = wavBuffer.subarray(44);
+  setupTtsFixture(t, wavBuffer);
+
+  const payload = {
+    script: "Hello\nWorld",
+    language: "en",
+    voice: "alloy",
+    ttsNewlinePauseSeconds: 0.75,
+  };
+
+  const req = createMockRequest(payload, { "x-tts-streaming": "1" });
+  const { res } = createMockResponse();
+
+  await handler(req, res);
+  const output = await readResponseBody(res);
+  const data = parseWavData(output);
+
+  const pauseBytes = getPauseBytes(0.75);
+  const expectedLength = audioData.length * 2 + pauseBytes * 2;
+  assert.equal(data.length, expectedLength);
 });
 
 test("streaming API applies default newline pauses when omitted", async (t) => {
