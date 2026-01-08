@@ -5,6 +5,7 @@ import http from "http";
 import path from "path";
 import { URL, fileURLToPath } from "url";
 import generateHandler from "./pages/api/generate";
+import scenariosHandler from "./pages/api/scenarios";
 import ttsHandler from "./pages/api/tts";
 import voicePreviewHandler from "./pages/api/voice-preview";
 import { DEFAULT_LOCALE, translate } from "./lib/i18n";
@@ -75,7 +76,8 @@ const server = http.createServer(async (req, res) => {
   const startTime = Date.now();
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const requiresAuth =
-    url.pathname === "/version" || url.pathname.startsWith("/api/");
+    url.pathname === "/version" ||
+    (url.pathname.startsWith("/api/") && url.pathname !== "/api/scenarios");
   res.setHeader("X-Request-Id", requestId);
   res.on("finish", () => {
     if (url.pathname.startsWith("/api/")) {
@@ -140,6 +142,11 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === "/api/generate") {
     await generateHandler(req, res);
+    return;
+  }
+
+  if (url.pathname === "/api/scenarios") {
+    await scenariosHandler(req, res);
     return;
   }
 
