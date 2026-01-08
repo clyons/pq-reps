@@ -197,6 +197,6 @@ const server = http.createServer(async (req, res) => {
   );
 });
 
-server.listen(port, () => {
+server.listen(port, "0.0.0.0", () => {
   logger.info("server_listening", { port });
 });
