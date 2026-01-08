@@ -3,13 +3,13 @@ import {
   synthesizeSpeech,
   synthesizeSpeechStream,
   TtsScriptTooLargeError,
-} from "../../services/tts";
+} from "../../services/tts.js";
 import {
   DEFAULT_LOCALE,
   resolveLocaleFromPayload,
   translate,
-} from "../../lib/i18n";
-import { logger } from "../../lib/logger";
+} from "../../lib/i18n.js";
+import { logger } from "../../lib/logger.js";
 
 type TtsPayload = {
   script: string;
