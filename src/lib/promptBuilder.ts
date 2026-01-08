@@ -1,4 +1,4 @@
-import { Duration, Eyes, Language, PromptConfig, Sense } from "./types";
+import { Duration, Eyes, Language, PromptConfig, Sense } from "./types.js";
 
 export type PracticeMode =
   | "tactile"

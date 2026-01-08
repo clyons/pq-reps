@@ -12,13 +12,13 @@ import {
   SenseRotation,
   SUPPORTED_LANGUAGES,
   getScenarioById,
-} from "./promptBuilder";
+} from "./promptBuilder.js";
 import {
   deriveDurationConfig,
   derivePracticeConfig,
   deriveSenseRotation,
-} from "./practiceConfig";
-import { DEFAULT_LOCALE, type Locale, translate } from "./i18n";
+} from "./practiceConfig.js";
+import { DEFAULT_LOCALE, type Locale, translate } from "./i18n.js";
 
 export type ErrorResponse = {
   error: {

@@ -13,10 +13,10 @@ import {
   SilenceProfile,
   SenseRotation,
   getScenarioById,
-} from "../../../lib/promptBuilder";
-import { OutputMode, validateGenerateConfig } from "../../../lib/generateValidation";
-import { generateScript, SCRIPT_SYSTEM_PROMPT } from "../../../services/script";
-import { synthesizeSpeech, synthesizeSpeechStream, TTS_SYSTEM_PROMPT } from "../../../services/tts";
+} from "../../../lib/promptBuilder.js";
+import { OutputMode, validateGenerateConfig } from "../../../lib/generateValidation.js";
+import { generateScript, SCRIPT_SYSTEM_PROMPT } from "../../../services/script.js";
+import { synthesizeSpeech, synthesizeSpeechStream, TTS_SYSTEM_PROMPT } from "../../../services/tts.js";
 
 export const runtime = "nodejs";
 

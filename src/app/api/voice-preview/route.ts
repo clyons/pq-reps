@@ -1,8 +1,8 @@
 import { createHash } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
-import { synthesizeSpeech } from "../../../services/tts";
-import { getVoicePreviewScript } from "../../../services/voicePreview";
+import { synthesizeSpeech } from "../../../services/tts.js";
+import { getVoicePreviewScript } from "../../../services/voicePreview.js";
 
 type VoicePreviewRequest = {
   language?: string;
