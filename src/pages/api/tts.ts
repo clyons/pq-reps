@@ -9,6 +9,7 @@ import {
   resolveLocaleFromPayload,
   translate,
 } from "../../lib/i18n/index.js";
+import { DEFAULT_TTS_NEWLINE_PAUSE_SECONDS } from "../../lib/generateValidation.js";
 import { logger } from "../../lib/logger.js";
 
 type TtsPayload = {
@@ -146,13 +147,15 @@ export default async function handler(
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
-          newlinePauseSeconds: payload.ttsNewlinePauseSeconds,
+          newlinePauseSeconds:
+            payload.ttsNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
         })
       : await synthesizeSpeech({
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
-          newlinePauseSeconds: payload.ttsNewlinePauseSeconds,
+          newlinePauseSeconds:
+            payload.ttsNewlinePauseSeconds ?? DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
         });
 
     if ("stream" in ttsResult) {
