@@ -9,7 +9,7 @@
     "start": "node --enable-source-maps dist/server.js",
     "test": "node --test --import tsx tests/generate-api.test.ts",
     "logs": "./scripts/logs.sh",
-    "logs:6h": "./scripts/logs.sh 6h
+    "logs:6h": "./scripts/logs.sh 6h"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
