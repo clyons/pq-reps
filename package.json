@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc --outDir dist",
+    "build": "tsc -p tsconfig.server.json",
     "start": "node --enable-source-maps dist/server.js",
     "test": "node --test --import tsx tests/generate-api.test.ts"
   },
