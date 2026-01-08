@@ -108,6 +108,7 @@ const SECTION_TABS: { id: SectionId; labelKey: string }[] = [
 ];
 
 const SECTION_STORAGE_KEY = "pq-reps-active-section";
+const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
 
 const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
   still_eyes_closed: "form.practice_type.still_eyes_closed",
@@ -823,6 +824,7 @@ export default function HomePage() {
       script,
       language: formState.language,
       voice: voiceStyle,
+      ttsNewlinePauseSeconds: DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
     });
 
     const requestJson = async (outputMode: "text" | "text-audio") => {
