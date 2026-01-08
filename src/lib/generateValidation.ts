@@ -42,7 +42,7 @@ type ValidationResult = {
   error: ErrorResponse;
 };
 
-const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
+export const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
 const MAX_CUSTOM_SCENARIO_LENGTH = 120;
 const CUSTOM_SCENARIO_INVALID_CHAR_PATTERN = /[^\p{L}\p{N} .,'’"?!:;()&-]/u;
 const CUSTOM_SCENARIO_URL_PATTERN = /(https?:\/\/|www\.)/i;
