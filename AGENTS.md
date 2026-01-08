@@ -30,6 +30,15 @@ This file documents how humans and automated agents should work in this repo.
 - `npm run dev` uses `tsx watch`, so TypeScript changes are picked up live.
 - The API supports both JSON responses and raw `audio/wav`; ensure content negotiation remains intact.
 
+## Deployment summary (short)
+- Platform: Google Cloud Run (us-east1).
+- Runtime: Node.js 20, Docker-based.
+- Scaling: Up to 3 instances, concurrency 5 per instance.
+- Secrets: Injected via Secret Manager (`OPENAI_API_KEY`, `API_KEY`).
+- Port binding: `process.env.PORT`, bind to `0.0.0.0`.
+- Auth: Shared API key (not IAM).
+- Stateless: No shared in-memory state across instances.
+
 ## PR/commit guidance
 - Use concise, imperative commit messages (e.g., "Add AGENTS guidance").
 - Summarize user-visible changes in PR descriptions.

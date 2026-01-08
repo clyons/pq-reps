@@ -176,6 +176,59 @@ npm run build
 npm start
 ```
 
+## Deployment / Production Environment
+
+### Runtime
+- Platform: Google Cloud Run
+- Region: us-east1
+- Runtime: Node.js 20 (Docker-based)
+- Execution model: Stateless HTTP service with scale-to-zero enabled
+- Each Cloud Run instance runs the same Node server; instances are created and
+  destroyed automatically based on incoming traffic.
+
+### Scaling & Limits
+- Max instances: 3
+- Concurrency: 5 requests per instance (maximum ~15 concurrent requests total)
+- Request timeout: 600s (10 min)
+- Long-running audio generation requests occupy a concurrency slot for their
+  duration.
+
+### Networking
+- The server must bind to `0.0.0.0` and read the port from `process.env.PORT`.
+- Cloud Run injects `PORT=8080` at runtime.
+
+### Secrets & Configuration
+- Secrets are provided via Google Secret Manager, not `.env` files.
+- Injected environment variables:
+  - `OPENAI_API_KEY` — OpenAI API access (used only for OpenAI calls).
+  - `API_KEY` — Shared secret used to authenticate incoming requests.
+- `.env` / `.env.local` are local development only and are ignored in production.
+
+### Authentication
+- Endpoints are protected via a shared API key (`API_KEY`) supplied by the
+  client (e.g. header-based auth).
+- Cloud Run IAM is not used for request authentication.
+
+### Build & Deploy
+- The service is built via a Dockerfile (not buildpacks).
+- Deployment command:
+  ```bash
+  gcloud run deploy pq-reps --source . --region us-east1
+  ```
+- Production runs `node dist/server.js`.
+
+### Observability
+- Logs are written to stdout/stderr and available via:
+  ```bash
+  gcloud run services logs read pq-reps --region us-east1
+  ```
+- Logs may interleave across multiple instances.
+
+### Operational Assumptions
+- The service is stateless.
+- No in-memory state is shared across requests or instances.
+- Long audio sessions may require increased timeout or chunking.
+
 ## Notes
 - The API defaults to OpenAI TTS voice `alloy`, with language-based fallbacks (`en: alloy`, `es: nova`, `fr: nova`, `de: alloy`).
 - `voiceStyle` must be one of: `alloy`, `ash`, `nova`, `onyx`.
