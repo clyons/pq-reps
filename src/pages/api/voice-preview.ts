@@ -2,14 +2,14 @@ import { createHash } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
 import type { IncomingMessage, ServerResponse } from "http";
-import { synthesizeSpeech } from "../../services/tts";
-import { getVoicePreviewScript } from "../../services/voicePreview";
+import { synthesizeSpeech } from "../../services/tts.js";
+import { getVoicePreviewScript } from "../../services/voicePreview.js";
 import {
   DEFAULT_LOCALE,
   resolveLocaleFromPayload,
   translate,
-} from "../../lib/i18n";
-import { logger } from "../../lib/logger";
+} from "../../lib/i18n/index.js";
+import { logger } from "../../lib/logger.js";
 
 type VoicePreviewRequest = {
   language?: string;

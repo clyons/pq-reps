@@ -3,7 +3,7 @@ import {
   synthesizeSpeech,
   synthesizeSpeechStream,
   TtsScriptTooLargeError,
-} from "../../../services/tts";
+} from "../../../services/tts.js";
 
 export const runtime = "nodejs";
 

@@ -9,7 +9,7 @@ import {
   PracticeType,
   SenseRotation,
   SilenceProfile,
-} from "./promptBuilder";
+} from "./promptBuilder.js";
 
 export type PracticeConfig = {
   practiceMode: PracticeMode;

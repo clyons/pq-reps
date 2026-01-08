@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { buildPrompt, buildPromptOutline } from "../promptBuilder";
-import { Eyes, Sense } from "../types";
+import { buildPrompt, buildPromptOutline } from "../promptBuilder.js";
+import { Eyes, Sense } from "../types.js";
 
 const senses: Sense[] = ["sight", "sound", "touch", "smell", "taste"];
 const eyesStates: Eyes[] = ["open", "closed", "soft"];

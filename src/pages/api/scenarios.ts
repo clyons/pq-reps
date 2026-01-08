@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "http";
-import { DEFAULT_LOCALE, translate } from "../../lib/i18n";
-import { SCENARIOS } from "../../lib/promptBuilder";
+import { DEFAULT_LOCALE, translate } from "../../lib/i18n/index.js";
+import { SCENARIOS } from "../../lib/promptBuilder.js";
 
 type ScenarioResponse = {
   id: string;
