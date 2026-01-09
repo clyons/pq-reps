@@ -75,10 +75,53 @@ function isPauseOnlyLine(line: string): boolean {
   return !Number.isNaN(value);
 }
 
+function getPauseValue(line: string): number | null {
+  const trimmed = line.trim();
+  const match = trimmed.match(/^\[pause:([^\]]+)\]$/i);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isNaN(value) ? null : value;
+}
+
 function stripPauseTokens(text: string): string {
   return text.replace(/\[pause:[^\]]+\]/gi, '').trim();
 }
 
+function buildParagraphs(lines: string[]): string[] {
+  const paragraphs: string[] = [];
+  let current: string[] = [];
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (current.length > 0) {
+        paragraphs.push(current.join(' '));
+        current = [];
+      }
+      return;
+    }
+
+    const pauseValue = getPauseValue(line);
+    if (pauseValue !== null) {
+      if (isIntentionalPause(pauseValue) && current.length > 0) {
+        paragraphs.push(current.join(' '));
+        current = [];
+      }
+      return;
+    }
+
+    current.push(trimmed);
+  });
+
+  if (current.length > 0) {
+    paragraphs.push(current.join(' '));
+  }
+
+  return paragraphs;
+}
+
+function getClosingParagraph(paragraphs: string[], fallback: string): string {
+  return paragraphs.at(-1) ?? fallback;
 function getClosingParagraph(lines: string[], paragraphs: string[]): string {
   const lastIntentionalPauseIndex = lines.findLastIndex((line) => {
     const match = line.match(/\[pause:([^\]]+)\]/i);
@@ -111,10 +154,7 @@ export function validateScript(
   const trimmed = script.trim();
   const lines = script.split(/\r?\n/);
   const sentences = splitSentences(script);
-  const paragraphs = script
-    .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.trim())
-    .filter((paragraph) => paragraph.length > 0);
+  const paragraphs = buildParagraphs(lines);
 
   if (!trimmed) {
     addFailure(failures, 'OUTPUT_EMPTY', 'fail', 'Output is empty.', 'Line 1: <empty>');
@@ -429,7 +469,7 @@ export function validateScript(
       }
     }
 
-    const closingParagraph = getClosingParagraph(lines, paragraphs);
+    const closingParagraph = getClosingParagraph(paragraphs, script);
     const closingSentences = splitSentences(stripPauseTokens(closingParagraph));
     const lastReentryIndex = closingSentences.findLastIndex((sentence) =>
       includesAny(sentence.text, config.reentryPhrases) ||
