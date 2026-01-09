@@ -198,6 +198,47 @@ Notes:
   - `text-audio` returns JSON plus audio metadata.
 - Stream JSON by setting `Accept: text/event-stream`. The server emits `status`, `done`,
   and `error` SSE events.
+
+## Prompt drift harness
+The harness can generate scripts or validate existing outputs for the prompt drift test cases.
+
+### OpenAI provider (generate + validate)
+Run the harness against the OpenAI API by loading your `.env.local` and selecting the
+OpenAI provider:
+
+```bash
+set -a; source .env.local; set +a
+node --import tsx scripts/export-script-system-prompt.ts --out scripts/prompt-drift/system.txt
+node --import tsx scripts/harness.ts \
+  --system scripts/prompt-drift/system.txt \
+  --cases scripts/prompt-drift/test-cases.example.json \
+  --out scripts/prompt-drift/output \
+  --provider openai
+```
+
+### Mock provider (generate + validate)
+Use the mock provider to generate placeholder outputs and validate them without calling
+the OpenAI API:
+
+```bash
+node --import tsx scripts/harness.ts \
+  --system scripts/prompt-drift/system.txt \
+  --cases scripts/prompt-drift/test-cases.example.json \
+  --out scripts/prompt-drift/output \
+  --provider mock
+```
+
+### Reuse outputs (validate only)
+If outputs already exist under `scripts/prompt-drift/output/outputs`, validate them without
+generating new scripts:
+
+```bash
+node --import tsx scripts/harness.ts \
+  --system scripts/prompt-drift/system.txt \
+  --cases scripts/prompt-drift/test-cases.example.json \
+  --out scripts/prompt-drift/output \
+  --reuse-outputs
+```
 - Set `debugTtsPrompt: true` to include `ttsPrompt` in JSON responses. The UI also enables
   this in dev mode via `?dev=1`.
 - Use `ttsNewlinePauseSeconds` to insert pause markers between sentences in TTS output.
