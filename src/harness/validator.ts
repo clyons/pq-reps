@@ -120,8 +120,6 @@ function buildParagraphs(lines: string[]): string[] {
   return paragraphs;
 }
 
-function getClosingParagraph(paragraphs: string[], fallback: string): string {
-  return paragraphs.at(-1) ?? fallback;
 function getClosingParagraph(lines: string[], paragraphs: string[]): string {
   const lastIntentionalPauseIndex = lines.findLastIndex((line) => {
     const match = line.match(/\[pause:([^\]]+)\]/i);
@@ -469,7 +467,7 @@ export function validateScript(
       }
     }
 
-    const closingParagraph = getClosingParagraph(paragraphs, script);
+    const closingParagraph = getClosingParagraph(lines, paragraphs);
     const closingSentences = splitSentences(stripPauseTokens(closingParagraph));
     const lastReentryIndex = closingSentences.findLastIndex((sentence) =>
       includesAny(sentence.text, config.reentryPhrases) ||
