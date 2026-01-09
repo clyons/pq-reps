@@ -20,6 +20,14 @@ export type SilenceProfile = 'none' | 'short_pauses' | 'extended_silence';
 export type NormalizationFrequency = 'once' | 'periodic' | 'repeated';
 export type ClosingStyle = 'minimal' | 'pq_framed' | 'pq_framed_with_progression';
 export type SenseRotation = 'none' | 'guided_rotation' | 'free_choice';
+export type ScenarioId =
+  | 'calm_me_now'
+  | 'get_present_for_meeting'
+  | 'start_the_thing_im_avoiding'
+  | 'prepare_for_a_tough_conversation'
+  | 'reset_after_feedback'
+  | 'wind_down_for_sleep'
+  | 'daily_deep_reset';
 
 export interface PromptInputs {
   practiceMode: PracticeMode;
@@ -33,6 +41,12 @@ export interface PromptInputs {
   closingStyle: ClosingStyle;
   senseRotation: SenseRotation;
   language: string;
+  languages?: string[];
+  scenarioId?: ScenarioId;
+  audience?: string;
+  voiceStyle?: string;
+  customScenarioLine?: string;
+  ttsNewlinePauseSeconds?: number;
 }
 
 export interface TestCase {
