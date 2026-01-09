@@ -137,7 +137,6 @@ export const SCRIPT_SYSTEM_PROMPT = [
   "- “You can stop here.”",
   "Authority Clause",
   "- If there is a conflict between producing something pleasant and following these rules, follow the rules.",
-  "Return only the finished script text.",
 ].join("\n");
 
 export async function generateScript(
