@@ -84,7 +84,7 @@ function parseArgs(argv: string[]): CliOptions {
 function printHelp(): void {
   console.log(`\nPrompt drift harness\n\n` +
     `Usage:\n` +
-    `  node --loader tsx scripts/harness.ts \\\n` +
+    `  node --import tsx scripts/harness.ts \\\n` +
     `    --system path/to/system.txt \\\n` +
     `    --cases path/to/test-cases.json \\\n` +
     `    --out path/to/output-dir \\\n` +
