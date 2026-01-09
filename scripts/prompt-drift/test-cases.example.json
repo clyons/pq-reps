@@ -1,12 +1,12 @@
 {
   "cases": [
     {
-      "id": "case-01-touch-still-open-1m",
-      "description": "Touch focus, still, eyes open, 1 minute.",
+      "id": "case-01-touch-still-closed-1m",
+      "description": "Touch focus, still, eyes closed, 1 minute.",
       "inputs": {
         "practiceMode": "guided",
         "bodyState": "still",
-        "eyeState": "open",
+        "eyeState": "closed",
         "primarySense": "touch",
         "durationMinutes": 1,
         "labelingMode": "none",
@@ -18,12 +18,12 @@
       }
     },
     {
-      "id": "case-02-hearing-still-closed-2m",
-      "description": "Hearing focus with eyes closed, 2 minutes.",
+      "id": "case-02-hearing-still-open-2m",
+      "description": "Hearing focus with eyes open, 2 minutes.",
       "inputs": {
         "practiceMode": "guided",
         "bodyState": "still",
-        "eyeState": "closed",
+        "eyeState": "open",
         "primarySense": "hearing",
         "durationMinutes": 2,
         "labelingMode": "light",
