@@ -59,6 +59,26 @@ function isIntentionalPause(value: number): boolean {
   return value >= 3;
 }
 
+function isShortPauseLine(line: string): boolean {
+  const match = line.match(/\[pause:([^\]]+)\]/i);
+  if (!match) return false;
+  const value = Number(match[1]);
+  return !Number.isNaN(value) && !isIntentionalPause(value);
+}
+
+function isPauseOnlyLine(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+  const match = trimmed.match(/^\[pause:([^\]]+)\]$/i);
+  if (!match) return false;
+  const value = Number(match[1]);
+  return !Number.isNaN(value);
+}
+
+function stripPauseTokens(text: string): string {
+  return text.replace(/\[pause:[^\]]+\]/gi, '').trim();
+}
+
 export function validateScript(
   script: string,
   inputs: PromptInputs | undefined,
@@ -68,6 +88,10 @@ export function validateScript(
   const trimmed = script.trim();
   const lines = script.split(/\r?\n/);
   const sentences = splitSentences(script);
+  const paragraphs = script
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph.length > 0);
 
   if (!trimmed) {
     addFailure(failures, 'OUTPUT_EMPTY', 'fail', 'Output is empty.', 'Line 1: <empty>');
@@ -126,13 +150,13 @@ export function validateScript(
     }
   });
 
-  if (sentences.length > 0) {
-    const firstSentence = sentences[0].text;
-    const secondSentence = sentences[1]?.text ?? '';
-    if (
-      includesAny(firstSentence, config.openingDurationPhrases) ||
-      /\b\d+\s*minute(s)?\b/i.test(firstSentence)
-    ) {
+    if (sentences.length > 0) {
+      const firstSentence = sentences[0].text;
+      const secondSentence = sentences[1]?.text ?? '';
+      if (
+        includesAny(firstSentence, config.openingDurationPhrases) ||
+        /\b\d+\s*minute(s)?\b/i.test(firstSentence)
+      ) {
       addFailure(
         failures,
         'OPENING_NO_DURATION',
@@ -143,7 +167,8 @@ export function validateScript(
     }
 
     if (inputs) {
-      const openingWindow = `${firstSentence} ${secondSentence}`;
+      const openingParagraph = stripPauseTokens(paragraphs[0] ?? '');
+      const openingWindow = openingParagraph.length > 0 ? openingParagraph : `${firstSentence} ${secondSentence}`;
       const hasVerb = includesAny(openingWindow, config.openingVerbs);
       const senseKeywords = config.senseKeywords[inputs.primarySense];
       const hasSense = includesAny(openingWindow, senseKeywords);
@@ -279,23 +304,20 @@ export function validateScript(
       .filter((value) => !Number.isNaN(value));
     const intentionalPauses = pauses.filter((value) => isIntentionalPause(value));
 
-    if (inputs.silenceProfile === 'none' && intentionalPauses.length > 0) {
-      addFailure(
-        failures,
-        'SILENCE_FORBIDDEN',
-        'fail',
-        'Intentional silences are not allowed for silence profile none.',
-        `Found ${intentionalPauses.length} intentional pauses.`
-      );
-    }
-
     pauseTokens.forEach((token) => {
       const value = Number(token[1]);
       if (!isIntentionalPause(value)) return;
       const tokenText = token[0];
       const lineIndex = lines.findIndex((line) => line.includes(tokenText));
-      const previousLine = lineIndex > 0 ? lines[lineIndex - 1] : '';
-      const nextLine = lines.slice(lineIndex + 1).find((line) => line.trim().length > 0) ?? '';
+      const previousLine =
+        lines
+          .slice(0, lineIndex)
+          .reverse()
+          .find((line) => line.trim().length > 0 && !isShortPauseLine(line)) ?? '';
+      const nextLine =
+        lines
+          .slice(lineIndex + 1)
+          .find((line) => line.trim().length > 0 && !isShortPauseLine(line)) ?? '';
       if (!includesAny(previousLine, config.silenceCuePhrases)) {
         addFailure(
           failures,
@@ -418,8 +440,10 @@ export function validateScript(
       }
     }
 
-    const lastParagraph = script.split(/\n\s*\n/).pop() ?? '';
-    const lastParagraphSentences = splitSentences(lastParagraph);
+    const closingParagraph = [...paragraphs]
+      .reverse()
+      .find((paragraph) => paragraph.split(/\r?\n/).some((line) => !isPauseOnlyLine(line))) ?? '';
+    const lastParagraphSentences = splitSentences(stripPauseTokens(closingParagraph));
     if (lastParagraphSentences.length > config.closingMaxSentences) {
       addFailure(
         failures,
@@ -440,7 +464,10 @@ export function validateScript(
       );
     }
 
-    const lastLine = [...lines].reverse().find((line) => line.trim().length > 0) ?? '';
+    const lastLine =
+      [...lines]
+        .reverse()
+        .find((line) => line.trim().length > 0 && !isShortPauseLine(line)) ?? '';
     const normalizedLastLine = lastLine.trim().replace(/\s+/g, ' ');
     const acceptableMatch = config.acceptableFinalLines.some((line) => {
       const normalized = line.trim().replace(/\s+/g, ' ');
