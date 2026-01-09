@@ -24,7 +24,7 @@ type GenerationResult = {
   audioUrl?: string;
   downloadUrl?: string;
   script?: string;
-  ttsPrompt?: string;
+  ttsPrompt?: Record<string, unknown>;
   downloadFilename?: string;
   scriptDownloadUrl?: string;
   scriptDownloadFilename?: string;
@@ -172,6 +172,62 @@ const resolveAudioExtension = (contentType?: string) =>
 
 const resolveStreamingMimeType = (contentType: string) =>
   contentType.includes("audio/wav") ? 'audio/wav; codecs="1"' : contentType;
+
+const formatTtsPromptValue = (value: unknown) => {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  return JSON.stringify(value, null, 2);
+};
+
+const buildFormattedTtsPrompt = (
+  ttsPrompt: Record<string, unknown>,
+  labels: Record<string, string>,
+) => {
+  const sections: string[] = [];
+  const addSection = (label: string, value: unknown) => {
+    const formattedValue = formatTtsPromptValue(value);
+    if (!formattedValue) {
+      return;
+    }
+    sections.push(`${label}:\n${formattedValue}`);
+  };
+  addSection(labels.model, ttsPrompt.model);
+  addSection(labels.voice, ttsPrompt.voice);
+  addSection(labels.responseFormat, ttsPrompt.response_format);
+  addSection(labels.voiceStylePreference, ttsPrompt.voiceStylePreference);
+  addSection(labels.scriptSystemPrompt, ttsPrompt.scriptSystemPrompt);
+  addSection(labels.scriptUserPrompt, ttsPrompt.scriptUserPrompt);
+  addSection(labels.ttsSystemPrompt, ttsPrompt.ttsSystemPrompt);
+  addSection(labels.input, ttsPrompt.input);
+  return sections.join("\n\n");
+};
+
+const copyTextToClipboard = async (text: string) => {
+  if (!text) {
+    return;
+  }
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (error) {
+      console.warn("Clipboard write failed, falling back to execCommand.", error);
+    }
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "absolute";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  document.body.removeChild(textarea);
+};
 
 const parseWavHeader = (header: Uint8Array) => {
   const readString = (offset: number, length: number) =>
@@ -602,6 +658,7 @@ export default function HomePage() {
   const [showAudioInfo, setShowAudioInfo] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionId>("quick");
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [ttsPromptFormat, setTtsPromptFormat] = useState<"json" | "text">("json");
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
   const sectionTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -621,6 +678,37 @@ export default function HomePage() {
   const shouldShowResult = Boolean(
     result?.audioStream || result?.audioUrl || result?.script || result?.ttsPrompt,
   );
+
+  const ttsPromptLabels = useMemo(
+    () => ({
+      model: t("result.debug_field.model"),
+      voice: t("result.debug_field.voice"),
+      responseFormat: t("result.debug_field.response_format"),
+      voiceStylePreference: t("result.debug_field.voice_style_preference"),
+      scriptSystemPrompt: t("result.debug_field.script_system_prompt"),
+      scriptUserPrompt: t("result.debug_field.script_user_prompt"),
+      ttsSystemPrompt: t("result.debug_field.tts_system_prompt"),
+      input: t("result.debug_field.input"),
+    }),
+    [t],
+  );
+
+  const ttsPromptJson = useMemo(() => {
+    if (!result?.ttsPrompt) {
+      return "";
+    }
+    return JSON.stringify(result.ttsPrompt, null, 2);
+  }, [result?.ttsPrompt]);
+
+  const ttsPromptFormatted = useMemo(() => {
+    if (!result?.ttsPrompt) {
+      return "";
+    }
+    return buildFormattedTtsPrompt(result.ttsPrompt, ttsPromptLabels);
+  }, [result?.ttsPrompt, ttsPromptLabels]);
+
+  const ttsPromptDisplay =
+    ttsPromptFormat === "json" || !ttsPromptFormatted ? ttsPromptJson : ttsPromptFormatted;
 
   const practiceConfig = useMemo(
     () => derivePracticeConfig(formState.practiceType, formState.durationMinutes),
@@ -655,6 +743,12 @@ export default function HomePage() {
   useEffect(() => {
     window.localStorage.setItem(SECTION_STORAGE_KEY, activeSection);
   }, [activeSection]);
+
+  useEffect(() => {
+    if (result?.ttsPrompt) {
+      setTtsPromptFormat("json");
+    }
+  }, [result?.ttsPrompt]);
 
   useEffect(() => {
     return () => {
@@ -776,6 +870,10 @@ export default function HomePage() {
     }
 
     return nextErrors;
+  };
+
+  const handleCopyTtsPrompt = () => {
+    void copyTextToClipboard(ttsPromptDisplay);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -1002,20 +1100,20 @@ export default function HomePage() {
       let script: string | undefined;
       let audioUrl: string | undefined;
       let downloadUrl: string | undefined;
-      let ttsPrompt: string | undefined;
+      let ttsPrompt: Record<string, unknown> | undefined;
       let audioContentType: string | undefined;
 
       if (effectiveOutputMode === "text") {
         const jsonResult = await requestJson("text");
         script = jsonResult.script;
         if (jsonResult.ttsPrompt) {
-          ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
+          ttsPrompt = jsonResult.ttsPrompt;
         }
       } else if (effectiveOutputMode === "audio") {
         const jsonResult = await requestJson("text");
         script = jsonResult.script;
         if (jsonResult.ttsPrompt) {
-          ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
+          ttsPrompt = jsonResult.ttsPrompt;
         }
         const cleanedScript = script
           ? script.replace(/\[pause:\d+(?:\.\d+)?\]/g, "").trim()
@@ -1120,7 +1218,7 @@ export default function HomePage() {
         const extension = resolveAudioExtension(audioContentType);
         script = jsonResult.script;
         if (jsonResult.ttsPrompt) {
-          ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
+          ttsPrompt = jsonResult.ttsPrompt;
         }
         const downloadFilename = buildDownloadFilename({
           voice: voiceStyle,
@@ -1162,7 +1260,7 @@ export default function HomePage() {
         };
         script = jsonResult.script;
         if (jsonResult.ttsPrompt) {
-          ttsPrompt = JSON.stringify(jsonResult.ttsPrompt, null, 2);
+          ttsPrompt = jsonResult.ttsPrompt;
         }
         if (jsonResult.audioBase64) {
           const binary = atob(jsonResult.audioBase64);
@@ -1683,9 +1781,91 @@ export default function HomePage() {
           )}
           {result.ttsPrompt && (
             <div style={{ marginTop: "1.5rem" }}>
-              <h3 style={{ marginBottom: "0.5rem" }}>
-                {t("result.debug_title")}
-              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: "0.75rem",
+                  flexWrap: "wrap",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                <h3 style={{ margin: 0 }}>{t("result.debug_title")}</h3>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <div
+                    role="group"
+                    aria-label={t("result.debug_format")}
+                    style={{
+                      display: "flex",
+                      gap: "0.35rem",
+                      background: BRAND_COLORS.neutral.grayMid,
+                      borderRadius: 999,
+                      padding: "0.25rem",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setTtsPromptFormat("json")}
+                      aria-pressed={ttsPromptFormat === "json"}
+                      style={{
+                        padding: "0.4rem 0.9rem",
+                        borderRadius: 999,
+                        border: "none",
+                        cursor: "pointer",
+                        background:
+                          ttsPromptFormat === "json"
+                            ? BRAND_COLORS.neutral.black
+                            : BRAND_COLORS.neutral.grayMid,
+                        color:
+                          ttsPromptFormat === "json"
+                            ? BRAND_COLORS.neutral.grayBase
+                            : BRAND_COLORS.neutral.black,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {t("result.debug_format_json")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTtsPromptFormat("text")}
+                      aria-pressed={ttsPromptFormat === "text"}
+                      style={{
+                        padding: "0.4rem 0.9rem",
+                        borderRadius: 999,
+                        border: "none",
+                        cursor: "pointer",
+                        background:
+                          ttsPromptFormat === "text"
+                            ? BRAND_COLORS.neutral.black
+                            : BRAND_COLORS.neutral.grayMid,
+                        color:
+                          ttsPromptFormat === "text"
+                            ? BRAND_COLORS.neutral.grayBase
+                            : BRAND_COLORS.neutral.black,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {t("result.debug_format_text")}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyTtsPrompt}
+                    style={{
+                      padding: "0.45rem 1rem",
+                      borderRadius: 999,
+                      border: "none",
+                      cursor: "pointer",
+                      background: BRAND_COLORS.neutral.grayMid,
+                      color: BRAND_COLORS.neutral.black,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {t("result.debug_copy")}
+                  </button>
+                </div>
+              </div>
               <pre
                 style={{
                   background: BRAND_COLORS.neutral.black,
@@ -1697,7 +1877,7 @@ export default function HomePage() {
                   wordBreak: "break-word",
                 }}
               >
-                {result.ttsPrompt}
+                {ttsPromptDisplay}
               </pre>
             </div>
           )}

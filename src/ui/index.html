@@ -334,6 +334,34 @@
         white-space: pre-wrap;
         word-break: break-word;
       }
+      .debug-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+      .debug-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .debug-toggle {
+        display: flex;
+        gap: 0.35rem;
+        padding: 0.25rem;
+        border-radius: var(--radius-pill);
+        background: var(--color-neutral-gray-mid);
+      }
+      .button-small {
+        padding: 0.45rem 1rem;
+        font-size: var(--font-size-sm);
+      }
+      .debug-toggle button[aria-pressed="true"] {
+        background: var(--color-neutral-black);
+        color: var(--color-neutral-gray);
+      }
       .hint {
         font-weight: 400;
         color: var(--color-neutral-black);
@@ -756,7 +784,37 @@
         </div>
         <p id="script-output" style="margin-top: 1rem; white-space: pre-line;" hidden></p>
         <div id="debug-section" hidden>
-          <h3 id="debug-title">TTS prompt (debug)</h3>
+          <div class="debug-header">
+            <h3 id="debug-title">TTS prompt (debug)</h3>
+            <div class="debug-actions">
+              <div
+                class="debug-toggle"
+                id="debug-format-group"
+                role="group"
+                aria-label="Debug prompt format"
+              >
+                <button
+                  type="button"
+                  id="debug-format-json"
+                  class="button-secondary button-small"
+                  aria-pressed="true"
+                >
+                  JSON
+                </button>
+                <button
+                  type="button"
+                  id="debug-format-text"
+                  class="button-secondary button-small"
+                  aria-pressed="false"
+                >
+                  Formatted text
+                </button>
+              </div>
+              <button type="button" id="debug-copy" class="button-secondary button-small">
+                Copy code
+              </button>
+            </div>
+          </div>
           <pre id="debug-output" class="debug-prompt"></pre>
         </div>
       </section>
@@ -842,6 +900,10 @@
       const resetButton = document.getElementById("reset-button");
       const debugSection = document.getElementById("debug-section");
       const debugOutput = document.getElementById("debug-output");
+      const debugFormatGroup = document.getElementById("debug-format-group");
+      const debugFormatJsonButton = document.getElementById("debug-format-json");
+      const debugFormatTextButton = document.getElementById("debug-format-text");
+      const debugCopyButton = document.getElementById("debug-copy");
       const devControls = document.getElementById("dev-controls");
       let currentUrl = null;
       let downloadUrl = null;
@@ -871,6 +933,8 @@
       const FALLBACK_LOCALE = "en";
       let versionState = "loading";
       let versionValue = "unknown";
+      let currentTtsPrompt = null;
+      let debugPromptFormat = "json";
 
       const TRANSLATIONS = {
         en: {
@@ -936,6 +1000,18 @@
           "result.download_audio": "Download the audio",
           "result.download_text": "Download the text",
           "result.debug_title": "TTS prompt (debug)",
+          "result.debug_copy": "Copy code",
+          "result.debug_format": "Debug prompt format",
+          "result.debug_format_json": "JSON",
+          "result.debug_format_text": "Formatted text",
+          "result.debug_field.model": "Model",
+          "result.debug_field.voice": "Voice",
+          "result.debug_field.response_format": "Response format",
+          "result.debug_field.voice_style_preference": "Voice style preference",
+          "result.debug_field.script_system_prompt": "Script system prompt",
+          "result.debug_field.script_user_prompt": "Script user prompt",
+          "result.debug_field.tts_system_prompt": "TTS system prompt",
+          "result.debug_field.input": "Input",
           "errors.unknown": "Something went wrong.",
           "errors.generator_failed": "The generator failed to respond.",
           "errors.generator_failed_status": "The generator failed to respond. ({status})",
@@ -1011,6 +1087,18 @@
           "result.download_audio": "Descargar el audio",
           "result.download_text": "Descargar el texto",
           "result.debug_title": "Prompt de TTS (depuración)",
+          "result.debug_copy": "Copiar código",
+          "result.debug_format": "Formato del prompt de depuración",
+          "result.debug_format_json": "JSON",
+          "result.debug_format_text": "Texto con formato",
+          "result.debug_field.model": "Modelo",
+          "result.debug_field.voice": "Voz",
+          "result.debug_field.response_format": "Formato de respuesta",
+          "result.debug_field.voice_style_preference": "Preferencia de estilo de voz",
+          "result.debug_field.script_system_prompt": "Prompt del sistema (guion)",
+          "result.debug_field.script_user_prompt": "Prompt del usuario (guion)",
+          "result.debug_field.tts_system_prompt": "Prompt del sistema (TTS)",
+          "result.debug_field.input": "Entrada",
           "errors.unknown": "Algo salió mal.",
           "errors.generator_failed": "El generador no respondió.",
           "errors.generator_failed_status": "El generador no respondió. ({status})",
@@ -1088,6 +1176,18 @@
           "result.download_audio": "Télécharger l'audio",
           "result.download_text": "Télécharger le texte",
           "result.debug_title": "Prompt TTS (debug)",
+          "result.debug_copy": "Copier le code",
+          "result.debug_format": "Format du prompt de débogage",
+          "result.debug_format_json": "JSON",
+          "result.debug_format_text": "Texte formaté",
+          "result.debug_field.model": "Modèle",
+          "result.debug_field.voice": "Voix",
+          "result.debug_field.response_format": "Format de réponse",
+          "result.debug_field.voice_style_preference": "Préférence de style vocal",
+          "result.debug_field.script_system_prompt": "Invite système (script)",
+          "result.debug_field.script_user_prompt": "Invite utilisateur (script)",
+          "result.debug_field.tts_system_prompt": "Invite système (TTS)",
+          "result.debug_field.input": "Entrée",
           "errors.unknown": "Une erreur est survenue.",
           "errors.generator_failed": "Le générateur n'a pas répondu.",
           "errors.generator_failed_status": "Le générateur n'a pas répondu. ({status})",
@@ -1165,6 +1265,18 @@
           "result.download_audio": "Audio herunterladen",
           "result.download_text": "Text herunterladen",
           "result.debug_title": "TTS-Prompt (Debug)",
+          "result.debug_copy": "Code kopieren",
+          "result.debug_format": "Format des Debug-Prompts",
+          "result.debug_format_json": "JSON",
+          "result.debug_format_text": "Formatierter Text",
+          "result.debug_field.model": "Modell",
+          "result.debug_field.voice": "Stimme",
+          "result.debug_field.response_format": "Antwortformat",
+          "result.debug_field.voice_style_preference": "Stimmstilpräferenz",
+          "result.debug_field.script_system_prompt": "System-Prompt (Skript)",
+          "result.debug_field.script_user_prompt": "Benutzer-Prompt (Skript)",
+          "result.debug_field.tts_system_prompt": "System-Prompt (TTS)",
+          "result.debug_field.input": "Eingabe",
           "errors.unknown": "Es ist ein Fehler aufgetreten.",
           "errors.generator_failed": "Der Generator hat nicht geantwortet.",
           "errors.generator_failed_status": "Der Generator hat nicht geantwortet. ({status})",
@@ -1375,6 +1487,54 @@
         return translate("form.duration.minutes", { count: minutes, suffix }, locale);
       };
 
+      const formatTtsPromptValue = (value) => {
+        if (value === null || value === undefined) {
+          return "";
+        }
+        if (typeof value === "string") {
+          return value;
+        }
+        return JSON.stringify(value, null, 2);
+      };
+
+      const buildFormattedTtsPrompt = (ttsPrompt, locale = getCurrentLocale()) => {
+        if (!ttsPrompt) {
+          return "";
+        }
+        const sections = [];
+        const addSection = (label, value) => {
+          const formattedValue = formatTtsPromptValue(value);
+          if (!formattedValue) {
+            return;
+          }
+          sections.push(`${label}:\n${formattedValue}`);
+        };
+        addSection(translate("result.debug_field.model", {}, locale), ttsPrompt.model);
+        addSection(translate("result.debug_field.voice", {}, locale), ttsPrompt.voice);
+        addSection(
+          translate("result.debug_field.response_format", {}, locale),
+          ttsPrompt.response_format,
+        );
+        addSection(
+          translate("result.debug_field.voice_style_preference", {}, locale),
+          ttsPrompt.voiceStylePreference,
+        );
+        addSection(
+          translate("result.debug_field.script_system_prompt", {}, locale),
+          ttsPrompt.scriptSystemPrompt,
+        );
+        addSection(
+          translate("result.debug_field.script_user_prompt", {}, locale),
+          ttsPrompt.scriptUserPrompt,
+        );
+        addSection(
+          translate("result.debug_field.tts_system_prompt", {}, locale),
+          ttsPrompt.ttsSystemPrompt,
+        );
+        addSection(translate("result.debug_field.input", {}, locale), ttsPrompt.input);
+        return sections.join("\n\n");
+      };
+
       const fetchScenarioDefinitions = async () => {
         try {
           const response = await fetch("/api/scenarios", { headers: authHeaders });
@@ -1479,6 +1639,71 @@
         appVersion.textContent = translate("ui.version.loading", {}, locale);
       };
 
+      const updateDebugFormatButtons = () => {
+        if (debugFormatJsonButton) {
+          debugFormatJsonButton.setAttribute(
+            "aria-pressed",
+            debugPromptFormat === "json" ? "true" : "false",
+          );
+        }
+        if (debugFormatTextButton) {
+          debugFormatTextButton.setAttribute(
+            "aria-pressed",
+            debugPromptFormat === "text" ? "true" : "false",
+          );
+        }
+      };
+
+      const getDebugPromptText = () => {
+        if (!currentTtsPrompt) {
+          return "";
+        }
+        if (debugPromptFormat === "text") {
+          const formatted = buildFormattedTtsPrompt(currentTtsPrompt);
+          if (formatted) {
+            return formatted;
+          }
+        }
+        return JSON.stringify(currentTtsPrompt, null, 2);
+      };
+
+      const renderDebugOutput = () => {
+        if (!debugOutput || !debugSection) {
+          return;
+        }
+        if (currentTtsPrompt) {
+          debugOutput.textContent = getDebugPromptText();
+          debugSection.hidden = false;
+          updateDebugFormatButtons();
+          return;
+        }
+        debugOutput.textContent = "";
+        debugSection.hidden = true;
+      };
+
+      const copyTextToClipboard = async (text) => {
+        if (!text) {
+          return;
+        }
+        if (navigator.clipboard?.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return;
+          } catch (error) {
+            console.warn("Clipboard write failed, falling back to execCommand.", error);
+          }
+        }
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.setAttribute("readonly", "true");
+        textarea.style.position = "absolute";
+        textarea.style.left = "-9999px";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      };
+
       const applyTranslations = () => {
         const locale = getCurrentLocale();
         document.documentElement.lang = locale;
@@ -1563,6 +1788,18 @@
         if (debugTitle) {
           debugTitle.textContent = translate("result.debug_title", {}, locale);
         }
+        if (debugFormatGroup) {
+          debugFormatGroup.setAttribute("aria-label", translate("result.debug_format", {}, locale));
+        }
+        if (debugFormatJsonButton) {
+          debugFormatJsonButton.textContent = translate("result.debug_format_json", {}, locale);
+        }
+        if (debugFormatTextButton) {
+          debugFormatTextButton.textContent = translate("result.debug_format_text", {}, locale);
+        }
+        if (debugCopyButton) {
+          debugCopyButton.textContent = translate("result.debug_copy", {}, locale);
+        }
         if (footerText) {
           footerText.textContent = translate("ui.footer", {}, locale);
         }
@@ -1609,6 +1846,7 @@
           }
           element.textContent = formatDurationLabel(value, locale);
         });
+        renderDebugOutput();
         updateVersionText();
       };
 
@@ -1995,6 +2233,23 @@
             applyTranslations();
           });
         }
+        if (debugFormatJsonButton) {
+          debugFormatJsonButton.addEventListener("click", () => {
+            debugPromptFormat = "json";
+            renderDebugOutput();
+          });
+        }
+        if (debugFormatTextButton) {
+          debugFormatTextButton.addEventListener("click", () => {
+            debugPromptFormat = "text";
+            renderDebugOutput();
+          });
+        }
+        if (debugCopyButton) {
+          debugCopyButton.addEventListener("click", () => {
+            void copyTextToClipboard(getDebugPromptText());
+          });
+        }
       };
 
       void initializeForm();
@@ -2153,6 +2408,8 @@
         scriptOutput.textContent = "";
         debugOutput.textContent = "";
         debugSection.hidden = true;
+        currentTtsPrompt = null;
+        debugPromptFormat = "json";
         setDownloadLinkState(downloadLink, { enabled: false });
         setDownloadLinkState(scriptDownloadLink, { enabled: false });
 
@@ -2634,12 +2891,9 @@
             setDownloadLinkState(scriptDownloadLink, { enabled: false });
           }
 
-          if (ttsPrompt) {
-            debugOutput.textContent = JSON.stringify(ttsPrompt, null, 2);
-            debugSection.hidden = false;
-          } else {
-            debugSection.hidden = true;
-          }
+          currentTtsPrompt = ttsPrompt;
+          debugPromptFormat = "json";
+          renderDebugOutput();
 
           result.hidden = false;
           status.textContent = "";
