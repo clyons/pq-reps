@@ -66,6 +66,19 @@ function isShortPauseLine(line: string): boolean {
   return !Number.isNaN(value) && !isIntentionalPause(value);
 }
 
+function isPauseOnlyLine(line: string): boolean {
+  const trimmed = line.trim();
+  if (!trimmed) return false;
+  const match = trimmed.match(/^\[pause:([^\]]+)\]$/i);
+  if (!match) return false;
+  const value = Number(match[1]);
+  return !Number.isNaN(value);
+}
+
+function stripPauseTokens(text: string): string {
+  return text.replace(/\[pause:[^\]]+\]/gi, '').trim();
+}
+
 export function validateScript(
   script: string,
   inputs: PromptInputs | undefined,
@@ -75,6 +88,10 @@ export function validateScript(
   const trimmed = script.trim();
   const lines = script.split(/\r?\n/);
   const sentences = splitSentences(script);
+  const paragraphs = script
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph.length > 0);
 
   if (!trimmed) {
     addFailure(failures, 'OUTPUT_EMPTY', 'fail', 'Output is empty.', 'Line 1: <empty>');
@@ -133,13 +150,13 @@ export function validateScript(
     }
   });
 
-  if (sentences.length > 0) {
-    const firstSentence = sentences[0].text;
-    const secondSentence = sentences[1]?.text ?? '';
-    if (
-      includesAny(firstSentence, config.openingDurationPhrases) ||
-      /\b\d+\s*minute(s)?\b/i.test(firstSentence)
-    ) {
+    if (sentences.length > 0) {
+      const firstSentence = sentences[0].text;
+      const secondSentence = sentences[1]?.text ?? '';
+      if (
+        includesAny(firstSentence, config.openingDurationPhrases) ||
+        /\b\d+\s*minute(s)?\b/i.test(firstSentence)
+      ) {
       addFailure(
         failures,
         'OPENING_NO_DURATION',
@@ -150,7 +167,8 @@ export function validateScript(
     }
 
     if (inputs) {
-      const openingWindow = `${firstSentence} ${secondSentence}`;
+      const openingParagraph = stripPauseTokens(paragraphs[0] ?? '');
+      const openingWindow = openingParagraph.length > 0 ? openingParagraph : `${firstSentence} ${secondSentence}`;
       const hasVerb = includesAny(openingWindow, config.openingVerbs);
       const senseKeywords = config.senseKeywords[inputs.primarySense];
       const hasSense = includesAny(openingWindow, senseKeywords);
@@ -422,18 +440,10 @@ export function validateScript(
       }
     }
 
-    const lastIntentionalPauseIndex = lines.findLastIndex((line) => {
-      const match = line.match(/\[pause:([^\]]+)\]/i);
-      if (!match) return false;
-      const value = Number(match[1]);
-      return !Number.isNaN(value) && isIntentionalPause(value);
-    });
-    const closingBlockLines =
-      lastIntentionalPauseIndex >= 0
-        ? lines.slice(lastIntentionalPauseIndex + 1)
-        : lines;
-    const lastParagraph = closingBlockLines.join('\n').split(/\n\s*\n/).pop() ?? '';
-    const lastParagraphSentences = splitSentences(lastParagraph);
+    const closingParagraph = [...paragraphs]
+      .reverse()
+      .find((paragraph) => paragraph.split(/\r?\n/).some((line) => !isPauseOnlyLine(line))) ?? '';
+    const lastParagraphSentences = splitSentences(stripPauseTokens(closingParagraph));
     if (lastParagraphSentences.length > config.closingMaxSentences) {
       addFailure(
         failures,
