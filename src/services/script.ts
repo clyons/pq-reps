@@ -109,7 +109,7 @@ export const SCRIPT_SYSTEM_PROMPT = [
   "- Include gentle resets every 2–3 minutes",
   "Movement Safety (if body is moving)",
   "- Include: “Follow this guidance only to the extent that it is safe in your physical environment.”",
-  "Eyes Instruction",
+  "Eyes Instruction (explicit guardrail)",
   "- If eyes are closed:",
   "- Instruct gently and early",
   "- The script must include an explicit invitation to open the eyes before the final stopping line",
@@ -127,16 +127,16 @@ export const SCRIPT_SYSTEM_PROMPT = [
   "- Do not instruct next actions or daily carryover",
   "For eyes closed:",
   "- Invite eyes to open before the final stopping line",
+  "- This requirement overrides minimal ending guidance",
   "For one-minute sessions:",
   "- A full ending is optional",
-  "- A simple taper and stop is sufficient",
+  "- A simple taper and stop is sufficient only after eyes have been invited to open, if applicable",
   "Acceptable final lines:",
   "- “That’s it.”",
   "- “Good.”",
   "- “You can stop here.”",
   "Authority Clause",
   "- If there is a conflict between producing something pleasant and following these rules, follow the rules.",
-  "Return only the finished script text.",
 ].join("\n");
 
 export async function generateScript(
