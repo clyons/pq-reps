@@ -108,6 +108,7 @@ const SECTION_TABS: { id: SectionId; labelKey: string }[] = [
 ];
 
 const SECTION_STORAGE_KEY = "pq-reps-active-section";
+const DEBUG_TTS_PROMPT_STORAGE_KEY = "pq-reps-debug-tts-prompt";
 const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
 
 const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
@@ -664,6 +665,7 @@ export default function HomePage() {
   const sectionTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const [isDevMode, setIsDevMode] = useState(process.env.NODE_ENV !== "production");
+  const [isDevQueryEnabled, setIsDevQueryEnabled] = useState(false);
   const isLoading = status === "loading";
   const locale = useMemo<Locale>(() => resolveLocale(formState.language), [formState.language]);
   const t = useMemo(
@@ -731,6 +733,7 @@ export default function HomePage() {
     const params = new URLSearchParams(window.location.search);
     const devParamEnabled = params.get("dev") === "1";
     setIsDevMode(devParamEnabled || process.env.NODE_ENV !== "production");
+    setIsDevQueryEnabled(devParamEnabled);
   }, []);
 
   useEffect(() => {
@@ -743,6 +746,32 @@ export default function HomePage() {
   useEffect(() => {
     window.localStorage.setItem(SECTION_STORAGE_KEY, activeSection);
   }, [activeSection]);
+
+  const debugPromptLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isDevQueryEnabled) {
+      return;
+    }
+    const storedValue = window.localStorage.getItem(DEBUG_TTS_PROMPT_STORAGE_KEY);
+    if (storedValue !== null) {
+      setFormState((prev) => ({
+        ...prev,
+        debugTtsPrompt: storedValue === "true",
+      }));
+    }
+    debugPromptLoadedRef.current = true;
+  }, [isDevQueryEnabled]);
+
+  useEffect(() => {
+    if (!isDevQueryEnabled || !debugPromptLoadedRef.current) {
+      return;
+    }
+    window.localStorage.setItem(
+      DEBUG_TTS_PROMPT_STORAGE_KEY,
+      String(formState.debugTtsPrompt),
+    );
+  }, [formState.debugTtsPrompt, isDevQueryEnabled]);
 
   useEffect(() => {
     if (result?.ttsPrompt) {
