@@ -122,6 +122,23 @@ function buildParagraphs(lines: string[]): string[] {
 
 function getClosingParagraph(paragraphs: string[], fallback: string): string {
   return paragraphs.at(-1) ?? fallback;
+function getClosingParagraph(lines: string[], paragraphs: string[]): string {
+  const lastIntentionalPauseIndex = lines.findLastIndex((line) => {
+    const match = line.match(/\[pause:([^\]]+)\]/i);
+    if (!match) return false;
+    const value = Number(match[1]);
+    return !Number.isNaN(value) && isIntentionalPause(value);
+  });
+  if (paragraphs.length <= 1) {
+    const closingLines =
+      lastIntentionalPauseIndex >= 0 ? lines.slice(lastIntentionalPauseIndex + 1) : lines;
+    return closingLines.join('\n').trim();
+  }
+  return (
+    [...paragraphs]
+      .reverse()
+      .find((paragraph) => paragraph.split(/\r?\n/).some((line) => !isPauseOnlyLine(line))) ?? ''
+  );
 }
 
 function normalizeForMatch(text: string): string {
