@@ -120,22 +120,11 @@ function buildParagraphs(lines: string[]): string[] {
   return paragraphs;
 }
 
-function getClosingParagraph(lines: string[], paragraphs: string[]): string {
-  const lastIntentionalPauseIndex = lines.findLastIndex((line) => {
-    const match = line.match(/\[pause:([^\]]+)\]/i);
-    if (!match) return false;
-    const value = Number(match[1]);
-    return !Number.isNaN(value) && isIntentionalPause(value);
-  });
-  if (paragraphs.length <= 1) {
-    const closingLines =
-      lastIntentionalPauseIndex >= 0 ? lines.slice(lastIntentionalPauseIndex + 1) : lines;
-    return closingLines.join('\n').trim();
-  }
+function getClosingParagraph(lines: string[]): string {
   return (
-    [...paragraphs]
+    [...lines]
       .reverse()
-      .find((paragraph) => paragraph.split(/\r?\n/).some((line) => !isPauseOnlyLine(line))) ?? ''
+      .find((line) => line.trim().length > 0 && !isPauseOnlyLine(line)) ?? ''
   );
 }
 
@@ -467,7 +456,7 @@ export function validateScript(
       }
     }
 
-    const closingParagraph = getClosingParagraph(lines, paragraphs);
+    const closingParagraph = getClosingParagraph(lines);
     const closingSentences = splitSentences(stripPauseTokens(closingParagraph));
     const lastReentryIndex = closingSentences.findLastIndex((sentence) =>
       includesAny(sentence.text, config.reentryPhrases) ||
