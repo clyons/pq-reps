@@ -431,6 +431,12 @@ export function validateScript(
 
     const closingParagraph = getClosingParagraph(lines, paragraphs);
     const closingSentences = splitSentences(stripPauseTokens(closingParagraph));
+    const lastReentryIndex = closingSentences.findLastIndex((sentence) =>
+      includesAny(sentence.text, config.reentryPhrases) ||
+      includesAny(sentence.text, config.returnKeywords)
+    );
+    const closingSentencesForLength =
+      lastReentryIndex >= 0 ? closingSentences.slice(lastReentryIndex + 1) : closingSentences;
     if (inputs.eyeState === 'closed') {
       const earlySentences = sentences.slice(0, 3).map((sentence) => sentence.text).join(' ');
       if (!includesAny(earlySentences, config.closeEyesPhrases)) {
@@ -465,14 +471,13 @@ export function validateScript(
       }
     }
 
-    const lastParagraphSentences = closingSentences;
-    if (lastParagraphSentences.length > config.closingMaxSentences) {
+    if (closingSentencesForLength.length > config.closingMaxSentences) {
       addFailure(
         failures,
         'CLOSING_TOO_LONG',
         'fail',
         'Closing paragraph is longer than expected.',
-        `Closing sentences: ${lastParagraphSentences.length}`
+        `Closing sentences: ${closingSentencesForLength.length}`
       );
     }
 
