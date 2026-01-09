@@ -4,8 +4,8 @@
       "id": "case-01-touch-still-closed-1m",
       "description": "Touch focus, still, eyes closed, 1 minute.",
       "inputs": {
-        "practiceMode": "guided",
-        "bodyState": "still",
+        "practiceMode": "tactile",
+        "bodyState": "still_seated_closed_eyes",
         "eyeState": "closed",
         "primarySense": "touch",
         "durationMinutes": 1,
