@@ -215,17 +215,6 @@ export function buildPrompt(config: GenerateConfig): string {
     customScenarioLine,
   } = config;
 
-  const durationSeconds = durationMinutes * 60;
-  const durationRule =
-    durationSeconds >= 300
-      ? "You may mention exact rep counts if it helps pacing."
-      : "Do not mention exact rep counts because the duration is under 5 minutes.";
-  const durationPacing =
-    durationMinutes === 1
-      ? "Pacing for 1 minute: use 1 or 2 short instruction beats, keep sentences compact, and avoid long silences (pause cues should be 3-5 seconds max)."
-      : durationMinutes === 12
-        ? "Pacing for 12 minutes: build a clear arc with checkpoints or gentle resets every 2-3 minutes, and include occasional extended silences (15-30 seconds) with brief reminders between."
-        : null;
   const scenario = getScenarioById(scenarioId);
   const scenarioLines = scenario
     ? [`Scenario: ${scenario.label}.`, ...scenario.promptLines]
@@ -238,8 +227,19 @@ export function buildPrompt(config: GenerateConfig): string {
   const languageLine = `Language: ${languages.map(formatLanguageLabel).join(", ")}.`;
   const primaryLanguage = formatLanguageLabel(languages[0] ?? "");
 
+  const practiceModeDefinition = [
+    "Practice mode meaning:",
+    "tactile = guided touch-based attention while still.",
+    "tense_relax = alternate gentle tension and release with sensory attention.",
+    "moving = guided attention while in motion.",
+    "sitting = guided attention while seated with eyes open.",
+    "label_with_anchor = label sensations while returning to a single anchor.",
+    "label_while_scanning = label sensations while scanning the body.",
+  ].join(" ");
+
   return [
     `Practice mode: ${practiceMode}.`,
+    practiceModeDefinition,
     `Body state: ${bodyState}.`,
     `Eye state: ${eyeState}.`,
     `Primary sense: ${primarySense}.`,
@@ -255,13 +255,8 @@ export function buildPrompt(config: GenerateConfig): string {
     audience ? `Audience: ${audience}.` : "Audience: general.",
     scenarioLine,
     voiceStyle
-      ? `Voice style preference: ${voiceStyle}. Use only if it does not conflict with tone rules.`
+      ? `Voice style preference: ${voiceStyle}.`
       : "No additional voice style preference provided.",
-    "Brand safety: keep content neutral and family-friendly. Avoid politics, religion, medical advice, illegal activity, sexual content, violence, or hate.",
-    durationRule,
-    durationPacing ? durationPacing : "Use steady pacing appropriate to the duration.",
-    "Use these inputs exactly. Do not invent additional modes, senses, or counts.",
-    "Pause markers must use the exact token [pause:10] (with the word “pause” in English). Do not translate it.",
   ].join("\n");
 }
 
