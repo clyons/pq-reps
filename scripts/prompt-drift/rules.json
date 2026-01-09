@@ -1,0 +1,210 @@
+{
+  "disallowedPreambles": [
+    "here is",
+    "here's",
+    "sure",
+    "of course",
+    "as an ai",
+    "certainly"
+  ],
+  "trademarks": [
+    "PQ Reps",
+    "PQ brain",
+    "survival brain"
+  ],
+  "disallowedKeywords": {
+    "sexual": [
+      "sexual",
+      "arousal",
+      "erotic",
+      "orgasm",
+      "nude",
+      "porn"
+    ],
+    "violent": [
+      "kill",
+      "weapon",
+      "attack",
+      "assault",
+      "blood",
+      "gun"
+    ],
+    "political": [
+      "election",
+      "campaign",
+      "vote",
+      "politician",
+      "government"
+    ],
+    "religious": [
+      "pray",
+      "prayer",
+      "god",
+      "church",
+      "scripture"
+    ],
+    "illegal": [
+      "steal",
+      "fraud",
+      "drugs",
+      "hack",
+      "crime"
+    ],
+    "hateful": [
+      "hate",
+      "racist",
+      "bigot",
+      "slur"
+    ],
+    "medical": [
+      "diagnose",
+      "treatment",
+      "prescription",
+      "therapist",
+      "medical advice"
+    ]
+  },
+  "openingDurationPhrases": [
+    "this will take",
+    "for the next",
+    "in the next",
+    "over the next"
+  ],
+  "openingVerbs": [
+    "feel",
+    "sense",
+    "let your attention",
+    "return",
+    "notice"
+  ],
+  "senseKeywords": {
+    "touch": [
+      "touch",
+      "contact",
+      "pressure",
+      "temperature",
+      "texture"
+    ],
+    "hearing": [
+      "sound",
+      "listen",
+      "hearing",
+      "tone",
+      "quiet"
+    ],
+    "sight": [
+      "see",
+      "sight",
+      "visual",
+      "light",
+      "color"
+    ],
+    "breath": [
+      "breath",
+      "breathing",
+      "inhale",
+      "exhale"
+    ]
+  },
+  "disallowedSenseKeywords": {
+    "touch": [
+      "look",
+      "see",
+      "visual",
+      "image",
+      "sound",
+      "listen",
+      "hearing"
+    ],
+    "hearing": [
+      "look",
+      "see",
+      "visual",
+      "image",
+      "touch",
+      "feel the fabric",
+      "pressure"
+    ],
+    "sight": [
+      "listen",
+      "sound",
+      "hearing",
+      "touch",
+      "feel",
+      "pressure"
+    ],
+    "breath": [
+      "look",
+      "see",
+      "visual",
+      "image",
+      "listen",
+      "sound",
+      "hearing",
+      "touch",
+      "pressure"
+    ]
+  },
+  "normalizationKeywords": [
+    "that's okay",
+    "that is okay",
+    "normal",
+    "nothing to fix",
+    "no need to fix"
+  ],
+  "driftKeywords": [
+    "mind drifts",
+    "mind wanders",
+    "wanders",
+    "drifts",
+    "thoughts wander"
+  ],
+  "returnKeywords": [
+    "return",
+    "come back",
+    "back to",
+    "bring your attention",
+    "again feel"
+  ],
+  "silenceCuePhrases": [
+    "i'll be quiet",
+    "stay with this",
+    "stay with that",
+    "rest with this"
+  ],
+  "reentryPhrases": [
+    "when you're ready",
+    "come back",
+    "return",
+    "bring your attention"
+  ],
+  "closeEyesPhrases": [
+    "close your eyes",
+    "let your eyes close"
+  ],
+  "openEyesPhrases": [
+    "open your eyes",
+    "let your eyes open"
+  ],
+  "closingDisallowedPhrases": [
+    "thank you for participating",
+    "continue with your day",
+    "take this with you"
+  ],
+  "acceptableFinalLines": [
+    "Stop.",
+    "End.",
+    "That is all.",
+    "Complete."
+  ],
+  "verbList": [
+    "notice",
+    "feel",
+    "sense",
+    "return",
+    "allow",
+    "observe"
+  ],
+  "noticeDominanceThreshold": 0.5,
+  "closingMaxSentences": 2
+}
