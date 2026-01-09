@@ -1,0 +1,344 @@
+{
+  "cases": [
+    {
+      "id": "case-01-touch-still-open-1m",
+      "description": "Touch focus, still, eyes open, 1 minute.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "still",
+        "eyeState": "open",
+        "primarySense": "touch",
+        "durationMinutes": 1,
+        "labelingMode": "none",
+        "silenceProfile": "none",
+        "normalizationFrequency": "once",
+        "closingStyle": "stop",
+        "senseRotation": "none",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-02-hearing-still-closed-2m",
+      "description": "Hearing focus with eyes closed, 2 minutes.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "still",
+        "eyeState": "closed",
+        "primarySense": "hearing",
+        "durationMinutes": 2,
+        "labelingMode": "light",
+        "silenceProfile": "light",
+        "normalizationFrequency": "once",
+        "closingStyle": "soft",
+        "senseRotation": "light",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-03-sight-moving-open-4m",
+      "description": "Sight focus while moving, safety line required.",
+      "inputs": {
+        "practiceMode": "self-led",
+        "bodyState": "moving",
+        "eyeState": "open",
+        "primarySense": "sight",
+        "durationMinutes": 4,
+        "labelingMode": "explicit",
+        "silenceProfile": "none",
+        "normalizationFrequency": "repeat",
+        "closingStyle": "formal",
+        "senseRotation": "none",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-04-breath-still-closed-12m",
+      "description": "Breath focus, long duration with deep silence profile.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "still",
+        "eyeState": "closed",
+        "primarySense": "breath",
+        "durationMinutes": 12,
+        "labelingMode": "light",
+        "silenceProfile": "deep",
+        "normalizationFrequency": "once",
+        "closingStyle": "soft",
+        "senseRotation": "none",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-05-touch-moving-closed-1m",
+      "description": "Touch focus, moving, eyes closed, 1 minute edge case.",
+      "inputs": {
+        "practiceMode": "check-in",
+        "bodyState": "moving",
+        "eyeState": "closed",
+        "primarySense": "touch",
+        "durationMinutes": 1,
+        "labelingMode": "none",
+        "silenceProfile": "none",
+        "normalizationFrequency": "once",
+        "closingStyle": "stop",
+        "senseRotation": "light",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-06-hearing-still-open-2m",
+      "description": "Hearing focus with open eyes, light silence profile.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "still",
+        "eyeState": "open",
+        "primarySense": "hearing",
+        "durationMinutes": 2,
+        "labelingMode": "none",
+        "silenceProfile": "light",
+        "normalizationFrequency": "none",
+        "closingStyle": "stop",
+        "senseRotation": "none",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-07-sight-still-open-5m",
+      "description": "Sight focus, still, 5 minutes, formal closing.",
+      "inputs": {
+        "practiceMode": "self-led",
+        "bodyState": "still",
+        "eyeState": "open",
+        "primarySense": "sight",
+        "durationMinutes": 5,
+        "labelingMode": "light",
+        "silenceProfile": "none",
+        "normalizationFrequency": "repeat",
+        "closingStyle": "formal",
+        "senseRotation": "full",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-08-breath-moving-open-2m",
+      "description": "Breath focus while moving, short duration.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "moving",
+        "eyeState": "open",
+        "primarySense": "breath",
+        "durationMinutes": 2,
+        "labelingMode": "explicit",
+        "silenceProfile": "light",
+        "normalizationFrequency": "once",
+        "closingStyle": "soft",
+        "senseRotation": "light",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-09-touch-still-closed-4m",
+      "description": "Touch focus, closed eyes, 4 minutes.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "still",
+        "eyeState": "closed",
+        "primarySense": "touch",
+        "durationMinutes": 4,
+        "labelingMode": "light",
+        "silenceProfile": "light",
+        "normalizationFrequency": "once",
+        "closingStyle": "soft",
+        "senseRotation": "none",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-10-hearing-moving-closed-5m",
+      "description": "Hearing focus while moving with closed eyes edge case.",
+      "inputs": {
+        "practiceMode": "check-in",
+        "bodyState": "moving",
+        "eyeState": "closed",
+        "primarySense": "hearing",
+        "durationMinutes": 5,
+        "labelingMode": "explicit",
+        "silenceProfile": "none",
+        "normalizationFrequency": "repeat",
+        "closingStyle": "stop",
+        "senseRotation": "light",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-11-sight-still-closed-2m",
+      "description": "Sight focus with closed eyes, 2 minutes.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "still",
+        "eyeState": "closed",
+        "primarySense": "sight",
+        "durationMinutes": 2,
+        "labelingMode": "none",
+        "silenceProfile": "none",
+        "normalizationFrequency": "once",
+        "closingStyle": "soft",
+        "senseRotation": "none",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-12-breath-still-open-4m",
+      "description": "Breath focus, still, 4 minutes.",
+      "inputs": {
+        "practiceMode": "self-led",
+        "bodyState": "still",
+        "eyeState": "open",
+        "primarySense": "breath",
+        "durationMinutes": 4,
+        "labelingMode": "light",
+        "silenceProfile": "light",
+        "normalizationFrequency": "once",
+        "closingStyle": "formal",
+        "senseRotation": "full",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-13-touch-moving-open-2m",
+      "description": "Touch focus while moving, 2 minutes.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "moving",
+        "eyeState": "open",
+        "primarySense": "touch",
+        "durationMinutes": 2,
+        "labelingMode": "none",
+        "silenceProfile": "none",
+        "normalizationFrequency": "once",
+        "closingStyle": "stop",
+        "senseRotation": "none",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-14-hearing-still-open-12m",
+      "description": "Hearing focus, long duration for deep silences.",
+      "inputs": {
+        "practiceMode": "self-led",
+        "bodyState": "still",
+        "eyeState": "open",
+        "primarySense": "hearing",
+        "durationMinutes": 12,
+        "labelingMode": "explicit",
+        "silenceProfile": "deep",
+        "normalizationFrequency": "repeat",
+        "closingStyle": "soft",
+        "senseRotation": "full",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-15-sight-moving-open-1m",
+      "description": "Sight focus, moving, 1 minute, safety line check.",
+      "inputs": {
+        "practiceMode": "check-in",
+        "bodyState": "moving",
+        "eyeState": "open",
+        "primarySense": "sight",
+        "durationMinutes": 1,
+        "labelingMode": "none",
+        "silenceProfile": "none",
+        "normalizationFrequency": "once",
+        "closingStyle": "stop",
+        "senseRotation": "none",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-16-breath-still-closed-5m",
+      "description": "Breath focus with closed eyes, 5 minutes.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "still",
+        "eyeState": "closed",
+        "primarySense": "breath",
+        "durationMinutes": 5,
+        "labelingMode": "light",
+        "silenceProfile": "light",
+        "normalizationFrequency": "once",
+        "closingStyle": "soft",
+        "senseRotation": "light",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-17-touch-still-open-12m",
+      "description": "Touch focus, long duration, deep silence.",
+      "inputs": {
+        "practiceMode": "self-led",
+        "bodyState": "still",
+        "eyeState": "open",
+        "primarySense": "touch",
+        "durationMinutes": 12,
+        "labelingMode": "explicit",
+        "silenceProfile": "deep",
+        "normalizationFrequency": "repeat",
+        "closingStyle": "formal",
+        "senseRotation": "full",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-18-hearing-moving-open-4m",
+      "description": "Hearing focus while moving, 4 minutes.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "moving",
+        "eyeState": "open",
+        "primarySense": "hearing",
+        "durationMinutes": 4,
+        "labelingMode": "none",
+        "silenceProfile": "none",
+        "normalizationFrequency": "once",
+        "closingStyle": "stop",
+        "senseRotation": "none",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-19-sight-still-open-2m-es",
+      "description": "Sight focus in Spanish for multilingual coverage.",
+      "inputs": {
+        "practiceMode": "guided",
+        "bodyState": "still",
+        "eyeState": "open",
+        "primarySense": "sight",
+        "durationMinutes": 2,
+        "labelingMode": "light",
+        "silenceProfile": "none",
+        "normalizationFrequency": "once",
+        "closingStyle": "stop",
+        "senseRotation": "none",
+        "language": "es"
+      }
+    },
+    {
+      "id": "case-20-breath-moving-closed-12m",
+      "description": "Breath focus, moving, closed eyes, long duration with deep silence.",
+      "inputs": {
+        "practiceMode": "self-led",
+        "bodyState": "moving",
+        "eyeState": "closed",
+        "primarySense": "breath",
+        "durationMinutes": 12,
+        "labelingMode": "explicit",
+        "silenceProfile": "deep",
+        "normalizationFrequency": "repeat",
+        "closingStyle": "formal",
+        "senseRotation": "full",
+        "language": "en"
+      }
+    }
+  ]
+}
