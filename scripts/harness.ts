@@ -83,6 +83,8 @@ function parseArgs(argv: string[]): CliOptions {
 
 function printHelp(): void {
   console.log(`\nPrompt drift harness\n\n` +
+    `Before running the harness, export the latest system prompt:\n` +
+    `  node --import tsx scripts/export-script-system-prompt.ts --out scripts/prompt-drift/system.txt\n\n` +
     `Usage:\n` +
     `  node --import tsx scripts/harness.ts \\\n` +
     `    --system path/to/system.txt \\\n` +
