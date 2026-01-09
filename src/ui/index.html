@@ -910,6 +910,7 @@
       let scriptDownloadUrl = null;
       const storageKey = "pq-reps-form";
       const sectionStorageKey = "pq-reps-active-section";
+      const debugTtsPromptStorageKey = "pq-reps-debug-tts-prompt";
       const femaleVoiceByLanguage = { es: "nova", fr: "nova" };
       const maleVoiceByLanguage = { es: "onyx", fr: "onyx" };
       const PRACTICE_TYPE_LABEL_KEYS = {
@@ -2174,6 +2175,12 @@
             : {}),
         };
         setFormValues(mergedValues);
+        if (isDevMode && debugInput) {
+          const storedDebugValue = localStorage.getItem(debugTtsPromptStorageKey);
+          if (storedDebugValue !== null) {
+            debugInput.checked = storedDebugValue === "true";
+          }
+        }
         if (pathLocale) {
           persistFormValues();
         }
@@ -2248,6 +2255,14 @@
         if (debugCopyButton) {
           debugCopyButton.addEventListener("click", () => {
             void copyTextToClipboard(getDebugPromptText());
+          });
+        }
+        if (isDevMode && debugInput) {
+          debugInput.addEventListener("change", () => {
+            localStorage.setItem(
+              debugTtsPromptStorageKey,
+              debugInput.checked ? "true" : "false",
+            );
           });
         }
       };
@@ -2395,6 +2410,12 @@
         updateVoiceLabels();
         applyTranslations();
         localStorage.removeItem(storageKey);
+        if (isDevMode) {
+          localStorage.removeItem(debugTtsPromptStorageKey);
+          if (debugInput) {
+            debugInput.checked = false;
+          }
+        }
       });
 
       form.addEventListener("submit", async (event) => {
