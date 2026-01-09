@@ -79,6 +79,29 @@ function stripPauseTokens(text: string): string {
   return text.replace(/\[pause:[^\]]+\]/gi, '').trim();
 }
 
+function getClosingParagraph(lines: string[], paragraphs: string[]): string {
+  const lastIntentionalPauseIndex = lines.findLastIndex((line) => {
+    const match = line.match(/\[pause:([^\]]+)\]/i);
+    if (!match) return false;
+    const value = Number(match[1]);
+    return !Number.isNaN(value) && isIntentionalPause(value);
+  });
+  if (paragraphs.length <= 1) {
+    const closingLines =
+      lastIntentionalPauseIndex >= 0 ? lines.slice(lastIntentionalPauseIndex + 1) : lines;
+    return closingLines.join('\n').trim();
+  }
+  return (
+    [...paragraphs]
+      .reverse()
+      .find((paragraph) => paragraph.split(/\r?\n/).some((line) => !isPauseOnlyLine(line))) ?? ''
+  );
+}
+
+function normalizeForMatch(text: string): string {
+  return text.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
 export function validateScript(
   script: string,
   inputs: PromptInputs | undefined,
@@ -406,6 +429,8 @@ export function validateScript(
       }
     }
 
+    const closingParagraph = getClosingParagraph(lines, paragraphs);
+    const closingSentences = splitSentences(stripPauseTokens(closingParagraph));
     if (inputs.eyeState === 'closed') {
       const earlySentences = sentences.slice(0, 3).map((sentence) => sentence.text).join(' ');
       if (!includesAny(earlySentences, config.closeEyesPhrases)) {
@@ -417,7 +442,7 @@ export function validateScript(
           findSentenceEvidence(sentences, 0)
         );
       }
-      const lastSentences = sentences.slice(-3).map((sentence) => sentence.text).join(' ');
+      const lastSentences = closingSentences.slice(-3).map((sentence) => sentence.text).join(' ');
       if (!includesAny(lastSentences, config.openEyesPhrases)) {
         addFailure(
           failures,
@@ -428,7 +453,7 @@ export function validateScript(
         );
       }
     } else if (inputs.eyeState === 'open') {
-      const lastSentences = sentences.slice(-3).map((sentence) => sentence.text).join(' ');
+      const lastSentences = closingSentences.slice(-3).map((sentence) => sentence.text).join(' ');
       if (includesAny(lastSentences, config.openEyesPhrases)) {
         addFailure(
           failures,
@@ -440,10 +465,7 @@ export function validateScript(
       }
     }
 
-    const closingParagraph = [...paragraphs]
-      .reverse()
-      .find((paragraph) => paragraph.split(/\r?\n/).some((line) => !isPauseOnlyLine(line))) ?? '';
-    const lastParagraphSentences = splitSentences(stripPauseTokens(closingParagraph));
+    const lastParagraphSentences = closingSentences;
     if (lastParagraphSentences.length > config.closingMaxSentences) {
       addFailure(
         failures,
@@ -468,10 +490,11 @@ export function validateScript(
       [...lines]
         .reverse()
         .find((line) => line.trim().length > 0 && !isShortPauseLine(line)) ?? '';
-    const normalizedLastLine = lastLine.trim().replace(/\s+/g, ' ');
+    const normalizedLastLine = normalizeForMatch(stripPauseTokens(lastLine));
+    const closingText = normalizeForMatch(stripPauseTokens(closingParagraph));
     const acceptableMatch = config.acceptableFinalLines.some((line) => {
-      const normalized = line.trim().replace(/\s+/g, ' ');
-      return toLower(normalized) === toLower(normalizedLastLine);
+      const normalized = normalizeForMatch(line);
+      return normalizedLastLine === normalized || closingText.includes(normalized);
     });
     if (!acceptableMatch) {
       addFailure(
