@@ -1,12 +1,25 @@
-export type PracticeMode = 'guided' | 'self-led' | 'check-in';
-export type BodyState = 'still' | 'moving';
-export type EyeState = 'open' | 'closed';
-export type PrimarySense = 'touch' | 'hearing' | 'sight' | 'breath';
-export type LabelingMode = 'none' | 'light' | 'explicit';
-export type SilenceProfile = 'none' | 'light' | 'deep';
-export type NormalizationFrequency = 'none' | 'once' | 'repeat';
-export type ClosingStyle = 'stop' | 'soft' | 'formal';
-export type SenseRotation = 'none' | 'light' | 'full';
+export type PracticeMode =
+  | 'tactile'
+  | 'tense_relax'
+  | 'moving'
+  | 'sitting'
+  | 'label_with_anchor'
+  | 'label_while_scanning';
+export type BodyState = 'still_seated' | 'still_seated_closed_eyes' | 'moving';
+export type EyeState = 'closed' | 'open_focused' | 'open_diffused';
+export type PrimarySense =
+  | 'touch'
+  | 'hearing'
+  | 'sight'
+  | 'breath'
+  | 'body_weight'
+  | 'smell'
+  | 'taste';
+export type LabelingMode = 'none' | 'breath_anchor' | 'scan_and_label';
+export type SilenceProfile = 'none' | 'short_pauses' | 'extended_silence';
+export type NormalizationFrequency = 'once' | 'periodic' | 'repeated';
+export type ClosingStyle = 'minimal' | 'pq_framed' | 'pq_framed_with_progression';
+export type SenseRotation = 'none' | 'guided_rotation' | 'free_choice';
 
 export interface PromptInputs {
   practiceMode: PracticeMode;

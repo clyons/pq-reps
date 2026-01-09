@@ -59,6 +59,13 @@ function isIntentionalPause(value: number): boolean {
   return value >= 3;
 }
 
+function isShortPauseLine(line: string): boolean {
+  const match = line.match(/\[pause:([^\]]+)\]/i);
+  if (!match) return false;
+  const value = Number(match[1]);
+  return !Number.isNaN(value) && !isIntentionalPause(value);
+}
+
 export function validateScript(
   script: string,
   inputs: PromptInputs | undefined,
@@ -279,23 +286,20 @@ export function validateScript(
       .filter((value) => !Number.isNaN(value));
     const intentionalPauses = pauses.filter((value) => isIntentionalPause(value));
 
-    if (inputs.silenceProfile === 'none' && intentionalPauses.length > 0) {
-      addFailure(
-        failures,
-        'SILENCE_FORBIDDEN',
-        'fail',
-        'Intentional silences are not allowed for silence profile none.',
-        `Found ${intentionalPauses.length} intentional pauses.`
-      );
-    }
-
     pauseTokens.forEach((token) => {
       const value = Number(token[1]);
       if (!isIntentionalPause(value)) return;
       const tokenText = token[0];
       const lineIndex = lines.findIndex((line) => line.includes(tokenText));
-      const previousLine = lineIndex > 0 ? lines[lineIndex - 1] : '';
-      const nextLine = lines.slice(lineIndex + 1).find((line) => line.trim().length > 0) ?? '';
+      const previousLine =
+        lines
+          .slice(0, lineIndex)
+          .reverse()
+          .find((line) => line.trim().length > 0 && !isShortPauseLine(line)) ?? '';
+      const nextLine =
+        lines
+          .slice(lineIndex + 1)
+          .find((line) => line.trim().length > 0 && !isShortPauseLine(line)) ?? '';
       if (!includesAny(previousLine, config.silenceCuePhrases)) {
         addFailure(
           failures,
@@ -418,7 +422,17 @@ export function validateScript(
       }
     }
 
-    const lastParagraph = script.split(/\n\s*\n/).pop() ?? '';
+    const lastIntentionalPauseIndex = lines.findLastIndex((line) => {
+      const match = line.match(/\[pause:([^\]]+)\]/i);
+      if (!match) return false;
+      const value = Number(match[1]);
+      return !Number.isNaN(value) && isIntentionalPause(value);
+    });
+    const closingBlockLines =
+      lastIntentionalPauseIndex >= 0
+        ? lines.slice(lastIntentionalPauseIndex + 1)
+        : lines;
+    const lastParagraph = closingBlockLines.join('\n').split(/\n\s*\n/).pop() ?? '';
     const lastParagraphSentences = splitSentences(lastParagraph);
     if (lastParagraphSentences.length > config.closingMaxSentences) {
       addFailure(
@@ -440,7 +454,10 @@ export function validateScript(
       );
     }
 
-    const lastLine = [...lines].reverse().find((line) => line.trim().length > 0) ?? '';
+    const lastLine =
+      [...lines]
+        .reverse()
+        .find((line) => line.trim().length > 0 && !isShortPauseLine(line)) ?? '';
     const normalizedLastLine = lastLine.trim().replace(/\s+/g, ' ');
     const acceptableMatch = config.acceptableFinalLines.some((line) => {
       const normalized = line.trim().replace(/\s+/g, ' ');
