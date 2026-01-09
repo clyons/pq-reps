@@ -23,12 +23,17 @@ interface CliOptions {
   provider: 'mock' | 'openai';
   temperature?: number;
   rulesPath: string;
+  reuseOutputs: boolean;
 }
 
 const DEFAULT_RULES_PATH = 'scripts/prompt-drift/rules.json';
 
 function parseArgs(argv: string[]): CliOptions {
-  const options: Partial<CliOptions> = { provider: 'mock', rulesPath: DEFAULT_RULES_PATH };
+  const options: Partial<CliOptions> = {
+    provider: 'mock',
+    rulesPath: DEFAULT_RULES_PATH,
+    reuseOutputs: false
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--help') {
@@ -68,6 +73,9 @@ function parseArgs(argv: string[]): CliOptions {
         options.rulesPath = next;
         i += 1;
         break;
+      case '--reuse-outputs':
+        options.reuseOutputs = true;
+        break;
       default:
         throw new Error(`Unknown argument: ${arg}`);
     }
@@ -90,7 +98,7 @@ function printHelp(): void {
     `    --system path/to/system.txt \\\n` +
     `    --cases path/to/test-cases.json \\\n` +
     `    --out path/to/output-dir \\\n` +
-    `    [--model gpt-4o-mini] [--provider mock|openai] [--temperature 0.2] [--rules rules.json]\n\n` +
+    `    [--model gpt-4o-mini] [--provider mock|openai] [--temperature 0.2] [--rules rules.json] [--reuse-outputs]\n\n` +
     `Defaults:\n` +
     `  --provider mock\n` +
     `  --rules ${DEFAULT_RULES_PATH}\n`
@@ -164,12 +172,13 @@ async function main(): Promise<void> {
   const outputsDir = join(outputDir, 'outputs');
   await mkdir(outputsDir, { recursive: true });
 
-  const provider =
-    options.provider === 'openai'
+  const provider = options.reuseOutputs
+    ? undefined
+    : options.provider === 'openai'
       ? new OpenAIProvider(process.env.OPENAI_API_KEY ?? '')
       : new MockProvider();
 
-  if (options.provider === 'openai' && !process.env.OPENAI_API_KEY) {
+  if (!options.reuseOutputs && options.provider === 'openai' && !process.env.OPENAI_API_KEY) {
     throw new Error('OPENAI_API_KEY is required for OpenAI provider.');
   }
 
@@ -186,8 +195,12 @@ async function main(): Promise<void> {
 
     let output = '';
     try {
-      output = await provider.generate(systemPrompt, userPrompt, { model, temperature, inputs });
-      await writeFile(outputPath, output, 'utf-8');
+      if (options.reuseOutputs) {
+        output = await readFile(outputPath, 'utf-8');
+      } else {
+        output = await provider.generate(systemPrompt, userPrompt, { model, temperature, inputs });
+        await writeFile(outputPath, output, 'utf-8');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       results.push({
@@ -198,10 +211,10 @@ async function main(): Promise<void> {
         status: 'fail',
         failures: [
           {
-            ruleId: 'GENERATION_ERROR',
+            ruleId: options.reuseOutputs ? 'OUTPUT_MISSING' : 'GENERATION_ERROR',
             severity: 'fail',
             message,
-            evidenceSnippet: 'Generator error'
+            evidenceSnippet: options.reuseOutputs ? 'Output file missing' : 'Generator error'
           }
         ],
         model,
