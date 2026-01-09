@@ -45,7 +45,10 @@ function parseArgs(argv: string[]): CliOptions {
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
   const outputPath = resolve(options.outputPath);
-  const payload = `${SCRIPT_SYSTEM_PROMPT.join('\n')}\n`;
+  const promptText = Array.isArray(SCRIPT_SYSTEM_PROMPT)
+    ? SCRIPT_SYSTEM_PROMPT.join('\n')
+    : String(SCRIPT_SYSTEM_PROMPT);
+  const payload = `${promptText}\n`;
 
   try {
     await writeFile(outputPath, payload, 'utf-8');
