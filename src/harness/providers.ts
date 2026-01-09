@@ -13,11 +13,21 @@ export interface ProviderOptions {
 export class MockProvider implements ScriptProvider {
   async generate(systemPrompt: string, userPrompt: string): Promise<string> {
     const content = [
-      'Feel the contact of your body with the surface beneath you.',
-      'Stay with those sensations as they change.',
-      '[pause:3]',
-      'Return to the sensation in the primary sense.',
-      'Stop.'
+      'Sit comfortably. Close your eyes. Let your attention settle into the points of contact where your body meets the surface beneath you.',
+      'Feel the weight of your body pressing down.',
+      'Sense the texture of the surface against your skin.',
+      '[pause:1.5]',
+      'If your mind drifts, that’s normal. Gently return your attention to the sensations of touch.',
+      'Notice the pressure in your legs, your back, your arms.',
+      'Feel the temperature of the air on your skin.',
+      '[pause:1.5]',
+      'Stay with these sensations for a moment.',
+      '[pause:10]',
+      '[pause:1.5]',
+      'Now, bring your awareness back to the points of contact. Feel the stability they provide.',
+      '[pause:1.5]',
+      'You can open your eyes. That’s it.',
+      '[pause:1.5]'
     ].join('\n');
     return Promise.resolve(content);
   }
