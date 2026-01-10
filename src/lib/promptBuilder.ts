@@ -205,8 +205,8 @@ export const SCENARIOS: ScenarioDefinition[] = [
     primarySense: "breath",
     durationMinutes: 12,
     promptLines: [
-      "Scenario Objective: Create a low-energy, sleep-ready tone that slows everything down.",
-      "Favor soft phrasing and longer exhales to prepare for rest.",
+      "Scenario Objective: relax the body and mind to prepare for restful sleep.",
+      "Favor soft phrasing and longer exhales to release tension.",
     ],
   },
   {
@@ -216,7 +216,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     primarySense: "touch",
     durationMinutes: 12,
     promptLines: [
-      "Scenario Objective: Treat this as a full-body reset with deep, unhurried grounding.",
+      "Scenario Objective: a full-body reset with deep, unhurried grounding.",
       "Emphasize steady contact and spacious pauses to restore baseline.",
     ],
   },
