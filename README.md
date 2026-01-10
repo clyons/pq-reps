@@ -1,6 +1,6 @@
 # PQ Reps Guided Audio Generator
 
-**Version:** 0.5.0
+**Version:** 0.6.0
 
 Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sense, eye position, duration, and language.
 
@@ -11,6 +11,13 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - Server-sent events for generation status updates via `Accept: text/event-stream`
 
 ## Changelog
+
+### 0.6.0
+- Improve the prompt drift harness with export automation, leaner debug reporting, and refreshed test cases.
+- Add validation coverage for practice configuration and quick access scenarios.
+- Fix scenario defaults for wind-down flow and resolve practice mode errors in scenario handling.
+- Refine prompt parameter descriptions and remove the custom scenario line from prompts while the UI is disabled.
+- Tweak script prompts for clearer PQ Reps guidance.
 
 ### 0.5.0
 - Split long TTS scripts to avoid 401/500 errors.
@@ -76,7 +83,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Secure the endpoints against unauthorised access
 - [x] Localise the whole site to 4 languages (English, German, Spanish, French)
 - [x] Add test harness to test script output and guard against prompt drift
-- [ ] Refine test harness to produce more passing tests
+- [x] Refine test harness to produce more passing tests
 - [x] Improve prompt handling for common scenarios and introduce new state for sleep
 
 ## Streaming audio
