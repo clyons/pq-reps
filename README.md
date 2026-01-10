@@ -75,6 +75,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Add tests for prompt outline (API validation coverage exists in `tests/generate-api.test.ts`).
 - [x] Secure the endpoints against unauthorised access
 - [x] Localise the whole site to 4 languages (English, German, Spanish, French)
+- [ ] Add test harness to test script output and guard against prompt drift
 
 ## Streaming audio
 - `/api/tts` supports streaming WAV audio when you set the `x-tts-streaming: 1` header.
