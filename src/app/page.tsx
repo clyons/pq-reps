@@ -760,21 +760,6 @@ export default function HomePage() {
 
   useAudioSync(audioRef, result?.audioStream, result?.audioUrl, setPlaybackBlocked);
 
-  useEffect(() => {
-    const storedValue = localStorage.getItem(optionsDrawerStorageKey);
-    if (storedValue !== null) {
-      setOptionsOpen(storedValue === "true");
-    }
-    optionsDrawerReadyRef.current = true;
-  }, []);
-
-  useEffect(() => {
-    if (!optionsDrawerReadyRef.current) {
-      return;
-    }
-    localStorage.setItem(optionsDrawerStorageKey, String(optionsOpen));
-  }, [optionsOpen, optionsDrawerStorageKey]);
-
   const shouldShowResult = Boolean(
     result?.audioStream || result?.audioUrl || result?.script || result?.ttsPrompt,
   );
@@ -1305,9 +1290,11 @@ export default function HomePage() {
         const streamingChunks: Uint8Array[] = [];
         let streamContentType: string | undefined;
         let downloadReady = false;
+        let streamPlaybackActive = false;
         const { blob, mediaUrl, contentType } = await requestAudio(script, {
           onStreamStart: ({ mediaUrl: streamUrl, mediaStream, contentType: streamStartType }) => {
             streamContentType = streamStartType;
+            streamPlaybackActive = Boolean(streamUrl || mediaStream);
             const downloadFilename = buildDownloadFilename({
               voice: voiceStyle,
               durationMinutes: formState.durationMinutes,
@@ -1341,6 +1328,9 @@ export default function HomePage() {
             }
             if (!downloadReady && streamContentType) {
               downloadReady = true;
+              if (!streamPlaybackActive) {
+                setStatus("success");
+              }
               const partialBlob = new Blob(streamingChunks, { type: streamContentType });
               const partialDownloadUrl = URL.createObjectURL(partialBlob);
               const downloadFilename = buildDownloadFilename({
@@ -1369,7 +1359,7 @@ export default function HomePage() {
         });
         if (mediaUrl) {
           audioUrl = mediaUrl;
-        } else {
+        } else if (!streamPlaybackActive) {
           audioUrl = URL.createObjectURL(blob);
         }
         downloadUrl = URL.createObjectURL(blob);

@@ -2938,6 +2938,11 @@
             if (downloadUrl) {
               URL.revokeObjectURL(downloadUrl);
             }
+            if (!statusPanel.hidden) {
+              status.textContent = "";
+              statusPanel.hidden = true;
+              spinner.hidden = true;
+            }
             const partialBlob = new Blob(streamingChunks, {
               type: streamContentType || "audio/wav",
             });
@@ -3034,7 +3039,7 @@
               audioPlayer.src = currentUrl;
             }
             audioPlayer.hidden = false;
-            if (!streamAudioEnabled) {
+            if (!streamAudioEnabled || !audioPlayer.srcObject) {
               attemptPlayback();
             }
             downloadLink.href = downloadUrl;
