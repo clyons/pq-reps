@@ -76,17 +76,31 @@ const useAudioSync = (
   audioRef: RefObject<HTMLAudioElement>,
   audioStream?: MediaStream,
   audioUrl?: string,
+  setPlaybackBlocked?: (blocked: boolean) => void,
 ) => {
   useEffect(() => {
     const audioElement = audioRef.current;
     if (!audioElement) {
       return;
     }
+    if (!audioStream && !audioUrl) {
+      setPlaybackBlocked?.(false);
+    }
+    const attemptPlay = () => {
+      const playPromise = audioElement.play();
+      if (!playPromise) {
+        return;
+      }
+      playPromise.then(
+        () => setPlaybackBlocked?.(false),
+        () => setPlaybackBlocked?.(true),
+      );
+    };
     if (audioStream) {
       if (audioElement.srcObject !== audioStream) {
         audioElement.srcObject = audioStream;
       }
-      audioElement.play().catch(() => {});
+      attemptPlay();
       return;
     }
     if (audioElement.srcObject) {
@@ -94,8 +108,9 @@ const useAudioSync = (
     }
     if (audioUrl && audioElement.src !== audioUrl) {
       audioElement.src = audioUrl;
+      attemptPlay();
     }
-  }, [audioRef, audioStream, audioUrl]);
+  }, [audioRef, audioStream, audioUrl, setPlaybackBlocked]);
 };
 
 const DURATION_OPTIONS: FormState["durationMinutes"][] = [1, 2, 5, 12];
@@ -713,6 +728,7 @@ export default function HomePage() {
   const [activeSection, setActiveSection] = useState<SectionId>("quick");
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [ttsPromptFormat, setTtsPromptFormat] = useState<"json" | "text">("json");
+  const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
   const sectionTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -730,11 +746,26 @@ export default function HomePage() {
   const formatDurationLabel = (minutes: number) => formatMinutes(locale, minutes);
   const isStreamingBlocked = isMobileSafari && formState.durationMinutes >= 5;
 
-  useAudioSync(audioRef, result?.audioStream, result?.audioUrl);
+  useAudioSync(audioRef, result?.audioStream, result?.audioUrl, setPlaybackBlocked);
 
   const shouldShowResult = Boolean(
     result?.audioStream || result?.audioUrl || result?.script || result?.ttsPrompt,
   );
+
+  const handlePlaybackRetry = () => {
+    const audioElement = audioRef.current;
+    if (!audioElement) {
+      return;
+    }
+    const playPromise = audioElement.play();
+    if (!playPromise) {
+      return;
+    }
+    playPromise.then(
+      () => setPlaybackBlocked(false),
+      () => setPlaybackBlocked(true),
+    );
+  };
 
   const ttsPromptLabels = useMemo(
     () => ({
@@ -1837,6 +1868,24 @@ export default function HomePage() {
             >
               {t("errors.audio_unsupported")}
             </audio>
+          )}
+          {playbackBlocked && (result.audioStream || result.audioUrl) && (
+            <button
+              type="button"
+              onClick={handlePlaybackRetry}
+              style={{
+                padding: "0.75rem 1.5rem",
+                background: BRAND_COLORS.orange.base,
+                color: BRAND_COLORS.neutral.black,
+                borderRadius: 999,
+                border: "none",
+                cursor: "pointer",
+                fontWeight: 600,
+                marginBottom: "1rem",
+              }}
+            >
+              {t("result.tap_to_play")}
+            </button>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "1rem" }}>
             <a

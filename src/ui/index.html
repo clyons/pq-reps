@@ -789,6 +789,15 @@
       <section id="result" class="result" hidden>
         <h2 id="result-title">Your session is ready</h2>
         <audio id="audio-player" controls style="width: 100%;" hidden></audio>
+        <button
+          type="button"
+          id="playback-blocked"
+          class="button-secondary"
+          data-i18n="result.tap_to_play"
+          hidden
+        >
+          Tap to play
+        </button>
         <div class="download-links">
           <a
             id="download-link"
@@ -891,6 +900,7 @@
       const error = document.getElementById("error");
       const result = document.getElementById("result");
       const audioPlayer = document.getElementById("audio-player");
+      const playbackBlockedButton = document.getElementById("playback-blocked");
       const downloadLink = document.getElementById("download-link");
       const scriptDownloadLink = document.getElementById("script-download-link");
       const scriptOutput = document.getElementById("script-output");
@@ -965,6 +975,7 @@
       let versionValue = "unknown";
       let currentTtsPrompt = null;
       let debugPromptFormat = "json";
+      let playbackBlocked = false;
 
       const TRANSLATIONS = {
         en: {
@@ -1028,6 +1039,7 @@
           "form.reset": "Reset to defaults",
           "status.preparing": "Preparing audio. This can take a few seconds.",
           "result.title": "Your session is ready",
+          "result.tap_to_play": "Tap to play",
           "result.download_audio": "Download the audio",
           "result.download_text": "Download the text",
           "result.debug_title": "TTS prompt (debug)",
@@ -1118,6 +1130,7 @@
           "form.reset": "Restablecer valores",
           "status.preparing": "Preparando el audio. Esto puede tardar unos segundos.",
           "result.title": "Tu sesión está lista",
+          "result.tap_to_play": "Toca para reproducir",
           "result.download_audio": "Descargar el audio",
           "result.download_text": "Descargar el texto",
           "result.debug_title": "Prompt de TTS (depuración)",
@@ -1210,6 +1223,7 @@
           "form.reset": "Réinitialiser",
           "status.preparing": "Préparation de l'audio. Cela peut prendre quelques secondes.",
           "result.title": "Votre session est prête",
+          "result.tap_to_play": "Touchez pour lancer la lecture",
           "result.download_audio": "Télécharger l'audio",
           "result.download_text": "Télécharger le texte",
           "result.debug_title": "Prompt TTS (debug)",
@@ -1302,6 +1316,7 @@
           "form.reset": "Auf Standard zurücksetzen",
           "status.preparing": "Audio wird vorbereitet. Das kann ein paar Sekunden dauern.",
           "result.title": "Deine Sitzung ist bereit",
+          "result.tap_to_play": "Zum Abspielen tippen",
           "result.download_audio": "Audio herunterladen",
           "result.download_text": "Text herunterladen",
           "result.debug_title": "TTS-Prompt (Debug)",
@@ -1527,6 +1542,30 @@
           suffix = "";
         }
         return translate("form.duration.minutes", { count: minutes, suffix }, locale);
+      };
+
+      const setPlaybackBlocked = (blocked) => {
+        playbackBlocked = blocked;
+        if (playbackBlockedButton) {
+          playbackBlockedButton.hidden = !blocked;
+          if (blocked) {
+            playbackBlockedButton.textContent = translate("result.tap_to_play");
+          }
+        }
+      };
+
+      const attemptPlayback = () => {
+        if (!audioPlayer) {
+          return;
+        }
+        const playPromise = audioPlayer.play();
+        if (!playPromise) {
+          return;
+        }
+        playPromise.then(
+          () => setPlaybackBlocked(false),
+          () => setPlaybackBlocked(true),
+        );
       };
 
       const formatTtsPromptValue = (value) => {
@@ -2479,6 +2518,11 @@
       };
 
       loadVersion();
+      if (playbackBlockedButton) {
+        playbackBlockedButton.addEventListener("click", () => {
+          attemptPlayback();
+        });
+      }
       resetButton.addEventListener("click", () => {
         setFormValues(defaultValues);
         clearScenarioSelection();
@@ -2504,6 +2548,7 @@
         statusPanel.hidden = true;
         spinner.hidden = true;
         result.hidden = true;
+        setPlaybackBlocked(false);
         scriptOutput.textContent = "";
         debugOutput.textContent = "";
         debugSection.hidden = true;
@@ -2890,13 +2935,13 @@
                 streamContentType = streamResponseContentType;
                 if (mediaStream) {
                   audioPlayer.srcObject = mediaStream;
-                  audioPlayer.play().catch(() => {});
                   audioPlayer.hidden = false;
+                  attemptPlayback();
                 } else if (mediaUrl) {
                   audioPlayer.srcObject = null;
                   audioPlayer.src = mediaUrl;
-                  audioPlayer.play().catch(() => {});
                   audioPlayer.hidden = false;
+                  attemptPlayback();
                 }
                 status.textContent = "";
                 statusPanel.hidden = true;
@@ -2977,6 +3022,7 @@
             setDownloadLinkState(downloadLink, { enabled: true, href: downloadUrl });
           } else {
             audioPlayer.hidden = true;
+            setPlaybackBlocked(false);
             setDownloadLinkState(downloadLink, { enabled: false });
           }
 
