@@ -97,6 +97,7 @@ const PRACTICE_MODE_DESCRIPTIONS: Record<PracticeMode, string> = {
   tense_relax: "alternate gentle tension and release with sensory attention",
   moving: "guided attention while in motion",
   sitting: "guided attention while seated with eyes open",
+  lying: "guided attention while lying down",
   label_with_anchor: "label sensations while returning to a single anchor",
   label_while_scanning: "label sensations while scanning the body",
 };

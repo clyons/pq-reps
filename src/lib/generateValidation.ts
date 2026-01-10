@@ -64,6 +64,7 @@ const ALLOWED_PRACTICE_MODES: PracticeMode[] = [
   "tense_relax",
   "moving",
   "sitting",
+  "lying",
   "label_with_anchor",
   "label_while_scanning",
 ];
@@ -71,6 +72,7 @@ const ALLOWED_PRACTICE_MODES: PracticeMode[] = [
 const ALLOWED_BODY_STATES: BodyState[] = [
   "still_seated",
   "still_seated_closed_eyes",
+  "lying",
   "moving",
 ];
 
