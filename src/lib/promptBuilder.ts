@@ -107,6 +107,30 @@ const BODY_STATE_DESCRIPTIONS: Record<BodyState, string> = {
   moving: "in motion (walking or gentle movement)",
 };
 
+const EYE_STATE_DESCRIPTIONS: Record<EyeState, string> = {
+  closed: "eyes closed",
+  open_focused: "eyes open with a focused gaze",
+  open_diffused: "eyes open with a soft, diffused gaze",
+};
+
+const LABELING_MODE_DESCRIPTIONS: Record<LabelingMode, string> = {
+  none: "no labeling",
+  breath_anchor: "label sensations while returning to the breath anchor",
+  scan_and_label: "label sensations while scanning the body",
+};
+
+const CLOSING_STYLE_DESCRIPTIONS: Record<ClosingStyle, string> = {
+  minimal: "a brief, minimal close",
+  pq_framed: "a PQ-framed close",
+  pq_framed_with_progression: "a PQ-framed close with progression",
+};
+
+const SENSE_ROTATION_DESCRIPTIONS: Record<SenseRotation, string> = {
+  none: "no sense rotation",
+  guided_rotation: "guide a rotation through the senses",
+  free_choice: "invite the listener to choose the sense",
+};
+
 export type ScenarioDefinition = {
   id: ScenarioId;
   label: string;
@@ -245,19 +269,28 @@ export function buildPrompt(config: GenerateConfig): string {
   const practiceModeDescription =
     PRACTICE_MODE_DESCRIPTIONS[practiceMode] ?? practiceMode;
   const bodyStateDescription = BODY_STATE_DESCRIPTIONS[bodyState] ?? bodyState;
+  const eyeStateDescription = EYE_STATE_DESCRIPTIONS[eyeState] ?? eyeState;
+  const labelingModeDescription =
+    LABELING_MODE_DESCRIPTIONS[labelingMode] ?? labelingMode;
+  const closingStyleDescription =
+    CLOSING_STYLE_DESCRIPTIONS[closingStyle] ?? closingStyle;
+  const senseRotationDescription =
+    SENSE_ROTATION_DESCRIPTIONS[senseRotation ?? "none"] ??
+    senseRotation ??
+    "none";
 
   return [
     `Practice mode: ${practiceModeDescription}.`,
     `Body state: ${bodyStateDescription}.`,
-    `Eye state: ${eyeState}.`,
+    `Eye state: ${eyeStateDescription}.`,
     `Primary sense: ${primarySense}.`,
     `Duration: ${durationMinutes} minutes.`,
     ...scenarioLines,
-    `Labeling mode: ${labelingMode}.`,
+    `Labeling mode: ${labelingModeDescription}.`,
     `Silence profile: ${silenceProfile}.`,
     `Normalization frequency: ${normalizationFrequency}.`,
-    `Closing style: ${closingStyle}.`,
-    senseRotation ? `Sense rotation: ${senseRotation}.` : "Sense rotation: none.",
+    `Closing style: ${closingStyleDescription}.`,
+    `Sense rotation: ${senseRotationDescription}.`,
     languageLine,
     `Write the script entirely in ${primaryLanguage}.`,
     audience ? `Audience: ${audience}.` : "Audience: general.",
