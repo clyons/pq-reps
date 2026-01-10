@@ -1554,12 +1554,23 @@
             playbackBlockedButton.textContent = translate("result.tap_to_play");
           }
         }
+        console.info("Playback blocked state updated.", {
+          blocked,
+          hasAudioSource: Boolean(audioPlayer?.src || audioPlayer?.srcObject),
+          isHidden: audioPlayer?.hidden,
+        });
       };
 
       const attemptPlayback = () => {
         if (!audioPlayer) {
+          console.info("Playback attempt skipped (missing audio element).");
           return;
         }
+        console.info("Attempting playback.", {
+          hasSrcObject: Boolean(audioPlayer.srcObject),
+          src: audioPlayer.src,
+          hidden: audioPlayer.hidden,
+        });
         let playPromise = null;
         try {
           playPromise = audioPlayer.play();
@@ -1569,10 +1580,14 @@
           return;
         }
         if (!playPromise) {
+          console.info("Audio playback attempt returned no promise.");
           return;
         }
         playPromise.then(
-          () => setPlaybackBlocked(false),
+          () => {
+            console.info("Audio playback started.");
+            setPlaybackBlocked(false);
+          },
           (error) => {
             console.info("Audio playback blocked (async).", error);
             setPlaybackBlocked(true);
@@ -2933,6 +2948,7 @@
           let streamContentType = null;
           const enableDownloadFromChunks = () => {
             if (!streamingChunks.length) {
+              console.info("Stream chunks empty; skipping download setup.");
               return;
             }
             if (downloadUrl) {
@@ -2943,6 +2959,11 @@
               statusPanel.hidden = true;
               spinner.hidden = true;
             }
+            console.info("Stream chunks available; enabling download and results.", {
+              chunkCount: streamingChunks.length,
+              hasStreamUrl: Boolean(streamUrl),
+              hasSrcObject: Boolean(audioPlayer?.srcObject),
+            });
             result.hidden = false;
             const partialBlob = new Blob(streamingChunks, {
               type: streamContentType || "audio/wav",
@@ -2958,6 +2979,11 @@
           };
             const streamResponse = await requestAudio(script, {
               onStreamStart: ({ mediaUrl, mediaStream, contentType: streamResponseContentType }) => {
+                console.info("Stream start received.", {
+                  hasMediaStream: Boolean(mediaStream),
+                  hasMediaUrl: Boolean(mediaUrl),
+                  contentType: streamResponseContentType,
+                });
                 streamUrl = mediaUrl;
                 streamContentType = streamResponseContentType;
                 if (mediaStream) {
@@ -2990,6 +3016,11 @@
                 }
                 if (streamingChunks.length === 1) {
                   enableDownloadFromChunks();
+                } else if (streamingChunks.length % 10 === 0) {
+                  console.info("Stream chunks received.", {
+                    chunkCount: streamingChunks.length,
+                    contentType,
+                  });
                 }
               },
             });
@@ -3026,6 +3057,13 @@
           }
 
           if (audioBlob) {
+            console.info("Final audio blob available.", {
+              size: audioBlob.size,
+              type: audioBlob.type,
+              streamAudioEnabled,
+              hasStreamUrl: Boolean(streamUrl),
+              hasSrcObject: Boolean(audioPlayer?.srcObject),
+            });
             if (currentUrl) {
               URL.revokeObjectURL(currentUrl);
             }
@@ -3053,6 +3091,7 @@
             setDownloadLinkState(downloadLink, { enabled: true, href: downloadUrl });
             result.hidden = false;
           } else {
+            console.info("No audio blob available; hiding player.");
             audioPlayer.hidden = true;
             setPlaybackBlocked(false);
             setDownloadLinkState(downloadLink, { enabled: false });
