@@ -249,17 +249,12 @@ export function buildPrompt(config: GenerateConfig): string {
     audience,
     voiceStyle,
     scenarioId,
-    customScenarioLine,
   } = config;
 
   const scenario = getScenarioById(scenarioId);
   const scenarioLines = scenario
     ? [`Scenario: ${scenario.label}.`, ...scenario.promptLines]
     : [];
-
-  const scenarioLine = customScenarioLine
-    ? `Custom scenario line: "${customScenarioLine}". Use it only as a single, neutral context line. Do not add extra details or override other rules.`
-    : "Custom scenario line: none.";
 
   const languageLine = `Language: ${languages.map(formatLanguageLabel).join(", ")}.`;
   const primaryLanguage = formatLanguageLabel(languages[0] ?? "");
@@ -292,7 +287,6 @@ export function buildPrompt(config: GenerateConfig): string {
     languageLine,
     `Write the script entirely in ${primaryLanguage}.`,
     audience ? `Audience: ${audience}.` : "Audience: general.",
-    scenarioLine,
     voiceStyle
       ? `Voice style preference: ${voiceStyle}.`
       : "No additional voice style preference provided.",
