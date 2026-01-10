@@ -439,7 +439,9 @@
         border-radius: 10px;
         font-size: var(--font-size-xs);
         font-weight: 500;
-        white-space: nowrap;
+        white-space: normal;
+        max-width: min(320px, calc(100vw - 3rem));
+        text-align: left;
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.15s ease;
@@ -933,6 +935,7 @@
       const groupLanguage = document.getElementById("group-language");
       const groupVoice = document.getElementById("group-voice");
       const groupAudioDelivery = document.getElementById("group-audio-delivery");
+      const optionsDrawer = document.querySelector(".options-drawer");
       const resetButton = document.getElementById("reset-button");
       const debugSection = document.getElementById("debug-section");
       const debugOutput = document.getElementById("debug-output");
@@ -947,6 +950,7 @@
       const storageKey = "pq-reps-form";
       const sectionStorageKey = "pq-reps-active-section";
       const debugTtsPromptStorageKey = "pq-reps-debug-tts-prompt";
+      const optionsDrawerStorageKey = "pq-reps-options-drawer-open";
       const femaleVoiceByLanguage = { es: "nova", fr: "nova" };
       const maleVoiceByLanguage = { es: "onyx", fr: "onyx" };
       const PRACTICE_TYPE_LABEL_KEYS = {
@@ -2301,6 +2305,7 @@
 
         const storedValuesRaw = localStorage.getItem(storageKey);
         const storedSection = localStorage.getItem(sectionStorageKey);
+        const storedOptionsDrawer = localStorage.getItem(optionsDrawerStorageKey);
         let storedValues = null;
         if (storedValuesRaw) {
           try {
@@ -2338,6 +2343,9 @@
         updateVoiceLabels();
         applyTranslations();
         syncScenarioSelection();
+        if (optionsDrawer && storedOptionsDrawer !== null) {
+          optionsDrawer.open = storedOptionsDrawer === "true";
+        }
         if (storedSection === "quick" || storedSection === "customize") {
           setActiveSection(storedSection, { preserveScenario: true });
         }
@@ -2352,6 +2360,11 @@
             setActiveSection("customize");
           });
           customizeToggle.addEventListener("keydown", handleSectionTabKeyDown);
+        }
+        if (optionsDrawer) {
+          optionsDrawer.addEventListener("toggle", () => {
+            localStorage.setItem(optionsDrawerStorageKey, String(optionsDrawer.open));
+          });
         }
         durationInputs.forEach((input) => {
           input.addEventListener("change", () => {
