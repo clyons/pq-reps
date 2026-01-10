@@ -203,6 +203,18 @@ const resolveAudioExtension = (contentType?: string) =>
 const resolveStreamingMimeType = (contentType: string) =>
   contentType.includes("audio/wav") ? 'audio/wav; codecs="1"' : contentType;
 
+const detectMobileSafari = () => {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+  const userAgent = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+  const isSafari =
+    /Safari/.test(userAgent) &&
+    !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS|SamsungBrowser/.test(userAgent);
+  return isIOS && isSafari;
+};
+
 const formatTtsPromptValue = (value: unknown) => {
   if (value === null || value === undefined) {
     return "";
@@ -696,6 +708,7 @@ export default function HomePage() {
   const [isDevMode, setIsDevMode] = useState(process.env.NODE_ENV !== "production");
   const [isDevQueryEnabled, setIsDevQueryEnabled] = useState(false);
   const isLoading = status === "loading";
+  const isMobileSafari = useMemo(() => detectMobileSafari(), []);
   const locale = useMemo<Locale>(() => resolveLocale(formState.language), [formState.language]);
   const t = useMemo(
     () => (key: string, params?: Record<string, string | number>) =>
@@ -703,6 +716,7 @@ export default function HomePage() {
     [locale],
   );
   const formatDurationLabel = (minutes: number) => formatMinutes(locale, minutes);
+  const isStreamingBlocked = isMobileSafari && formState.durationMinutes >= 5;
 
   useAudioSync(audioRef, result?.audioStream, result?.audioUrl);
 
@@ -917,7 +931,11 @@ export default function HomePage() {
   ];
   const audioDeliveryOptions: PillOption[] = [
     { value: "generate", label: t("form.audio_delivery.generate") },
-    { value: "stream", label: t("form.audio_delivery.stream") },
+    {
+      value: "stream",
+      label: t("form.audio_delivery.stream"),
+      disabled: isStreamingBlocked,
+    },
   ];
 
   const validate = (state: FormState) => {
@@ -925,6 +943,9 @@ export default function HomePage() {
 
     if (!state.language) {
       nextErrors.push(t("errors.language_required"));
+    }
+    if (state.audioDelivery === "stream" && isMobileSafari && state.durationMinutes >= 5) {
+      nextErrors.push(t("errors.audio_streaming_unavailable_mobile"));
     }
 
     return nextErrors;
@@ -1710,6 +1731,11 @@ export default function HomePage() {
                   }
                 />
               </div>
+              {isStreamingBlocked && (
+                <span style={{ fontSize: "0.9rem", color: BRAND_COLORS.orange.dark }}>
+                  {t("errors.audio_streaming_unavailable_mobile")}
+                </span>
+              )}
             </label>
 
             {isDevMode && (

@@ -97,6 +97,8 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.stream_ended": "The stream ended before returning a response.",
     "errors.streaming_failed": "Streaming failed.",
     "errors.audio_stream_failed": "Audio stream failed.",
+    "errors.audio_streaming_unavailable_mobile":
+      "Audio streaming is unavailable on Mobile Safari for 5-minute or longer practices.",
     "errors.append_audio_chunk_failed": "Failed to append audio chunk.",
     "errors.audio_stream_no_data": "Audio stream ended before data arrived.",
     "errors.preview_failed": "Preview failed.",
@@ -257,6 +259,8 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.stream_ended": "La transmisión terminó antes de devolver una respuesta.",
     "errors.streaming_failed": "La transmisión falló.",
     "errors.audio_stream_failed": "Falló la transmisión de audio.",
+    "errors.audio_streaming_unavailable_mobile":
+      "La transmisión de audio no está disponible en Safari móvil para prácticas de 5 minutos o más.",
     "errors.append_audio_chunk_failed": "No se pudo añadir el fragmento de audio.",
     "errors.audio_stream_no_data": "La transmisión de audio terminó antes de que llegaran datos.",
     "errors.preview_failed": "Falló la vista previa.",
@@ -424,6 +428,8 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.stream_ended": "Le flux s'est terminé avant d'envoyer une réponse.",
     "errors.streaming_failed": "Le streaming a échoué.",
     "errors.audio_stream_failed": "Le flux audio a échoué.",
+    "errors.audio_streaming_unavailable_mobile":
+      "Le streaming audio n'est pas disponible sur Safari mobile pour les pratiques de 5 minutes ou plus.",
     "errors.append_audio_chunk_failed": "Impossible d'ajouter le fragment audio.",
     "errors.audio_stream_no_data": "Le flux audio s'est terminé avant l'arrivée des données.",
     "errors.preview_failed": "L'aperçu a échoué.",
@@ -591,6 +597,8 @@ const MESSAGES: Record<Locale, Messages> = {
     "errors.stream_ended": "Der Stream endete, bevor eine Antwort zurückkam.",
     "errors.streaming_failed": "Streaming fehlgeschlagen.",
     "errors.audio_stream_failed": "Audio-Stream fehlgeschlagen.",
+    "errors.audio_streaming_unavailable_mobile":
+      "Audio-Streaming ist auf Mobile Safari für 5-minütige oder längere Übungen nicht verfügbar.",
     "errors.append_audio_chunk_failed": "Audio-Chunk konnte nicht hinzugefügt werden.",
     "errors.audio_stream_no_data": "Der Audio-Stream endete, bevor Daten ankamen.",
     "errors.preview_failed": "Vorschau fehlgeschlagen.",
