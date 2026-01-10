@@ -1562,6 +1562,7 @@
         try {
           playPromise = audioPlayer.play();
         } catch (error) {
+          console.info("Audio playback blocked (sync).", error);
           setPlaybackBlocked(true);
           return;
         }
@@ -1570,7 +1571,10 @@
         }
         playPromise.then(
           () => setPlaybackBlocked(false),
-          () => setPlaybackBlocked(true),
+          (error) => {
+            console.info("Audio playback blocked (async).", error);
+            setPlaybackBlocked(true);
+          },
         );
       };
 
@@ -3013,12 +3017,15 @@
             }
             downloadUrl = URL.createObjectURL(audioBlob);
             currentUrl = streamUrl || downloadUrl;
-            if (audioPlayer.src !== currentUrl) {
+            const shouldSwapSource = !(streamAudioEnabled && audioPlayer.srcObject);
+            if (shouldSwapSource && audioPlayer.src !== currentUrl) {
               audioPlayer.srcObject = null;
               audioPlayer.src = currentUrl;
             }
             audioPlayer.hidden = false;
-            attemptPlayback();
+            if (!streamAudioEnabled) {
+              attemptPlayback();
+            }
             downloadLink.href = downloadUrl;
             downloadLink.download = buildDownloadFilename({
               voice: voiceStyle,

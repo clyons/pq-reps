@@ -91,6 +91,7 @@ const useAudioSync = (
       try {
         playPromise = audioElement.play();
       } catch (error) {
+        console.info("Audio playback blocked (sync).", error);
         setPlaybackBlocked?.(true);
         return;
       }
@@ -99,7 +100,10 @@ const useAudioSync = (
       }
       playPromise.then(
         () => setPlaybackBlocked?.(false),
-        () => setPlaybackBlocked?.(true),
+        (error) => {
+          console.info("Audio playback blocked (async).", error);
+          setPlaybackBlocked?.(true);
+        },
       );
     };
     if (audioStream) {
@@ -767,6 +771,7 @@ export default function HomePage() {
     try {
       playPromise = audioElement.play();
     } catch (error) {
+      console.info("Audio playback retry blocked (sync).", error);
       setPlaybackBlocked(true);
       return;
     }
@@ -775,7 +780,10 @@ export default function HomePage() {
     }
     playPromise.then(
       () => setPlaybackBlocked(false),
-      () => setPlaybackBlocked(true),
+      (error) => {
+        console.info("Audio playback retry blocked (async).", error);
+        setPlaybackBlocked(true);
+      },
     );
   };
 
@@ -1433,23 +1441,25 @@ export default function HomePage() {
         ? URL.createObjectURL(new Blob([cleanedScript], { type: "text/plain" }))
         : undefined;
 
-        setResult((prev) => {
-          if (prev?.audioUrl && prev.audioUrl !== audioUrl) {
-            URL.revokeObjectURL(prev.audioUrl);
-          }
-          if (prev?.downloadUrl) {
-            URL.revokeObjectURL(prev.downloadUrl);
-          }
-          if (prev?.scriptDownloadUrl) {
-            URL.revokeObjectURL(prev.scriptDownloadUrl);
-          }
-          return {
-            audioStream: undefined,
-            audioUrl,
-            downloadUrl: downloadUrl ?? audioUrl,
-            script: cleanedScript,
-            ttsPrompt,
-            downloadFilename,
+      setResult((prev) => {
+        if (prev?.audioUrl && audioUrl && prev.audioUrl !== audioUrl) {
+          URL.revokeObjectURL(prev.audioUrl);
+        }
+        if (prev?.downloadUrl && downloadUrl && prev.downloadUrl !== downloadUrl) {
+          URL.revokeObjectURL(prev.downloadUrl);
+        }
+        if (prev?.scriptDownloadUrl) {
+          URL.revokeObjectURL(prev.scriptDownloadUrl);
+        }
+        const nextAudioUrl = audioUrl ?? prev?.audioUrl;
+        const nextDownloadUrl = downloadUrl ?? audioUrl ?? prev?.downloadUrl;
+        return {
+          audioStream: audioUrl ? undefined : prev?.audioStream,
+          audioUrl: nextAudioUrl,
+          downloadUrl: nextDownloadUrl,
+          script: cleanedScript,
+          ttsPrompt,
+          downloadFilename,
           scriptDownloadFilename,
           scriptDownloadUrl,
         };
