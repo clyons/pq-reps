@@ -29,6 +29,11 @@ function toMarkdownReport(payload: ReportPayload): string {
     ''
   ].join('\n');
 
+  const sharedSystemPrompt = payload.results[0]?.systemPrompt?.trim();
+  const systemPromptSection = sharedSystemPrompt
+    ? ['## System prompt', '```text', sharedSystemPrompt, '```', ''].join('\n')
+    : '';
+
   const tableHeader = [
     '| Case ID | Status | Failures |',
     '| --- | --- | --- |'
@@ -45,7 +50,9 @@ function toMarkdownReport(payload: ReportPayload): string {
 
   const details = payload.results.map((result) => formatCaseDetails(result)).join('\n\n');
 
-  return [header, tableHeader, ...rows, '', details].join('\n');
+  return [header, systemPromptSection, tableHeader, ...rows, '', details]
+    .filter(Boolean)
+    .join('\n');
 }
 
 function formatCaseDetails(result: CaseResult): string {
@@ -72,10 +79,6 @@ function formatCaseDetails(result: CaseResult): string {
   lines.push('Inputs:');
   lines.push('```json');
   lines.push(JSON.stringify(result.inputs, null, 2));
-  lines.push('```', '');
-  lines.push('System prompt:');
-  lines.push('```text');
-  lines.push(result.systemPrompt.trim());
   lines.push('```', '');
   lines.push('User prompt:');
   lines.push('```text');
