@@ -24,3 +24,6 @@ dist/
 .env.local
 npm-debug.log*
 yarn-error.log*
+.cache/
+.ds_store
+scripts/prompt_drift/output/
