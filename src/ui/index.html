@@ -1536,6 +1536,15 @@
         );
       };
 
+      const logClient = (message, data = {}) => {
+        console.info(message, data);
+        fetch("/api/client-log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, data }),
+        }).catch(() => {});
+      };
+
       const formatDurationLabel = (minutes, locale = getCurrentLocale()) => {
         let suffix = "s";
         if (locale === "de") {
@@ -1554,7 +1563,7 @@
             playbackBlockedButton.textContent = translate("result.tap_to_play");
           }
         }
-        console.info("Playback blocked state updated.", {
+        logClient("Playback blocked state updated.", {
           blocked,
           hasAudioSource: Boolean(audioPlayer?.src || audioPlayer?.srcObject),
           isHidden: audioPlayer?.hidden,
@@ -1563,10 +1572,10 @@
 
       const attemptPlayback = () => {
         if (!audioPlayer) {
-          console.info("Playback attempt skipped (missing audio element).");
+          logClient("Playback attempt skipped (missing audio element).");
           return;
         }
-        console.info("Attempting playback.", {
+        logClient("Attempting playback.", {
           hasSrcObject: Boolean(audioPlayer.srcObject),
           src: audioPlayer.src,
           hidden: audioPlayer.hidden,
@@ -1575,21 +1584,21 @@
         try {
           playPromise = audioPlayer.play();
         } catch (error) {
-          console.info("Audio playback blocked (sync).", error);
+          logClient("Audio playback blocked (sync).", { error: String(error) });
           setPlaybackBlocked(true);
           return;
         }
         if (!playPromise) {
-          console.info("Audio playback attempt returned no promise.");
+          logClient("Audio playback attempt returned no promise.");
           return;
         }
         playPromise.then(
           () => {
-            console.info("Audio playback started.");
+            logClient("Audio playback started.");
             setPlaybackBlocked(false);
           },
           (error) => {
-            console.info("Audio playback blocked (async).", error);
+            logClient("Audio playback blocked (async).", { error: String(error) });
             setPlaybackBlocked(true);
           },
         );
@@ -2948,7 +2957,7 @@
           let streamContentType = null;
           const enableDownloadFromChunks = () => {
             if (!streamingChunks.length) {
-              console.info("Stream chunks empty; skipping download setup.");
+              logClient("Stream chunks empty; skipping download setup.");
               return;
             }
             if (downloadUrl) {
@@ -2959,7 +2968,7 @@
               statusPanel.hidden = true;
               spinner.hidden = true;
             }
-            console.info("Stream chunks available; enabling download and results.", {
+            logClient("Stream chunks available; enabling download and results.", {
               chunkCount: streamingChunks.length,
               hasStreamUrl: Boolean(streamUrl),
               hasSrcObject: Boolean(audioPlayer?.srcObject),
@@ -2979,7 +2988,7 @@
           };
             const streamResponse = await requestAudio(script, {
               onStreamStart: ({ mediaUrl, mediaStream, contentType: streamResponseContentType }) => {
-                console.info("Stream start received.", {
+                logClient("Stream start received.", {
                   hasMediaStream: Boolean(mediaStream),
                   hasMediaUrl: Boolean(mediaUrl),
                   contentType: streamResponseContentType,
@@ -3017,7 +3026,7 @@
                 if (streamingChunks.length === 1) {
                   enableDownloadFromChunks();
                 } else if (streamingChunks.length % 10 === 0) {
-                  console.info("Stream chunks received.", {
+                  logClient("Stream chunks received.", {
                     chunkCount: streamingChunks.length,
                     contentType,
                   });
@@ -3057,7 +3066,7 @@
           }
 
           if (audioBlob) {
-            console.info("Final audio blob available.", {
+            logClient("Final audio blob available.", {
               size: audioBlob.size,
               type: audioBlob.type,
               streamAudioEnabled,
@@ -3091,7 +3100,7 @@
             setDownloadLinkState(downloadLink, { enabled: true, href: downloadUrl });
             result.hidden = false;
           } else {
-            console.info("No audio blob available; hiding player.");
+            logClient("No audio blob available; hiding player.");
             audioPlayer.hidden = true;
             setPlaybackBlocked(false);
             setDownloadLinkState(downloadLink, { enabled: false });

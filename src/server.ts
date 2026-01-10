@@ -79,6 +79,14 @@ const sendJson = (res: http.ServerResponse, status: number, payload: unknown) =>
   res.end(JSON.stringify(payload));
 };
 
+const readRequestBody = async (req: http.IncomingMessage) => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks).toString("utf-8");
+};
+
 const server = http.createServer(async (req, res) => {
   const requestId = randomUUID();
   const startTime = Date.now();
@@ -149,6 +157,27 @@ const server = http.createServer(async (req, res) => {
       );
       return;
     }
+  }
+
+  if (url.pathname === "/api/client-log" && req.method === "POST") {
+    try {
+      const body = await readRequestBody(req);
+      const payload = JSON.parse(body);
+      logger.info("client_log", {
+        requestId,
+        message: payload?.message ?? "client_log",
+        data: payload?.data ?? {},
+        userAgent: req.headers["user-agent"] ?? "unknown",
+      });
+      sendJson(res, 200, { ok: true });
+    } catch (error) {
+      logger.warn("client_log_error", {
+        requestId,
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+      sendJson(res, 400, { ok: false });
+    }
+    return;
   }
 
   if (url.pathname === "/api/generate") {
