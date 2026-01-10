@@ -124,9 +124,9 @@ const CLOSING_STYLE_DESCRIPTIONS: Record<ClosingStyle, string> = {
 };
 
 const SENSE_ROTATION_DESCRIPTIONS: Record<SenseRotation, string> = {
-  none: "no sense rotation",
-  guided_rotation: "guide a rotation through the senses",
-  free_choice: "invite the listener to choose the sense",
+  none: "focus the practice on a single sense, with no sense rotation",
+  guided_rotation: "guide the listener into a rotation of different senses",
+  free_choice: "invite the listener to choose a different sense periodically",
 };
 
 export type ScenarioDefinition = {
