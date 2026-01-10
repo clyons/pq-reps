@@ -1540,7 +1540,7 @@
         console.info(message, data);
         fetch("/api/client-log", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { ...authHeaders, "Content-Type": "application/json" },
           body: JSON.stringify({ message, data }),
         }).catch(() => {});
       };
