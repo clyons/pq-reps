@@ -727,6 +727,7 @@
                   </label>
                 </div>
               </div>
+              <p id="audio-delivery-warning" class="hint" hidden></p>
             </label>
 
             <div id="dev-controls" hidden>
@@ -857,6 +858,7 @@
       let scenarioCards = [];
       const practiceTypeInputs = form.querySelectorAll("input[name='practiceType']");
       const durationInputs = form.querySelectorAll("input[name='durationMinutes']");
+      const audioDeliveryInputs = form.querySelectorAll("input[name='audioDelivery']");
       const getSelectedValue = (name) =>
         form.querySelector(`input[name='${name}']:checked`)?.value;
       const status = document.getElementById("status");
@@ -886,6 +888,7 @@
       const voicePreviewText = document.getElementById("voice-preview-text");
       const labelAudioDelivery = document.getElementById("label-audio-delivery");
       const audioDeliveryInfo = document.getElementById("audio-delivery-info");
+      const audioDeliveryWarning = document.getElementById("audio-delivery-warning");
       const labelDebugTts = document.getElementById("label-debug-tts");
       const debugTtsHelp = document.getElementById("debug-tts-help");
       const resultTitle = document.getElementById("result-title");
@@ -1023,6 +1026,8 @@
           "errors.stream_ended": "The stream ended before returning a response.",
           "errors.streaming_failed": "Streaming failed.",
           "errors.audio_stream_failed": "Audio stream failed.",
+          "errors.audio_streaming_unavailable_mobile":
+            "Audio streaming is unavailable on Mobile Safari for 5-minute or longer practices.",
           "errors.append_audio_chunk_failed": "Failed to append audio chunk.",
           "errors.audio_stream_no_data": "Audio stream ended before data arrived.",
           "errors.preview_failed": "Preview failed.",
@@ -1112,6 +1117,8 @@
           "errors.stream_ended": "La transmisión terminó antes de devolver una respuesta.",
           "errors.streaming_failed": "La transmisión falló.",
           "errors.audio_stream_failed": "Falló la transmisión de audio.",
+          "errors.audio_streaming_unavailable_mobile":
+            "La transmisión de audio no está disponible en Safari móvil para prácticas de 5 minutos o más.",
           "errors.append_audio_chunk_failed": "No se pudo añadir el fragmento de audio.",
           "errors.audio_stream_no_data":
             "La transmisión de audio terminó antes de que llegaran datos.",
@@ -1202,6 +1209,8 @@
           "errors.stream_ended": "Le flux s'est terminé avant d'envoyer une réponse.",
           "errors.streaming_failed": "Le streaming a échoué.",
           "errors.audio_stream_failed": "Le flux audio a échoué.",
+          "errors.audio_streaming_unavailable_mobile":
+            "Le streaming audio n'est pas disponible sur Safari mobile pour les pratiques de 5 minutes ou plus.",
           "errors.append_audio_chunk_failed": "Impossible d'ajouter le fragment audio.",
           "errors.audio_stream_no_data":
             "Le flux audio s'est terminé avant l'arrivée des données.",
@@ -1291,6 +1300,8 @@
           "errors.stream_ended": "Der Stream endete, bevor eine Antwort zurückkam.",
           "errors.streaming_failed": "Streaming fehlgeschlagen.",
           "errors.audio_stream_failed": "Audio-Stream fehlgeschlagen.",
+          "errors.audio_streaming_unavailable_mobile":
+            "Audio-Streaming ist auf Mobile Safari für 5-minütige oder längere Übungen nicht verfügbar.",
           "errors.append_audio_chunk_failed": "Audio-Chunk konnte nicht hinzugefügt werden.",
           "errors.audio_stream_no_data":
             "Der Audio-Stream endete, bevor Daten ankamen.",
@@ -1853,6 +1864,7 @@
           }
           element.textContent = formatDurationLabel(value, locale);
         });
+        updateAudioDeliveryAvailability();
         renderDebugOutput();
         updateVersionText();
       };
@@ -1887,6 +1899,14 @@
             ? maleVoiceByLanguage[language] || "ash"
             : femaleVoiceByLanguage[language] || "alloy",
         );
+      const isMobileSafari = (() => {
+        const userAgent = navigator.userAgent || "";
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent);
+        const isSafari =
+          /Safari/.test(userAgent) &&
+          !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS|SamsungBrowser/.test(userAgent);
+        return isIOS && isSafari;
+      })();
       const parseWavHeader = (header) => {
         const readString = (offset, length) =>
           String.fromCharCode(...header.slice(offset, offset + length));
@@ -2107,6 +2127,29 @@
         updateFocusOptions(eyeState);
       };
 
+      const updateAudioDeliveryAvailability = () => {
+        const durationMinutes = Number(getSelectedValue("durationMinutes"));
+        const isBlocked = isMobileSafari && durationMinutes >= 5;
+        audioDeliveryInputs.forEach((input) => {
+          if (input.value !== "stream") {
+            return;
+          }
+          input.disabled = isBlocked;
+        });
+        if (audioDeliveryWarning) {
+          audioDeliveryWarning.hidden = !isBlocked;
+          audioDeliveryWarning.textContent = isBlocked
+            ? translate("errors.audio_streaming_unavailable_mobile")
+            : "";
+        }
+        if (isBlocked && getSelectedValue("audioDelivery") === "stream") {
+          const fallback = form.querySelector("input[name='audioDelivery'][value='generate']");
+          if (fallback) {
+            fallback.checked = true;
+          }
+        }
+      };
+
       const selectScenarioCard = (card) => {
         const scenarioId = card.dataset.scenarioId;
         const practiceType = card.dataset.practiceType;
@@ -2196,6 +2239,7 @@
         bindScenarioCardEvents();
 
         updateDerivedFields();
+        updateAudioDeliveryAvailability();
         updateVoiceLabels();
         applyTranslations();
         syncScenarioSelection();
@@ -2215,7 +2259,10 @@
           customizeToggle.addEventListener("keydown", handleSectionTabKeyDown);
         }
         durationInputs.forEach((input) => {
-          input.addEventListener("change", updateDerivedFields);
+          input.addEventListener("change", () => {
+            updateDerivedFields();
+            updateAudioDeliveryAvailability();
+          });
         });
         practiceTypeInputs.forEach((input) => {
           input.addEventListener("change", updateDerivedFields);
@@ -2413,6 +2460,7 @@
         clearScenarioSelection();
         setActiveSection("quick", { preserveScenario: true });
         updateDerivedFields();
+        updateAudioDeliveryAvailability();
         updateVoiceLabels();
         applyTranslations();
         localStorage.removeItem(storageKey);
@@ -2481,6 +2529,16 @@
         const ttsNewlinePauseSeconds = Number.isFinite(parsedTtsNewlinePauseSeconds)
           ? parsedTtsNewlinePauseSeconds
           : 1.5;
+        const isStreamingBlocked = isMobileSafari && durationMinutes >= 5;
+        if (streamAudioEnabled && isStreamingBlocked) {
+          error.hidden = false;
+          error.textContent = translate("errors.audio_streaming_unavailable_mobile");
+          submitButton.disabled = false;
+          status.textContent = "";
+          statusPanel.hidden = true;
+          spinner.hidden = true;
+          return;
+        }
         const practiceConfig = derivePracticeConfig(practiceType, durationMinutes);
         const durationConfig = deriveDurationConfig(durationMinutes);
         const primarySense = derivePrimarySense(focus, practiceConfig.eyeState);
