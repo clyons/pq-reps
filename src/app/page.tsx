@@ -738,9 +738,11 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
   const sectionTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const optionsDrawerReadyRef = useRef(false);
 
   const [isDevMode, setIsDevMode] = useState(process.env.NODE_ENV !== "production");
   const [isDevQueryEnabled, setIsDevQueryEnabled] = useState(false);
+  const optionsDrawerStorageKey = "pq-reps-options-drawer-open";
   const isLoading = status === "loading";
   const isMobileSafari = useMemo(() => detectMobileSafari(), []);
   const locale = useMemo<Locale>(() => resolveLocale(formState.language), [formState.language]);
@@ -753,6 +755,21 @@ export default function HomePage() {
   const isStreamingBlocked = isMobileSafari && formState.durationMinutes >= 5;
 
   useAudioSync(audioRef, result?.audioStream, result?.audioUrl, setPlaybackBlocked);
+
+  useEffect(() => {
+    const storedValue = localStorage.getItem(optionsDrawerStorageKey);
+    if (storedValue !== null) {
+      setOptionsOpen(storedValue === "true");
+    }
+    optionsDrawerReadyRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!optionsDrawerReadyRef.current) {
+      return;
+    }
+    localStorage.setItem(optionsDrawerStorageKey, String(optionsOpen));
+  }, [optionsOpen, optionsDrawerStorageKey]);
 
   const shouldShowResult = Boolean(
     result?.audioStream || result?.audioUrl || result?.script || result?.ttsPrompt,
@@ -1668,6 +1685,7 @@ export default function HomePage() {
 
         <details
           style={optionsDrawerStyle}
+          open={optionsOpen}
           onToggle={(event) => setOptionsOpen(event.currentTarget.open)}
         >
           <summary style={optionsSummaryStyle}>
