@@ -108,9 +108,9 @@ const BODY_STATE_DESCRIPTIONS: Record<BodyState, string> = {
 };
 
 const EYE_STATE_DESCRIPTIONS: Record<EyeState, string> = {
-  closed: "eyes closed",
-  open_focused: "eyes open with a focused gaze",
-  open_diffused: "eyes open with a soft, diffused gaze",
+  closed: "closed",
+  open_focused: "open with a focused gaze",
+  open_diffused: "open with a soft, diffused gaze",
 };
 
 const LABELING_MODE_DESCRIPTIONS: Record<LabelingMode, string> = {
