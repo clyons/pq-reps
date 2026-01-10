@@ -218,7 +218,10 @@ async function main(): Promise<void> {
           }
         ],
         model,
-        temperature
+        temperature,
+        systemPrompt,
+        userPrompt,
+        inputs
       });
       continue;
     }
@@ -233,7 +236,10 @@ async function main(): Promise<void> {
       status: getStatus(failures),
       failures,
       model,
-      temperature
+      temperature,
+      systemPrompt,
+      userPrompt,
+      inputs
     });
   }
 
