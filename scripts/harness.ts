@@ -184,7 +184,11 @@ async function main(): Promise<void> {
 
   const results: CaseResult[] = [];
 
+  const totalCases = casesFile.cases.length;
+  let caseIndex = 0;
   for (const caseItem of casesFile.cases) {
+    caseIndex += 1;
+    console.log(`[${caseIndex}/${totalCases}] Running case ${caseItem.id}`);
     const inputs = ensureInputs(caseItem);
     const userPrompt = caseItem.prompt ?? buildUserPrompt(inputs);
     const model = caseItem.model ?? options.model ?? process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
