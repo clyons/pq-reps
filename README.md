@@ -17,7 +17,6 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - Add validation coverage for practice configuration and quick access scenarios.
 - Fix scenario defaults for wind-down flow and resolve practice mode errors in scenario handling.
 - Refine prompt parameter descriptions and remove the custom scenario line from prompts while the UI is disabled.
-- Tweak script prompts for clearer PQ Reps guidance.
 
 ### 0.5.0
 - Split long TTS scripts to avoid 401/500 errors.
@@ -30,7 +29,6 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - Fix newline pause insertion and update newline pause defaults.
 - Replace dropdowns with pill radios and update preview controls.
 - Apply styling updates across the UI.
-- Preserve pause tokens in prompts.
 
 ### 0.3.0
 - Force streaming WAV output and enable WAV streaming MIME types.
@@ -38,7 +36,6 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 
 ### 0.2.0
 - Add streaming audio support for generation.
-- Add a UI toggle for streaming audio playback.
 - Add script download links to the UI.
 - Log script and audio generation timing.
 - Add UI disclosures for AI-generated audio.
@@ -76,15 +73,16 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
   - Reset after feedback (Labeling, hearing)
   - Wind down for sleep (Still, eyes closed, breath)
   - Daily deep reset (Still, eyes closed, touch)
-- [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog" (Notes: server-side guardrail validation exists, but UI input + validation wiring still pending.)
-- [ ] Improve prompt handling for custom scenario line before re-enabling UI input (Notes: prompt does not include custom scenario lines until the feature is re-enabled.)
-- [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min) (Notes: pacing guidance exists in prompts, but no runtime timing calibration.)
 - [x] Add tests for prompt outline (API validation coverage exists in `tests/generate-api.test.ts`).
 - [x] Secure the endpoints against unauthorised access
 - [x] Localise the whole site to 4 languages (English, German, Spanish, French)
 - [x] Add test harness to test script output and guard against prompt drift
 - [x] Refine test harness to produce more passing tests
 - [x] Improve prompt handling for common scenarios and introduce new state for sleep
+- [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog" (Notes: server-side guardrail validation exists, but UI input + validation wiring still pending.)
+- [ ] Improve prompt handling for custom scenario line before re-enabling UI input (Notes: prompt does not include custom scenario lines until the feature is re-enabled.)
+- [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min) (Notes: pacing guidance exists in prompts, but no runtime timing calibration.)
+- [ ] Fix/enable straming in Mobile Safari
 
 ## Streaming audio
 - `/api/tts` supports streaming WAV audio when you set the `x-tts-streaming: 1` header.

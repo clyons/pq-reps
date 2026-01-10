@@ -574,7 +574,9 @@ const infoTooltipStyle: React.CSSProperties = {
   borderRadius: 8,
   fontSize: "0.75rem",
   fontWeight: 500,
-  whiteSpace: "nowrap",
+  whiteSpace: "normal",
+  maxWidth: "min(320px, calc(100vw - 3rem))",
+  textAlign: "left",
   pointerEvents: "none",
   transition: "opacity 0.15s ease",
   zIndex: 10,
@@ -740,9 +742,11 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement>(null);
   const sectionTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const optionsDrawerReadyRef = useRef(false);
 
   const [isDevMode, setIsDevMode] = useState(process.env.NODE_ENV !== "production");
   const [isDevQueryEnabled, setIsDevQueryEnabled] = useState(false);
+  const optionsDrawerStorageKey = "pq-reps-options-drawer-open";
   const isLoading = status === "loading";
   const isMobileSafari = useMemo(() => detectMobileSafari(), []);
   const locale = useMemo<Locale>(() => resolveLocale(formState.language), [formState.language]);
@@ -1681,6 +1685,7 @@ export default function HomePage() {
 
         <details
           style={optionsDrawerStyle}
+          open={optionsOpen}
           onToggle={(event) => setOptionsOpen(event.currentTarget.open)}
         >
           <summary style={optionsSummaryStyle}>
