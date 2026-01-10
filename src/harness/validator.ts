@@ -263,7 +263,7 @@ export function validateScript(
     }
 
     const noticeCount = countOccurrences(script, 'notice');
-    if (inputs.durationMinutes < 5 && noticeCount > 2) {
+    if (inputs.durationMinutes < 5 && noticeCount > 3) {
       addFailure(
         failures,
         'NOTICE_LIMIT',
