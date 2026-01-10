@@ -92,6 +92,45 @@ const formatLanguageLabel = (language: string) =>
 
 export const ALLOWED_DURATIONS: DurationMinutes[] = [1, 2, 5, 12];
 
+const PRACTICE_MODE_DESCRIPTIONS: Record<PracticeMode, string> = {
+  tactile: "guided touch-based attention while still",
+  tense_relax: "alternate gentle tension and release with sensory attention",
+  moving: "guided attention while in motion",
+  sitting: "guided attention while seated with eyes open",
+  label_with_anchor: "label sensations while returning to a single anchor",
+  label_while_scanning: "label sensations while scanning the body",
+};
+
+const BODY_STATE_DESCRIPTIONS: Record<BodyState, string> = {
+  still_seated: "seated and still with eyes open",
+  still_seated_closed_eyes: "seated and still with eyes closed",
+  moving: "in motion (walking or gentle movement)",
+};
+
+const EYE_STATE_DESCRIPTIONS: Record<EyeState, string> = {
+  closed: "eyes closed",
+  open_focused: "eyes open with a focused gaze",
+  open_diffused: "eyes open with a soft, diffused gaze",
+};
+
+const LABELING_MODE_DESCRIPTIONS: Record<LabelingMode, string> = {
+  none: "no labeling",
+  breath_anchor: "label sensations while returning to the breath anchor",
+  scan_and_label: "label sensations while scanning the body",
+};
+
+const CLOSING_STYLE_DESCRIPTIONS: Record<ClosingStyle, string> = {
+  minimal: "a brief, minimal close",
+  pq_framed: "a PQ-framed close",
+  pq_framed_with_progression: "a PQ-framed close with progression",
+};
+
+const SENSE_ROTATION_DESCRIPTIONS: Record<SenseRotation, string> = {
+  none: "no sense rotation",
+  guided_rotation: "guide a rotation through the senses",
+  free_choice: "invite the listener to choose the sense",
+};
+
 export type ScenarioDefinition = {
   id: ScenarioId;
   label: string;
@@ -227,36 +266,31 @@ export function buildPrompt(config: GenerateConfig): string {
   const languageLine = `Language: ${languages.map(formatLanguageLabel).join(", ")}.`;
   const primaryLanguage = formatLanguageLabel(languages[0] ?? "");
 
-  const practiceModeDefinition = [
-    "Practice mode meaning:",
-    "tactile = guided touch-based attention while still.",
-    "tense_relax = alternate gentle tension and release with sensory attention.",
-    "moving = guided attention while in motion.",
-    "sitting = guided attention while seated with eyes open.",
-    "label_with_anchor = label sensations while returning to a single anchor.",
-    "label_while_scanning = label sensations while scanning the body.",
-  ].join(" ");
-  const bodyStateDefinition = [
-    "Body state meaning:",
-    "still_seated = seated and still with eyes open.",
-    "still_seated_closed_eyes = seated and still with eyes closed.",
-    "moving = in motion (walking or gentle movement).",
-  ].join(" ");
+  const practiceModeDescription =
+    PRACTICE_MODE_DESCRIPTIONS[practiceMode] ?? practiceMode;
+  const bodyStateDescription = BODY_STATE_DESCRIPTIONS[bodyState] ?? bodyState;
+  const eyeStateDescription = EYE_STATE_DESCRIPTIONS[eyeState] ?? eyeState;
+  const labelingModeDescription =
+    LABELING_MODE_DESCRIPTIONS[labelingMode] ?? labelingMode;
+  const closingStyleDescription =
+    CLOSING_STYLE_DESCRIPTIONS[closingStyle] ?? closingStyle;
+  const senseRotationDescription =
+    SENSE_ROTATION_DESCRIPTIONS[senseRotation ?? "none"] ??
+    senseRotation ??
+    "none";
 
   return [
-    `Practice mode: ${practiceMode}.`,
-    practiceModeDefinition,
-    bodyStateDefinition,
-    `Body state: ${bodyState}.`,
-    `Eye state: ${eyeState}.`,
+    `Practice mode: ${practiceModeDescription}.`,
+    `Body state: ${bodyStateDescription}.`,
+    `Eye state: ${eyeStateDescription}.`,
     `Primary sense: ${primarySense}.`,
     `Duration: ${durationMinutes} minutes.`,
     ...scenarioLines,
-    `Labeling mode: ${labelingMode}.`,
+    `Labeling mode: ${labelingModeDescription}.`,
     `Silence profile: ${silenceProfile}.`,
     `Normalization frequency: ${normalizationFrequency}.`,
-    `Closing style: ${closingStyle}.`,
-    senseRotation ? `Sense rotation: ${senseRotation}.` : "Sense rotation: none.",
+    `Closing style: ${closingStyleDescription}.`,
+    `Sense rotation: ${senseRotationDescription}.`,
     languageLine,
     `Write the script entirely in ${primaryLanguage}.`,
     audience ? `Audience: ${audience}.` : "Audience: general.",
