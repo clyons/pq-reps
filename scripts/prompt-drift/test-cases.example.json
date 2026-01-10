@@ -1,7 +1,133 @@
 {
   "cases": [
     {
-      "id": "case-01-touch-still-closed-1m",
+      "id": "case-01-scenario-calm-me-now",
+      "description": "Quick access: calm me now (still, eyes open, 2 minutes).",
+      "inputs": {
+        "practiceMode": "sitting",
+        "bodyState": "still_seated",
+        "eyeState": "open_diffused",
+        "primarySense": "touch",
+        "durationMinutes": 2,
+        "labelingMode": "none",
+        "silenceProfile": "short_pauses",
+        "normalizationFrequency": "once",
+        "closingStyle": "minimal",
+        "senseRotation": "none",
+        "scenarioId": "calm_me_now",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-02-scenario-get-present-for-meeting",
+      "description": "Quick access: get present for a meeting (still, eyes open, 2 minutes).",
+      "inputs": {
+        "practiceMode": "sitting",
+        "bodyState": "still_seated",
+        "eyeState": "open_diffused",
+        "primarySense": "touch",
+        "durationMinutes": 2,
+        "labelingMode": "none",
+        "silenceProfile": "short_pauses",
+        "normalizationFrequency": "once",
+        "closingStyle": "minimal",
+        "senseRotation": "none",
+        "scenarioId": "get_present_for_meeting",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-03-scenario-start-the-thing-im-avoiding",
+      "description": "Quick access: start the thing I'm avoiding (moving, 2 minutes).",
+      "inputs": {
+        "practiceMode": "moving",
+        "bodyState": "moving",
+        "eyeState": "open_focused",
+        "primarySense": "touch",
+        "durationMinutes": 2,
+        "labelingMode": "none",
+        "silenceProfile": "short_pauses",
+        "normalizationFrequency": "once",
+        "closingStyle": "minimal",
+        "senseRotation": "none",
+        "scenarioId": "start_the_thing_im_avoiding",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-04-scenario-prepare-for-a-tough-conversation",
+      "description": "Quick access: prepare for a tough conversation (still, eyes open, 5 minutes).",
+      "inputs": {
+        "practiceMode": "sitting",
+        "bodyState": "still_seated",
+        "eyeState": "open_diffused",
+        "primarySense": "sight",
+        "durationMinutes": 5,
+        "labelingMode": "none",
+        "silenceProfile": "short_pauses",
+        "normalizationFrequency": "periodic",
+        "closingStyle": "pq_framed",
+        "senseRotation": "guided_rotation",
+        "scenarioId": "prepare_for_a_tough_conversation",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-05-scenario-reset-after-feedback",
+      "description": "Quick access: reset after feedback (labeling, 5 minutes).",
+      "inputs": {
+        "practiceMode": "label_with_anchor",
+        "bodyState": "still_seated_closed_eyes",
+        "eyeState": "closed",
+        "primarySense": "breath",
+        "durationMinutes": 5,
+        "labelingMode": "breath_anchor",
+        "silenceProfile": "short_pauses",
+        "normalizationFrequency": "periodic",
+        "closingStyle": "pq_framed",
+        "senseRotation": "none",
+        "scenarioId": "reset_after_feedback",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-06-scenario-wind-down-for-sleep",
+      "description": "Quick access: wind down for sleep (lying, eyes closed, 12 minutes).",
+      "inputs": {
+        "practiceMode": "lying",
+        "bodyState": "lying",
+        "eyeState": "closed",
+        "primarySense": "breath",
+        "durationMinutes": 12,
+        "labelingMode": "none",
+        "silenceProfile": "extended_silence",
+        "normalizationFrequency": "repeated",
+        "closingStyle": "pq_framed_with_progression",
+        "senseRotation": "guided_rotation",
+        "scenarioId": "wind_down_for_sleep",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-07-scenario-daily-deep-reset",
+      "description": "Quick access: daily deep reset (still, eyes closed, 12 minutes).",
+      "inputs": {
+        "practiceMode": "tactile",
+        "bodyState": "still_seated_closed_eyes",
+        "eyeState": "closed",
+        "primarySense": "touch",
+        "durationMinutes": 12,
+        "labelingMode": "none",
+        "silenceProfile": "extended_silence",
+        "normalizationFrequency": "repeated",
+        "closingStyle": "pq_framed_with_progression",
+        "senseRotation": "guided_rotation",
+        "scenarioId": "daily_deep_reset",
+        "language": "en"
+      }
+    },
+    {
+      "id": "case-08-touch-still-closed-1m",
       "description": "Touch focus, still, eyes closed, 1 minute.",
       "inputs": {
         "practiceMode": "tactile",
@@ -18,7 +144,7 @@
       }
     },
     {
-      "id": "case-02-hearing-still-open-2m",
+      "id": "case-09-hearing-still-open-2m",
       "description": "Hearing focus with eyes open, 2 minutes.",
       "inputs": {
         "practiceMode": "sitting",
@@ -35,7 +161,7 @@
       }
     },
     {
-      "id": "case-03-sight-moving-open-4m",
+      "id": "case-10-sight-moving-open-4m",
       "description": "Sight focus while moving, safety line required.",
       "inputs": {
         "practiceMode": "moving",
@@ -52,7 +178,7 @@
       }
     },
     {
-      "id": "case-04-breath-still-closed-12m",
+      "id": "case-11-breath-still-closed-12m",
       "description": "Breath focus, long duration with deep silence profile.",
       "inputs": {
         "practiceMode": "tactile",
@@ -69,41 +195,7 @@
       }
     },
     {
-      "id": "case-05-touch-moving-closed-1m",
-      "description": "Touch focus, moving, eyes closed, 1 minute edge case.",
-      "inputs": {
-        "practiceMode": "moving",
-        "bodyState": "moving",
-        "eyeState": "closed",
-        "primarySense": "touch",
-        "durationMinutes": 1,
-        "labelingMode": "none",
-        "silenceProfile": "none",
-        "normalizationFrequency": "once",
-        "closingStyle": "minimal",
-        "senseRotation": "guided_rotation",
-        "language": "en"
-      }
-    },
-    {
-      "id": "case-06-hearing-still-open-2m",
-      "description": "Hearing focus with open eyes, light silence profile.",
-      "inputs": {
-        "practiceMode": "sitting",
-        "bodyState": "still_seated",
-        "eyeState": "open_diffused",
-        "primarySense": "hearing",
-        "durationMinutes": 2,
-        "labelingMode": "none",
-        "silenceProfile": "short_pauses",
-        "normalizationFrequency": "once",
-        "closingStyle": "minimal",
-        "senseRotation": "none",
-        "language": "en"
-      }
-    },
-    {
-      "id": "case-07-sight-still-open-5m",
+      "id": "case-12-sight-still-open-5m",
       "description": "Sight focus, still, 5 minutes, formal closing.",
       "inputs": {
         "practiceMode": "sitting",
@@ -120,7 +212,7 @@
       }
     },
     {
-      "id": "case-08-breath-moving-open-2m",
+      "id": "case-13-breath-moving-open-2m",
       "description": "Breath focus while moving, short duration.",
       "inputs": {
         "practiceMode": "moving",
@@ -137,58 +229,7 @@
       }
     },
     {
-      "id": "case-09-touch-still-closed-4m",
-      "description": "Touch focus, closed eyes, 4 minutes.",
-      "inputs": {
-        "practiceMode": "tactile",
-        "bodyState": "still_seated_closed_eyes",
-        "eyeState": "closed",
-        "primarySense": "touch",
-        "durationMinutes": 4,
-        "labelingMode": "none",
-        "silenceProfile": "short_pauses",
-        "normalizationFrequency": "repeated",
-        "closingStyle": "pq_framed",
-        "senseRotation": "none",
-        "language": "en"
-      }
-    },
-    {
-      "id": "case-10-hearing-moving-closed-5m",
-      "description": "Hearing focus while moving with closed eyes edge case.",
-      "inputs": {
-        "practiceMode": "moving",
-        "bodyState": "moving",
-        "eyeState": "closed",
-        "primarySense": "hearing",
-        "durationMinutes": 5,
-        "labelingMode": "none",
-        "silenceProfile": "none",
-        "normalizationFrequency": "repeated",
-        "closingStyle": "minimal",
-        "senseRotation": "guided_rotation",
-        "language": "en"
-      }
-    },
-    {
-      "id": "case-11-sight-still-closed-2m",
-      "description": "Sight focus with closed eyes, 2 minutes.",
-      "inputs": {
-        "practiceMode": "tactile",
-        "bodyState": "still_seated_closed_eyes",
-        "eyeState": "closed",
-        "primarySense": "sight",
-        "durationMinutes": 2,
-        "labelingMode": "none",
-        "silenceProfile": "none",
-        "normalizationFrequency": "once",
-        "closingStyle": "pq_framed",
-        "senseRotation": "none",
-        "language": "en"
-      }
-    },
-    {
-      "id": "case-12-breath-still-open-4m",
+      "id": "case-14-breath-still-open-4m",
       "description": "Breath focus, still, 4 minutes.",
       "inputs": {
         "practiceMode": "sitting",
@@ -205,24 +246,7 @@
       }
     },
     {
-      "id": "case-13-touch-moving-open-2m",
-      "description": "Touch focus while moving, 2 minutes.",
-      "inputs": {
-        "practiceMode": "moving",
-        "bodyState": "moving",
-        "eyeState": "open_focused",
-        "primarySense": "touch",
-        "durationMinutes": 2,
-        "labelingMode": "none",
-        "silenceProfile": "none",
-        "normalizationFrequency": "once",
-        "closingStyle": "minimal",
-        "senseRotation": "none",
-        "language": "en"
-      }
-    },
-    {
-      "id": "case-14-hearing-still-open-12m",
+      "id": "case-15-hearing-still-open-12m",
       "description": "Hearing focus, long duration for deep silences.",
       "inputs": {
         "practiceMode": "sitting",
@@ -239,7 +263,7 @@
       }
     },
     {
-      "id": "case-15-sight-moving-open-1m",
+      "id": "case-16-sight-moving-open-1m",
       "description": "Sight focus, moving, 1 minute, safety line check.",
       "inputs": {
         "practiceMode": "moving",
@@ -256,7 +280,7 @@
       }
     },
     {
-      "id": "case-16-breath-still-closed-5m",
+      "id": "case-17-breath-still-closed-5m",
       "description": "Breath focus with closed eyes, 5 minutes.",
       "inputs": {
         "practiceMode": "tactile",
@@ -273,7 +297,7 @@
       }
     },
     {
-      "id": "case-17-touch-still-open-12m",
+      "id": "case-18-touch-still-open-12m",
       "description": "Touch focus, long duration, deep silence.",
       "inputs": {
         "practiceMode": "sitting",
@@ -286,23 +310,6 @@
         "normalizationFrequency": "repeated",
         "closingStyle": "pq_framed_with_progression",
         "senseRotation": "free_choice",
-        "language": "en"
-      }
-    },
-    {
-      "id": "case-18-hearing-moving-open-4m",
-      "description": "Hearing focus while moving, 4 minutes.",
-      "inputs": {
-        "practiceMode": "moving",
-        "bodyState": "moving",
-        "eyeState": "open_focused",
-        "primarySense": "hearing",
-        "durationMinutes": 4,
-        "labelingMode": "none",
-        "silenceProfile": "none",
-        "normalizationFrequency": "repeated",
-        "closingStyle": "minimal",
-        "senseRotation": "none",
         "language": "en"
       }
     },
