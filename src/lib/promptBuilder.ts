@@ -3,18 +3,20 @@ export type PracticeMode =
   | "tense_relax"
   | "moving"
   | "sitting"
+  | "lying"
   | "label_with_anchor"
   | "label_while_scanning";
 
 export type PracticeType =
   | "still_eyes_closed"
   | "still_eyes_open"
-  | "moving"
+  | "lying_eyes_closed"
   | "labeling";
 
 export type BodyState =
   | "still_seated"
   | "still_seated_closed_eyes"
+  | "lying"
   | "moving";
 
 export type EyeState = "closed" | "open_focused" | "open_diffused";
@@ -102,6 +104,7 @@ const PRACTICE_MODE_DESCRIPTIONS: Record<PracticeMode, string> = {
 const BODY_STATE_DESCRIPTIONS: Record<BodyState, string> = {
   still_seated: "seated and still with eyes open",
   still_seated_closed_eyes: "seated and still with eyes closed",
+  lying: "lying down",
   moving: "in motion (walking or gentle movement)",
 };
 
@@ -146,8 +149,8 @@ export const SCENARIOS: ScenarioDefinition[] = [
     primarySense: "touch",
     durationMinutes: 2,
     promptLines: [
-      "Goal: settle the listener quickly with immediate grounding.",
-      "Use soothing language that lowers intensity fast and feels reassuring.",
+      "Scenario Objective: settle the listener quickly with immediate grounding.",
+      "Lower intensity fast and provide reassurance.",
     ],
   },
   {
@@ -157,7 +160,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     primarySense: "touch",
     durationMinutes: 2,
     promptLines: [
-      "Frame this as a brief arrival ritual before a meeting.",
+      "Scenario Objective: help the listener reach a state of relaxed focus before a meeting.",
       "Invite steady posture, feet contact, and readiness to engage.",
     ],
   },
@@ -168,7 +171,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     primarySense: "touch",
     durationMinutes: 2,
     promptLines: [
-      "Build gentle momentum and emphasize the first tiny step.",
+      "Scenario Objective: beat procrastination by preparing to take a small first action.",
       "Keep the tone encouraging and action-oriented without pressure.",
     ],
   },
@@ -179,7 +182,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     primarySense: "sight",
     durationMinutes: 5,
     promptLines: [
-      "Support emotional steadiness and clear focus before speaking.",
+      "Scenario Objective: Support emotional steadiness and clear focus before speaking.",
       "Use visual anchoring to keep attention stable and composed.",
     ],
   },
@@ -187,21 +190,21 @@ export const SCENARIOS: ScenarioDefinition[] = [
     id: "reset_after_feedback",
     label: "Reset after feedback",
     practiceType: "labeling",
-    primarySense: "hearing",
+    primarySense: "breath",
     durationMinutes: 5,
     promptLines: [
-      "Acknowledge lingering reactions and gently name what arises.",
-      "Anchor with nearby sounds to let the nervous system reset.",
+      "Scenario Objective: Acknowledge lingering reactions and gently name what arises.",
+      "Anchor on the breath to let the nervous system reset.",
     ],
   },
   {
     id: "wind_down_for_sleep",
     label: "Wind down for sleep",
-    practiceType: "still_eyes_closed",
+    practiceType: "lying_eyes_closed",
     primarySense: "breath",
     durationMinutes: 12,
     promptLines: [
-      "Create a low-energy, sleep-ready tone that slows everything down.",
+      "Scenario Objective: Create a low-energy, sleep-ready tone that slows everything down.",
       "Favor soft phrasing and longer exhales to prepare for rest.",
     ],
   },
@@ -212,7 +215,7 @@ export const SCENARIOS: ScenarioDefinition[] = [
     primarySense: "touch",
     durationMinutes: 12,
     promptLines: [
-      "Treat this as a full-body reset with deeper, unhurried grounding.",
+      "Scenario Objective: Treat this as a full-body reset with deep, unhurried grounding.",
       "Emphasize steady contact and spacious pauses to restore baseline.",
     ],
   },
@@ -273,12 +276,12 @@ export function buildPrompt(config: GenerateConfig): string {
     "none";
 
   return [
+    ...scenarioLines,
     `Practice mode: ${practiceModeDescription}.`,
     `Body state: ${bodyStateDescription}.`,
     `Eye state: ${eyeStateDescription}.`,
     `Primary sense: ${primarySense}.`,
     `Duration: ${durationMinutes} minutes.`,
-    ...scenarioLines,
     `Labeling mode: ${labelingModeDescription}.`,
     `Silence profile: ${silenceProfile}.`,
     `Normalization frequency: ${normalizationFrequency}.`,
@@ -286,9 +289,5 @@ export function buildPrompt(config: GenerateConfig): string {
     `Sense rotation: ${senseRotationDescription}.`,
     languageLine,
     `Write the script entirely in ${primaryLanguage}.`,
-    audience ? `Audience: ${audience}.` : "Audience: general.",
-    voiceStyle
-      ? `Voice style preference: ${voiceStyle}.`
-      : "No additional voice style preference provided.",
   ].join("\n");
 }

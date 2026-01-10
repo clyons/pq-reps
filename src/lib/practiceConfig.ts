@@ -55,6 +55,15 @@ export const derivePracticeConfig = (
     };
   }
 
+  if (practiceType === "labeling") {
+    return {
+      practiceMode: "labeling",
+      bodyState: "still_seated_closed_eyes",
+      eyeState: "closed",
+      labelingMode: "breath_anchor",
+    };
+  }
+
   const labelingMode = durationMinutes < 5 ? "breath_anchor" : "scan_and_label";
   return {
     practiceMode: durationMinutes < 5 ? "label_with_anchor" : "label_while_scanning",
