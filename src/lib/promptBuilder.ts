@@ -10,6 +10,7 @@ export type PracticeMode =
 export type PracticeType =
   | "still_eyes_closed"
   | "still_eyes_open"
+  | "moving"
   | "lying_eyes_closed"
   | "labeling";
 
