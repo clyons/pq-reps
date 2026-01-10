@@ -1558,7 +1558,13 @@
         if (!audioPlayer) {
           return;
         }
-        const playPromise = audioPlayer.play();
+        let playPromise = null;
+        try {
+          playPromise = audioPlayer.play();
+        } catch (error) {
+          setPlaybackBlocked(true);
+          return;
+        }
         if (!playPromise) {
           return;
         }
@@ -3012,6 +3018,7 @@
               audioPlayer.src = currentUrl;
             }
             audioPlayer.hidden = false;
+            attemptPlayback();
             downloadLink.href = downloadUrl;
             downloadLink.download = buildDownloadFilename({
               voice: voiceStyle,

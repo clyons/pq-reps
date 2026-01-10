@@ -87,7 +87,13 @@ const useAudioSync = (
       setPlaybackBlocked?.(false);
     }
     const attemptPlay = () => {
-      const playPromise = audioElement.play();
+      let playPromise: Promise<void> | undefined;
+      try {
+        playPromise = audioElement.play();
+      } catch (error) {
+        setPlaybackBlocked?.(true);
+        return;
+      }
       if (!playPromise) {
         return;
       }
@@ -757,7 +763,13 @@ export default function HomePage() {
     if (!audioElement) {
       return;
     }
-    const playPromise = audioElement.play();
+    let playPromise: Promise<void> | undefined;
+    try {
+      playPromise = audioElement.play();
+    } catch (error) {
+      setPlaybackBlocked(true);
+      return;
+    }
     if (!playPromise) {
       return;
     }
