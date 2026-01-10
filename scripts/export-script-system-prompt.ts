@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { SCRIPT_SYSTEM_PROMPT } from '../src/services/script.js';
+import { exportScriptSystemPrompt } from './export-script-system-prompt-lib.js';
 
 const DEFAULT_OUTPUT_PATH = 'scripts/prompt-drift/system.txt';
 
@@ -45,13 +44,9 @@ function parseArgs(argv: string[]): CliOptions {
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2));
   const outputPath = resolve(options.outputPath);
-  const promptText = Array.isArray(SCRIPT_SYSTEM_PROMPT)
-    ? SCRIPT_SYSTEM_PROMPT.join('\n')
-    : String(SCRIPT_SYSTEM_PROMPT);
-  const payload = `${promptText}\n`;
 
   try {
-    await writeFile(outputPath, payload, 'utf-8');
+    await exportScriptSystemPrompt(outputPath);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`Failed to write system prompt to ${outputPath}: ${message}`);

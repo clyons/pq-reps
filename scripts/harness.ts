@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { exportScriptSystemPrompt } from './export-script-system-prompt-lib.js';
 import { buildUserPrompt } from '../src/harness/promptBuilder.js';
 import { OpenAIProvider, MockProvider } from '../src/harness/providers.js';
 import { writeReports } from '../src/harness/reportWriter.js';
@@ -91,8 +92,6 @@ function parseArgs(argv: string[]): CliOptions {
 
 function printHelp(): void {
   console.log(`\nPrompt drift harness\n\n` +
-    `Before running the harness, export the latest system prompt:\n` +
-    `  node --import tsx scripts/export-script-system-prompt.ts --out scripts/prompt-drift/system.txt\n\n` +
     `Usage:\n` +
     `  node --import tsx scripts/harness.ts \\\n` +
     `    --system path/to/system.txt \\\n` +
@@ -160,6 +159,8 @@ async function main(): Promise<void> {
   const casesPath = resolve(options.casesPath);
   const outputDir = resolve(options.outputDir);
   const rulesPath = resolve(options.rulesPath);
+
+  await exportScriptSystemPrompt(systemPromptPath);
 
   const [systemPrompt, casesFile, rulesFile] = await Promise.all([
     readFile(systemPromptPath, 'utf-8'),
