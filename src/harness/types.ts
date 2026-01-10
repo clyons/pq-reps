@@ -108,6 +108,9 @@ export interface CaseResult {
   failures: ValidationFailure[];
   model: string;
   temperature?: number;
+  systemPrompt: string;
+  userPrompt: string;
+  inputs: PromptInputs;
 }
 
 export interface ReportSummary {

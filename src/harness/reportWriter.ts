@@ -43,17 +43,44 @@ function toMarkdownReport(payload: ReportPayload): string {
     return `| ${result.caseId} | ${result.status} | ${failures || '0'} |`;
   });
 
-  const details = payload.results
-    .filter((result) => result.failures.length > 0)
-    .map((result) => formatFailureDetails(result))
-    .join('\n\n');
+  const details = payload.results.map((result) => formatCaseDetails(result)).join('\n\n');
 
   return [header, tableHeader, ...rows, '', details].join('\n');
 }
 
-function formatFailureDetails(result: CaseResult): string {
-  const lines = result.failures.map((failure) => {
-    return `- **${failure.ruleId}** (${failure.severity}): ${failure.message} — ${failure.evidenceSnippet}`;
-  });
-  return [`## ${result.caseId}`, ...lines].join('\n');
+function formatCaseDetails(result: CaseResult): string {
+  const lines = [
+    `## ${result.caseId}`,
+    '',
+    `Status: ${result.status}`,
+    `Model: ${result.model}`,
+    `Temperature: ${result.temperature ?? 'default'}`,
+    `Output: ${result.outputPath}`,
+    ''
+  ];
+
+  if (result.failures.length > 0) {
+    lines.push('Failures:');
+    result.failures.forEach((failure) => {
+      lines.push(
+        `- **${failure.ruleId}** (${failure.severity}): ${failure.message} — ${failure.evidenceSnippet}`
+      );
+    });
+    lines.push('');
+  }
+
+  lines.push('Inputs:');
+  lines.push('```json');
+  lines.push(JSON.stringify(result.inputs, null, 2));
+  lines.push('```', '');
+  lines.push('System prompt:');
+  lines.push('```text');
+  lines.push(result.systemPrompt.trim());
+  lines.push('```', '');
+  lines.push('User prompt:');
+  lines.push('```text');
+  lines.push(result.userPrompt.trim());
+  lines.push('```');
+
+  return lines.join('\n');
 }
