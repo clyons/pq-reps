@@ -114,6 +114,7 @@ const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
 const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
   still_eyes_closed: "form.practice_type.still_eyes_closed",
   still_eyes_open: "form.practice_type.still_eyes_open",
+  lying_eyes_closed: "form.practice_type.lying_eyes_closed",
   moving: "form.practice_type.moving",
   labeling: "form.practice_type.labeling",
 };
@@ -1445,6 +1446,9 @@ export default function HomePage() {
       </p>
 
       <form onSubmit={handleSubmit} style={{ display: "grid", gap: "1.5rem" }}>
+        {formState.practiceType === "lying_eyes_closed" ? (
+          <input type="hidden" name="practiceType" value="lying_eyes_closed" />
+        ) : null}
         <div>
           <div
             role="tablist"

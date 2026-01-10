@@ -3,9 +3,14 @@ export type PracticeMode =
   | 'tense_relax'
   | 'moving'
   | 'sitting'
+  | 'lying'
   | 'label_with_anchor'
   | 'label_while_scanning';
-export type BodyState = 'still_seated' | 'still_seated_closed_eyes' | 'moving';
+export type BodyState =
+  | 'still_seated'
+  | 'still_seated_closed_eyes'
+  | 'lying'
+  | 'moving';
 export type EyeState = 'closed' | 'open_focused' | 'open_diffused';
 export type PrimarySense =
   | 'touch'
