@@ -1563,6 +1563,14 @@
             playbackBlockedButton.textContent = translate("result.tap_to_play");
           }
         }
+        if (audioPlayer && isMobileSafari) {
+          const hasAudioSource = Boolean(audioPlayer.src || audioPlayer.srcObject);
+          if (blocked) {
+            audioPlayer.hidden = true;
+          } else if (hasAudioSource) {
+            audioPlayer.hidden = false;
+          }
+        }
         logClient("Playback blocked state updated.", {
           blocked,
           hasAudioSource: Boolean(audioPlayer?.src || audioPlayer?.srcObject),
@@ -2006,6 +2014,9 @@
           !/Chrome|CriOS|FxiOS|EdgiOS|OPiOS|SamsungBrowser/.test(userAgent);
         return isIOS && isSafari;
       })();
+      if (isMobileSafari && playbackBlockedButton && audioPlayer?.parentElement) {
+        audioPlayer.parentElement.insertBefore(playbackBlockedButton, audioPlayer);
+      }
       const parseWavHeader = (header) => {
         const readString = (offset, length) =>
           String.fromCharCode(...header.slice(offset, offset + length));

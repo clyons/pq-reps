@@ -763,6 +763,7 @@ export default function HomePage() {
   const shouldShowResult = Boolean(
     result?.audioStream || result?.audioUrl || result?.script || result?.ttsPrompt,
   );
+  const shouldHideAudioPlayer = isMobileSafari && playbackBlocked;
 
   const handlePlaybackRetry = () => {
     const audioElement = audioRef.current;
@@ -1889,17 +1890,39 @@ export default function HomePage() {
           <h2 style={{ marginTop: 0 }}>
             {isLoading ? t("status.streaming_audio") : t("result.title")}
           </h2>
+          {playbackBlocked && isMobileSafari && (result.audioStream || result.audioUrl) && (
+            <button
+              type="button"
+              onClick={handlePlaybackRetry}
+              style={{
+                padding: "0.75rem 1.5rem",
+                background: BRAND_COLORS.orange.base,
+                color: BRAND_COLORS.neutral.black,
+                borderRadius: 999,
+                border: "none",
+                cursor: "pointer",
+                fontWeight: 600,
+                marginBottom: "1rem",
+              }}
+            >
+              {t("result.tap_to_play")}
+            </button>
+          )}
           {(result.audioStream || result.audioUrl) && (
             <audio
               ref={audioRef}
               controls
               src={result.audioUrl}
-              style={{ width: "100%", marginBottom: "1rem" }}
+              style={{
+                width: "100%",
+                marginBottom: "1rem",
+                display: shouldHideAudioPlayer ? "none" : "block",
+              }}
             >
               {t("errors.audio_unsupported")}
             </audio>
           )}
-          {playbackBlocked && (result.audioStream || result.audioUrl) && (
+          {playbackBlocked && !isMobileSafari && (result.audioStream || result.audioUrl) && (
             <button
               type="button"
               onClick={handlePlaybackRetry}
