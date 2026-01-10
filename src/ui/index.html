@@ -2943,6 +2943,7 @@
               statusPanel.hidden = true;
               spinner.hidden = true;
             }
+            result.hidden = false;
             const partialBlob = new Blob(streamingChunks, {
               type: streamContentType || "audio/wav",
             });
@@ -3050,6 +3051,7 @@
               extension: resolveAudioExtension(audioBlob.type),
             });
             setDownloadLinkState(downloadLink, { enabled: true, href: downloadUrl });
+            result.hidden = false;
           } else {
             audioPlayer.hidden = true;
             setPlaybackBlocked(false);
