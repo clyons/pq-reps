@@ -55,15 +55,6 @@ export const derivePracticeConfig = (
     };
   }
 
-  if (practiceType === "labeling") {
-    return {
-      practiceMode: "labeling",
-      bodyState: "still_seated_closed_eyes",
-      eyeState: "closed",
-      labelingMode: "breath_anchor",
-    };
-  }
-
   if (practiceType === "lying_eyes_closed") {
     return {
       practiceMode: "lying",
