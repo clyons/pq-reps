@@ -51,7 +51,7 @@ function assertConfigMapping(result: ReturnType<typeof validateGenerateConfig>) 
   assert.match(prompt, /Eye state: eyes open with a focused gaze\./);
   assert.match(prompt, /Primary sense: breath\./);
   assert.match(prompt, /Duration: 5 minutes\./);
-  assert.match(prompt, /Custom scenario line: "A short, neutral line for a morning reset\."/);
+  assert.doesNotMatch(prompt, /Custom scenario line:/);
   assert.doesNotMatch(prompt, /undefined/);
 }
 
