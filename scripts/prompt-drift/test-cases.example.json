@@ -62,7 +62,7 @@
         "durationMinutes": 12,
         "labelingMode": "none",
         "silenceProfile": "extended_silence",
-        "normalizationFrequency": "once",
+        "normalizationFrequency": "repeated",
         "closingStyle": "pq_framed",
         "senseRotation": "none",
         "language": "en"
@@ -147,7 +147,7 @@
         "durationMinutes": 4,
         "labelingMode": "none",
         "silenceProfile": "short_pauses",
-        "normalizationFrequency": "once",
+        "normalizationFrequency": "repeated",
         "closingStyle": "pq_framed",
         "senseRotation": "none",
         "language": "en"
@@ -198,7 +198,7 @@
         "durationMinutes": 4,
         "labelingMode": "none",
         "silenceProfile": "short_pauses",
-        "normalizationFrequency": "once",
+        "normalizationFrequency": "repeated",
         "closingStyle": "pq_framed_with_progression",
         "senseRotation": "free_choice",
         "language": "en"
@@ -266,7 +266,7 @@
         "durationMinutes": 5,
         "labelingMode": "none",
         "silenceProfile": "short_pauses",
-        "normalizationFrequency": "once",
+        "normalizationFrequency": "repeated",
         "closingStyle": "pq_framed",
         "senseRotation": "guided_rotation",
         "language": "en"
@@ -300,7 +300,7 @@
         "durationMinutes": 4,
         "labelingMode": "none",
         "silenceProfile": "none",
-        "normalizationFrequency": "once",
+        "normalizationFrequency": "repeated",
         "closingStyle": "minimal",
         "senseRotation": "none",
         "language": "en"
