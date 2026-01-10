@@ -236,10 +236,17 @@ export function buildPrompt(config: GenerateConfig): string {
     "label_with_anchor = label sensations while returning to a single anchor.",
     "label_while_scanning = label sensations while scanning the body.",
   ].join(" ");
+  const bodyStateDefinition = [
+    "Body state meaning:",
+    "still_seated = seated and still with eyes open.",
+    "still_seated_closed_eyes = seated and still with eyes closed.",
+    "moving = in motion (walking or gentle movement).",
+  ].join(" ");
 
   return [
     `Practice mode: ${practiceMode}.`,
     practiceModeDefinition,
+    bodyStateDefinition,
     `Body state: ${bodyState}.`,
     `Eye state: ${eyeState}.`,
     `Primary sense: ${primarySense}.`,
