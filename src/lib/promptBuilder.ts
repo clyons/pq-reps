@@ -92,6 +92,21 @@ const formatLanguageLabel = (language: string) =>
 
 export const ALLOWED_DURATIONS: DurationMinutes[] = [1, 2, 5, 12];
 
+const PRACTICE_MODE_DESCRIPTIONS: Record<PracticeMode, string> = {
+  tactile: "guided touch-based attention while still",
+  tense_relax: "alternate gentle tension and release with sensory attention",
+  moving: "guided attention while in motion",
+  sitting: "guided attention while seated with eyes open",
+  label_with_anchor: "label sensations while returning to a single anchor",
+  label_while_scanning: "label sensations while scanning the body",
+};
+
+const BODY_STATE_DESCRIPTIONS: Record<BodyState, string> = {
+  still_seated: "seated and still with eyes open",
+  still_seated_closed_eyes: "seated and still with eyes closed",
+  moving: "in motion (walking or gentle movement)",
+};
+
 export type ScenarioDefinition = {
   id: ScenarioId;
   label: string;
@@ -227,27 +242,13 @@ export function buildPrompt(config: GenerateConfig): string {
   const languageLine = `Language: ${languages.map(formatLanguageLabel).join(", ")}.`;
   const primaryLanguage = formatLanguageLabel(languages[0] ?? "");
 
-  const practiceModeDefinition = [
-    "Practice mode meaning:",
-    "tactile = guided touch-based attention while still.",
-    "tense_relax = alternate gentle tension and release with sensory attention.",
-    "moving = guided attention while in motion.",
-    "sitting = guided attention while seated with eyes open.",
-    "label_with_anchor = label sensations while returning to a single anchor.",
-    "label_while_scanning = label sensations while scanning the body.",
-  ].join(" ");
-  const bodyStateDefinition = [
-    "Body state meaning:",
-    "still_seated = seated and still with eyes open.",
-    "still_seated_closed_eyes = seated and still with eyes closed.",
-    "moving = in motion (walking or gentle movement).",
-  ].join(" ");
+  const practiceModeDescription =
+    PRACTICE_MODE_DESCRIPTIONS[practiceMode] ?? practiceMode;
+  const bodyStateDescription = BODY_STATE_DESCRIPTIONS[bodyState] ?? bodyState;
 
   return [
-    `Practice mode: ${practiceMode}.`,
-    practiceModeDefinition,
-    bodyStateDefinition,
-    `Body state: ${bodyState}.`,
+    `Practice mode: ${practiceModeDescription}.`,
+    `Body state: ${bodyStateDescription}.`,
     `Eye state: ${eyeState}.`,
     `Primary sense: ${primarySense}.`,
     `Duration: ${durationMinutes} minutes.`,

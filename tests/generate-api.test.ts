@@ -43,8 +43,11 @@ function assertConfigMapping(result: ReturnType<typeof validateGenerateConfig>) 
   assert.equal(config.customScenarioLine, validPayload.customScenarioLine);
 
   const prompt = buildPrompt(config);
-  assert.match(prompt, /Practice mode: sitting\./);
-  assert.match(prompt, /Body state: still_seated\./);
+  assert.match(
+    prompt,
+    /Practice mode: guided attention while seated with eyes open\./,
+  );
+  assert.match(prompt, /Body state: seated and still with eyes open\./);
   assert.match(prompt, /Eye state: open_focused\./);
   assert.match(prompt, /Primary sense: breath\./);
   assert.match(prompt, /Duration: 5 minutes\./);
