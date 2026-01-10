@@ -111,6 +111,7 @@ const SECTION_STORAGE_KEY = "pq-reps-active-section";
 const DEBUG_TTS_PROMPT_STORAGE_KEY = "pq-reps-debug-tts-prompt";
 const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
 const MOBILE_MAX_WIDTH = 640;
+const MEDIUM_MAX_WIDTH = 960;
 
 const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
   still_eyes_closed: "form.practice_type.still_eyes_closed",
@@ -120,31 +121,40 @@ const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
   labeling: "form.practice_type.labeling",
 };
 
-const useIsMobile = () => {
+const useViewportCategory = () => {
   const [isMobile, setIsMobile] = useState(false);
+  const [isMedium, setIsMedium] = useState(false);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH}px)`);
+    const mobileQuery = window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH}px)`);
+    const mediumQuery = window.matchMedia(
+      `(min-width: ${MOBILE_MAX_WIDTH + 1}px) and (max-width: ${MEDIUM_MAX_WIDTH}px)`,
+    );
     const update = () => {
-      setIsMobile(mediaQuery.matches);
+      setIsMobile(mobileQuery.matches);
+      setIsMedium(mediumQuery.matches);
     };
 
     update();
 
-    if ("addEventListener" in mediaQuery) {
-      mediaQuery.addEventListener("change", update);
+    if ("addEventListener" in mobileQuery) {
+      mobileQuery.addEventListener("change", update);
+      mediumQuery.addEventListener("change", update);
       return () => {
-        mediaQuery.removeEventListener("change", update);
+        mobileQuery.removeEventListener("change", update);
+        mediumQuery.removeEventListener("change", update);
       };
     }
 
-    mediaQuery.addListener(update);
+    mobileQuery.addListener(update);
+    mediumQuery.addListener(update);
     return () => {
-      mediaQuery.removeListener(update);
+      mobileQuery.removeListener(update);
+      mediumQuery.removeListener(update);
     };
   }, []);
 
-  return isMobile;
+  return { isMobile, isMedium };
 };
 
 const FOCUS_LABEL_KEYS: Record<FormState["focus"], string> = {
@@ -1472,10 +1482,10 @@ export default function HomePage() {
   };
 
   const previewIcon = previewLoading ? "⏳" : previewPlaying ? "■" : "▶";
-  const isMobile = useIsMobile();
+  const { isMobile, isMedium } = useViewportCategory();
   const mainStyle = {
     fontFamily: "sans-serif",
-    padding: isMobile ? "1.5rem" : "2rem",
+    padding: isMobile ? "1.5rem" : isMedium ? "1.5rem" : "2rem",
     maxWidth: isMobile ? "none" : 720,
     margin: isMobile ? "0" : "0 auto",
     background: BRAND_COLORS.neutral.white,
