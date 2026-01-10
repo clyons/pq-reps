@@ -110,6 +110,8 @@ const SECTION_TABS: { id: SectionId; labelKey: string }[] = [
 const SECTION_STORAGE_KEY = "pq-reps-active-section";
 const DEBUG_TTS_PROMPT_STORAGE_KEY = "pq-reps-debug-tts-prompt";
 const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
+const MOBILE_MAX_WIDTH = 640;
+const MEDIUM_MAX_WIDTH = 960;
 
 const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
   still_eyes_closed: "form.practice_type.still_eyes_closed",
@@ -117,6 +119,42 @@ const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
   lying_eyes_closed: "form.practice_type.lying_eyes_closed",
   moving: "form.practice_type.moving",
   labeling: "form.practice_type.labeling",
+};
+
+const useViewportCategory = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMedium, setIsMedium] = useState(false);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH}px)`);
+    const mediumQuery = window.matchMedia(
+      `(min-width: ${MOBILE_MAX_WIDTH + 1}px) and (max-width: ${MEDIUM_MAX_WIDTH}px)`,
+    );
+    const update = () => {
+      setIsMobile(mobileQuery.matches);
+      setIsMedium(mediumQuery.matches);
+    };
+
+    update();
+
+    if ("addEventListener" in mobileQuery) {
+      mobileQuery.addEventListener("change", update);
+      mediumQuery.addEventListener("change", update);
+      return () => {
+        mobileQuery.removeEventListener("change", update);
+        mediumQuery.removeEventListener("change", update);
+      };
+    }
+
+    mobileQuery.addListener(update);
+    mediumQuery.addListener(update);
+    return () => {
+      mobileQuery.removeListener(update);
+      mediumQuery.removeListener(update);
+    };
+  }, []);
+
+  return { isMobile, isMedium };
 };
 
 const FOCUS_LABEL_KEYS: Record<FormState["focus"], string> = {
@@ -499,7 +537,9 @@ const infoTooltipStyle: React.CSSProperties = {
   borderRadius: 8,
   fontSize: "0.75rem",
   fontWeight: 500,
-  whiteSpace: "nowrap",
+  whiteSpace: "normal",
+  maxWidth: "min(320px, calc(100vw - 3rem))",
+  textAlign: "left",
   pointerEvents: "none",
   transition: "opacity 0.15s ease",
   zIndex: 10,
@@ -1423,18 +1463,19 @@ export default function HomePage() {
   };
 
   const previewIcon = previewLoading ? "⏳" : previewPlaying ? "■" : "▶";
+  const { isMobile, isMedium } = useViewportCategory();
+  const mainStyle = {
+    fontFamily: "sans-serif",
+    padding: isMobile ? "1.5rem" : isMedium ? "1.5rem" : "2rem",
+    maxWidth: isMobile ? "none" : 720,
+    margin: isMobile ? "0" : "0 auto",
+    background: BRAND_COLORS.neutral.white,
+    borderRadius: isMobile ? 0 : 16,
+    minHeight: isMobile ? "100vh" : undefined,
+  } as const;
 
   return (
-    <main
-      style={{
-        fontFamily: "sans-serif",
-        padding: "2rem",
-        maxWidth: 720,
-        margin: "0 auto",
-        background: BRAND_COLORS.neutral.white,
-        borderRadius: 16,
-      }}
-    >
+    <main style={mainStyle}>
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
         {t("ui.title")}
       </h1>
