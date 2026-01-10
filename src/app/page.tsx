@@ -110,6 +110,7 @@ const SECTION_TABS: { id: SectionId; labelKey: string }[] = [
 const SECTION_STORAGE_KEY = "pq-reps-active-section";
 const DEBUG_TTS_PROMPT_STORAGE_KEY = "pq-reps-debug-tts-prompt";
 const DEFAULT_TTS_NEWLINE_PAUSE_SECONDS = 1.5;
+const MOBILE_MAX_WIDTH = 640;
 
 const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
   still_eyes_closed: "form.practice_type.still_eyes_closed",
@@ -117,6 +118,33 @@ const PRACTICE_TYPE_LABEL_KEYS: Record<PracticeType, string> = {
   lying_eyes_closed: "form.practice_type.lying_eyes_closed",
   moving: "form.practice_type.moving",
   labeling: "form.practice_type.labeling",
+};
+
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(`(max-width: ${MOBILE_MAX_WIDTH}px)`);
+    const update = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+
+    update();
+
+    if ("addEventListener" in mediaQuery) {
+      mediaQuery.addEventListener("change", update);
+      return () => {
+        mediaQuery.removeEventListener("change", update);
+      };
+    }
+
+    mediaQuery.addListener(update);
+    return () => {
+      mediaQuery.removeListener(update);
+    };
+  }, []);
+
+  return isMobile;
 };
 
 const FOCUS_LABEL_KEYS: Record<FormState["focus"], string> = {
@@ -1423,18 +1451,19 @@ export default function HomePage() {
   };
 
   const previewIcon = previewLoading ? "⏳" : previewPlaying ? "■" : "▶";
+  const isMobile = useIsMobile();
+  const mainStyle = {
+    fontFamily: "sans-serif",
+    padding: isMobile ? "1.5rem" : "2rem",
+    maxWidth: isMobile ? "none" : 720,
+    margin: isMobile ? "0" : "0 auto",
+    background: BRAND_COLORS.neutral.white,
+    borderRadius: isMobile ? 0 : 16,
+    minHeight: isMobile ? "100vh" : undefined,
+  } as const;
 
   return (
-    <main
-      style={{
-        fontFamily: "sans-serif",
-        padding: "2rem",
-        maxWidth: 720,
-        margin: "0 auto",
-        background: BRAND_COLORS.neutral.white,
-        borderRadius: 16,
-      }}
-    >
+    <main style={mainStyle}>
       <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
         {t("ui.title")}
       </h1>
