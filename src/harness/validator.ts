@@ -35,6 +35,19 @@ function findSentenceEvidence(sentences: SentenceInfo[], index: number): string 
   return `Sentence ${sentence.index + 1}: ${sentence.text}`;
 }
 
+function findParagraphEvidence(paragraphs: string[], index: number): string {
+  const paragraph = paragraphs[index];
+  if (!paragraph) return 'Paragraph ?';
+  return `Paragraph ${index + 1}: ${paragraph}`;
+}
+
+function formatParagraphWindow(paragraphs: string[], start: number, count: number): string {
+  return paragraphs
+    .slice(start, start + count)
+    .filter((paragraph) => paragraph.trim().length > 0)
+    .join(' ');
+}
+
 function addFailure(
   failures: ValidationFailure[],
   ruleId: string,
@@ -218,7 +231,17 @@ export function validateScript(
 
     if (inputs) {
       const openingParagraph = stripPauseTokens(paragraphs[0] ?? '');
-      const openingWindow = openingParagraph.length > 0 ? openingParagraph : `${firstSentence} ${secondSentence}`;
+      const openingParagraphWindow = formatParagraphWindow(
+        paragraphs.map(stripPauseTokens),
+        0,
+        2
+      );
+      const openingWindow =
+        openingParagraphWindow.length > 0
+          ? openingParagraphWindow
+          : openingParagraph.length > 0
+            ? openingParagraph
+            : firstSentence;
       const hasVerb = includesAny(openingWindow, config.openingVerbs);
       const senseKeywords = config.senseKeywords[inputs.primarySense];
       const hasSense = includesAny(openingWindow, senseKeywords);
@@ -228,7 +251,7 @@ export function validateScript(
           'OPENING_PHYSICAL_INSTRUCTION',
           'fail',
           'Opening does not place attention in the primary sense.',
-          findSentenceEvidence(sentences, 0)
+          findParagraphEvidence(paragraphs, 0)
         );
       }
     }
