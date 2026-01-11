@@ -117,6 +117,18 @@ Generate guided mental fitness audio scripts and placeholder audio URLs tailored
 npm install
 ```
 
+### Tests
+Run the mocked unit tests (default):
+```bash
+npm test
+```
+
+Run the full test suite, including any live OpenAI tests tagged with `[live]` in their
+names:
+```bash
+npm run test:live
+```
+
 ### Configure environment
 Create a `.env.local` file with your OpenAI API key and API auth secret (auto-loaded on startup):
 ```bash
