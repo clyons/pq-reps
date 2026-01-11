@@ -41,6 +41,12 @@ const sendAudioResponse = (res: ServerResponse, audio: Buffer) => {
   res.end(audio);
 };
 
+const sendCacheStatusResponse = (res: ServerResponse, cached: boolean) => {
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify({ cached }));
+};
+
 const handler = async (req: IncomingMessage, res: ServerResponse) => {
   if (req.method !== "POST") {
     res.statusCode = 405;
@@ -64,6 +70,20 @@ const handler = async (req: IncomingMessage, res: ServerResponse) => {
     const script = getVoicePreviewScript(language);
     await fs.mkdir(cacheDirectory, { recursive: true });
     const cachePath = getCachePath(language, voice, script);
+    const isCacheCheck = req.headers["x-preview-cache-check"] === "1";
+
+    if (isCacheCheck) {
+      try {
+        await fs.access(cachePath);
+        sendCacheStatusResponse(res, true);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+          throw error;
+        }
+        sendCacheStatusResponse(res, false);
+      }
+      return;
+    }
 
     try {
       const cachedAudio = await fs.readFile(cachePath);

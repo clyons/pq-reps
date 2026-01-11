@@ -24,6 +24,13 @@ const sendAudioResponse = (audio: Buffer) =>
     },
   });
 
+const sendCacheStatusResponse = (cached: boolean) =>
+  new Response(JSON.stringify({ cached }), {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as VoicePreviewRequest;
@@ -33,6 +40,19 @@ export async function POST(request: Request) {
 
     await fs.mkdir(cacheDirectory, { recursive: true });
     const cachePath = getCachePath(language, voice, script);
+    const isCacheCheck = request.headers.get("x-preview-cache-check") === "1";
+
+    if (isCacheCheck) {
+      try {
+        await fs.access(cachePath);
+        return sendCacheStatusResponse(true);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+          throw error;
+        }
+        return sendCacheStatusResponse(false);
+      }
+    }
 
     try {
       const cachedAudio = await fs.readFile(cachePath);
