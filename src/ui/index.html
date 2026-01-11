@@ -2806,6 +2806,21 @@
           voice: voiceStyle,
           ttsNewlinePauseSeconds,
         });
+        const parseJsonResponse = async (response) => {
+          const text = await response.text();
+          if (!text) {
+            return null;
+          }
+          try {
+            return JSON.parse(text);
+          } catch (parseError) {
+            logClient("Failed to parse JSON response.", {
+              error: parseError instanceof Error ? parseError.message : String(parseError),
+              snippet: text.slice(0, 200),
+            });
+            throw new Error(translate("errors.generator_failed"));
+          }
+        };
         submitButton.disabled = true;
         statusPanel.hidden = false;
         spinner.hidden = false;
@@ -2823,13 +2838,17 @@
           });
 
           if (!response.ok) {
-            const errorBody = await response.json();
+            const errorBody = await parseJsonResponse(response);
             throw new Error(
               errorBody?.error?.message || translate("errors.generator_failed"),
             );
           }
 
-          return response.json();
+          const payload = await parseJsonResponse(response);
+          if (!payload) {
+            throw new Error(translate("errors.generator_failed"));
+          }
+          return payload;
         };
 
         const requestStreamed = async () => {
@@ -2846,7 +2865,7 @@
           if (!response.ok) {
             const errorContentType = response.headers.get("content-type") || "";
             if (errorContentType.includes("application/json")) {
-              const errorBody = await response.json();
+              const errorBody = await parseJsonResponse(response);
               throw new Error(
                 errorBody?.error?.message || translate("errors.generator_failed"),
               );
@@ -2938,7 +2957,7 @@
           if (!response.ok) {
             const errorContentType = response.headers.get("content-type") || "";
             if (errorContentType.includes("application/json")) {
-              const errorBody = await response.json();
+              const errorBody = await parseJsonResponse(response);
               throw new Error(
                 errorBody?.error?.message || translate("errors.generator_failed"),
               );

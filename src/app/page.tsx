@@ -1146,6 +1146,20 @@ export default function HomePage() {
       voice: voiceStyle,
       ttsNewlinePauseSeconds: DEFAULT_TTS_NEWLINE_PAUSE_SECONDS,
     });
+    const parseJsonResponse = async <T,>(
+      response: Response,
+    ): Promise<T | null> => {
+      const text = await response.text();
+      if (!text) {
+        return null;
+      }
+      try {
+        return JSON.parse(text) as T;
+      } catch (parseError) {
+        console.warn("Failed to parse JSON response.", parseError);
+        throw new Error(t("errors.generator_failed"));
+      }
+    };
 
     const requestJson = async (outputMode: "text" | "text-audio") => {
       const response = await fetch("/api/generate", {
@@ -1159,13 +1173,21 @@ export default function HomePage() {
       });
 
       if (!response.ok) {
-        const errorBody = (await response.json()) as { error?: { message?: string } };
+        const errorBody =
+          await parseJsonResponse<{ error?: { message?: string } }>(response);
         throw new Error(
           errorBody.error?.message ?? t("errors.generator_failed"),
         );
       }
 
-      return (await response.json()) as { script: string; ttsPrompt?: Record<string, unknown> };
+      const payload =
+        await parseJsonResponse<{ script: string; ttsPrompt?: Record<string, unknown> }>(
+          response,
+        );
+      if (!payload) {
+        throw new Error(t("errors.generator_failed"));
+      }
+      return payload;
     };
 
     const requestAudio = async (
@@ -1196,7 +1218,8 @@ export default function HomePage() {
       if (!response.ok) {
         const errorContentType = response.headers.get("content-type") ?? "";
         if (errorContentType.includes("application/json")) {
-          const errorBody = (await response.json()) as { error?: { message?: string } };
+          const errorBody =
+            await parseJsonResponse<{ error?: { message?: string } }>(response);
           throw new Error(
             errorBody.error?.message ?? t("errors.generator_failed"),
           );
