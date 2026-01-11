@@ -828,7 +828,7 @@ export default function HomePage() {
     [locale],
   );
   const formatDurationLabel = (minutes: number) => formatMinutes(locale, minutes);
-  const isStreamingBlocked = isMobileSafari && formState.durationMinutes >= 5;
+  const isStreamingBlocked = isMobileSafari;
 
   useAudioSync(audioRef, result?.audioStream, result?.audioUrl, setPlaybackBlocked);
 
@@ -1083,7 +1083,7 @@ export default function HomePage() {
     if (!state.language) {
       nextErrors.push(t("errors.language_required"));
     }
-    if (state.audioDelivery === "stream" && isMobileSafari && state.durationMinutes >= 5) {
+    if (state.audioDelivery === "stream" && isMobileSafari) {
       nextErrors.push(t("errors.audio_streaming_unavailable_mobile"));
     }
 

@@ -262,7 +262,7 @@ const buildStreamingWavHeader = (format: Omit<WavFormat, "audioData">): Buffer =
   return header;
 };
 
-const DEFAULT_STREAM_CHUNK_SIZE = 16 * 1024;
+const DEFAULT_STREAM_CHUNK_SIZE = 64 * 1024;
 
 const chunkBuffer = async function* (
   buffer: Buffer,

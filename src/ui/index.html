@@ -2310,7 +2310,7 @@
 
       const updateAudioDeliveryAvailability = () => {
         const durationMinutes = Number(getSelectedValue("durationMinutes"));
-        const isBlocked = isMobileSafari && durationMinutes >= 5;
+        const isBlocked = isMobileSafari;
         audioDeliveryInputs.forEach((input) => {
           if (input.value !== "stream") {
             return;
@@ -2730,7 +2730,7 @@
         const ttsNewlinePauseSeconds = Number.isFinite(parsedTtsNewlinePauseSeconds)
           ? parsedTtsNewlinePauseSeconds
           : 1.5;
-        const isStreamingBlocked = isMobileSafari && durationMinutes >= 5;
+        const isStreamingBlocked = isMobileSafari;
         if (streamAudioEnabled && isStreamingBlocked) {
           error.hidden = false;
           error.textContent = translate("errors.audio_streaming_unavailable_mobile");
