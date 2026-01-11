@@ -15,9 +15,8 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 ### 0.7.0
 - Add a Cloud Run deploy workflow with build/test checks in GitHub Actions.
 - Improve streaming playback reliability and diagnostics (iOS unlock handling, fallback playback, stream resets, logging, smaller chunk sizes).
-- Adjust Mobile Safari streaming behavior and copy, including tap-to-play layout tweaks and disabling streaming when unstable.
+- Adjust Mobile Safari playing behavior, including tap-to-play layout tweaks and disabling streaming when unstable.
 - Refine mobile layout and controls (options drawer persistence, tooltip wrapping, medium viewport tweaks).
-- Housekeeping: update gitignore entries and remove the prompt drift system file.
 
 ### 0.6.0
 - Improve the prompt drift harness with export automation, leaner debug reporting, and refreshed test cases.
