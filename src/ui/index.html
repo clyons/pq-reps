@@ -467,6 +467,12 @@
         line-height: 1.2;
         font-size: var(--font-size-sm);
       }
+      #voice-preview-icon svg {
+        width: 1rem;
+        height: 1rem;
+        display: inline-block;
+        vertical-align: middle;
+      }
       .voice-preview button[disabled] {
         background: var(--color-primary-green-light);
         color: var(--color-neutral-black);
@@ -714,7 +720,11 @@
                 <span class="option-hint" id="voice-help">Choose the voice you prefer for guidance.</span>
                 <button type="button" id="voice-preview-button">
                   <span id="voice-preview-text">Preview</span>
-                  <span id="voice-preview-icon" aria-hidden="true">▶</span>
+                  <span id="voice-preview-icon" aria-hidden="true">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                      <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" />
+                    </svg>
+                  </span>
                 </button>
               </div>
               <audio id="voice-preview-audio" hidden></audio>
@@ -971,6 +981,7 @@
       const previewStatus = document.getElementById("voice-preview-status");
       const previewIcon = document.getElementById("voice-preview-icon");
       let previewPlaying = false;
+      let previewPaused = false;
       const isDevMode = new URLSearchParams(window.location.search).get("dev") === "1";
       const FALLBACK_LOCALE = "en";
       let versionState = "loading";
@@ -2515,17 +2526,17 @@
 
       void initializeForm();
 
+      const previewIconSvgs = {
+        idle: `<svg aria-hidden="true" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" /></svg>`,
+        loading: `<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g><path d="M21 12a9 9 0 1 1-6.219-8.56"></path><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"></animateTransform></g></svg>`,
+        playing: `<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor" /><rect x="14" y="4" width="4" height="16" fill="currentColor" /></svg>`,
+        paused: `<svg aria-hidden="true" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" fill="currentColor" /></svg>`,
+      };
       const setPreviewIcon = (state) => {
         if (!previewIcon) {
           return;
         }
-        if (state === "loading") {
-          previewIcon.textContent = "⏳";
-        } else if (state === "playing") {
-          previewIcon.textContent = "■";
-        } else {
-          previewIcon.textContent = "▶";
-        }
+        previewIcon.innerHTML = previewIconSvgs[state] || previewIconSvgs.idle;
       };
 
       const setPreviewError = (message) => {
@@ -2548,7 +2559,18 @@
         previewAudio.pause();
         previewAudio.currentTime = 0;
         previewPlaying = false;
+        previewPaused = false;
         setPreviewIcon("idle");
+      };
+
+      const pausePreview = () => {
+        if (!previewAudio) {
+          return;
+        }
+        previewAudio.pause();
+        previewPlaying = false;
+        previewPaused = true;
+        setPreviewIcon("paused");
       };
 
       const playPreview = async () => {
@@ -2556,6 +2578,10 @@
           return;
         }
         if (previewPlaying) {
+          pausePreview();
+          return;
+        }
+        if (previewPaused) {
           stopPreview();
           return;
         }
@@ -2596,17 +2622,26 @@
           previewAudio.hidden = false;
           await previewAudio.play();
           previewPlaying = true;
+          previewPaused = false;
           setPreviewIcon("playing");
           previewAudio.onended = () => {
             previewPlaying = false;
+            previewPaused = false;
             setPreviewIcon("idle");
           };
           previewAudio.onpause = () => {
             previewPlaying = false;
-            setPreviewIcon("idle");
+            if (previewAudio.currentTime > 0 && !previewAudio.ended) {
+              previewPaused = true;
+              setPreviewIcon("paused");
+            } else {
+              previewPaused = false;
+              setPreviewIcon("idle");
+            }
           };
         } catch (error) {
           previewPlaying = false;
+          previewPaused = false;
           setPreviewIcon("idle");
           setPreviewError(
             error instanceof Error ? error.message : translate("errors.preview_failed"),

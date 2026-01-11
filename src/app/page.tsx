@@ -808,6 +808,7 @@ export default function HomePage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewPaused, setPreviewPaused] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showAudioInfo, setShowAudioInfo] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionId>("quick");
@@ -1596,8 +1597,14 @@ export default function HomePage() {
     }
     if (previewPlaying) {
       previewAudio.pause();
-      previewAudio.currentTime = 0;
       setPreviewPlaying(false);
+      setPreviewPaused(true);
+      return;
+    }
+    if (previewPaused) {
+      previewAudio.pause();
+      previewAudio.currentTime = 0;
+      setPreviewPaused(false);
       return;
     }
     const language = formState.language;
@@ -1634,23 +1641,89 @@ export default function HomePage() {
       previewAudio.hidden = false;
       previewAudio.onended = () => {
         setPreviewPlaying(false);
+        setPreviewPaused(false);
       };
       previewAudio.onpause = () => {
+        const shouldPause =
+          previewAudio.currentTime > 0 && !previewAudio.ended && !previewLoading;
         setPreviewPlaying(false);
+        setPreviewPaused(shouldPause);
       };
       await previewAudio.play();
       setPreviewPlaying(true);
+      setPreviewPaused(false);
     } catch (error) {
       setPreviewError(
         error instanceof Error ? error.message : t("errors.preview_failed"),
       );
       setPreviewPlaying(false);
+      setPreviewPaused(false);
     } finally {
       setPreviewLoading(false);
     }
   };
 
-  const previewIcon = previewLoading ? "⏳" : previewPlaying ? "■" : "▶";
+  const previewState = previewLoading
+    ? "loading"
+    : previewPlaying
+      ? "playing"
+      : previewPaused
+        ? "paused"
+        : "idle";
+  const previewIconStyle = {
+    width: "1rem",
+    height: "1rem",
+    display: "inline-block",
+    verticalAlign: "middle",
+  } as const;
+  const previewIcon = (() => {
+    switch (previewState) {
+      case "loading":
+        return (
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            style={previewIconStyle}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <g>
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                from="0 12 12"
+                to="360 12 12"
+                dur="1s"
+                repeatCount="indefinite"
+              />
+            </g>
+          </svg>
+        );
+      case "playing":
+        return (
+          <svg aria-hidden="true" viewBox="0 0 24 24" style={previewIconStyle}>
+            <rect x="6" y="4" width="4" height="16" fill="currentColor" />
+            <rect x="14" y="4" width="4" height="16" fill="currentColor" />
+          </svg>
+        );
+      case "paused":
+        return (
+          <svg aria-hidden="true" viewBox="0 0 24 24" style={previewIconStyle}>
+            <rect x="6" y="6" width="12" height="12" fill="currentColor" />
+          </svg>
+        );
+      default:
+        return (
+          <svg aria-hidden="true" viewBox="0 0 24 24" style={previewIconStyle}>
+            <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" />
+          </svg>
+        );
+    }
+  })();
   const { isMobile, isMedium } = useViewportCategory();
   const mainStyle = {
     fontFamily: "sans-serif",
