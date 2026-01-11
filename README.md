@@ -1,6 +1,6 @@
 # PQ Reps Guided Audio Generator
 
-**Version:** 0.6.0
+**Version:** 0.7.0
 
 Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sense, eye position, duration, and language.
 
@@ -11,6 +11,13 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - Server-sent events for generation status updates via `Accept: text/event-stream`
 
 ## Changelog
+
+### 0.7.0
+- Add a Cloud Run deploy workflow with build/test checks in GitHub Actions.
+- Improve streaming playback reliability and diagnostics (iOS unlock handling, fallback playback, stream resets, logging, smaller chunk sizes).
+- Adjust Mobile Safari streaming behavior and copy, including tap-to-play layout tweaks and disabling streaming when unstable.
+- Refine mobile layout and controls (options drawer persistence, tooltip wrapping, medium viewport tweaks).
+- Housekeeping: update gitignore entries and remove the prompt drift system file.
 
 ### 0.6.0
 - Improve the prompt drift harness with export automation, leaner debug reporting, and refreshed test cases.
@@ -82,8 +89,11 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog" (Notes: server-side guardrail validation exists, but UI input + validation wiring still pending.)
 - [ ] Improve prompt handling for custom scenario line before re-enabling UI input (Notes: prompt does not include custom scenario lines until the feature is re-enabled.)
 - [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min) (Notes: pacing guidance exists in prompts, but no runtime timing calibration.)
-- [ ] Fix/enable straming in Mobile Safari
+- [x] Stabilize Mobile Safari streaming UX (unlock handling, tap-to-play layout, disable streaming when unstable)
 - [x] Add deploy script via Github Actions
+- [ ] Re-enable streaming on Mobile Safari once playback stability is verified.
+- [ ] Add regression coverage for streaming playback and SSE audio outputs.
+- [ ] Provide a user-visible support bundle for streaming diagnostics.
 
 ## Streaming audio
 - `/api/tts` supports streaming WAV audio when you set the `x-tts-streaming: 1` header.
