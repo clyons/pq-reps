@@ -173,7 +173,7 @@ export default async function handler(
     }
   };
   req.on("aborted", handleAbort);
-  req.on("close", handleAbort);
+  res.on("close", handleAbort);
 
   let payload: unknown;
   try {
