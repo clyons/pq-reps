@@ -262,9 +262,11 @@ const buildStreamingWavHeader = (format: Omit<WavFormat, "audioData">): Buffer =
   return header;
 };
 
+const DEFAULT_STREAM_CHUNK_SIZE = 64 * 1024;
+
 const chunkBuffer = async function* (
   buffer: Buffer,
-  chunkSize = 64 * 1024,
+  chunkSize: number = DEFAULT_STREAM_CHUNK_SIZE,
 ): AsyncGenerator<Buffer> {
   let offset = 0;
   while (offset < buffer.length) {
@@ -488,7 +490,7 @@ export async function synthesizeSpeechStream(
   options?: { chunkSize?: number },
 ): Promise<TtsStreamResponse> {
   const { apiKey, voice, inputScript, tokens } = prepareTtsRequest(request);
-  const chunkSize = options?.chunkSize;
+  const chunkSize = options?.chunkSize ?? DEFAULT_STREAM_CHUNK_SIZE;
   const responseFormat: TtsResponseFormat = "wav";
 
   const stream = (async function* () {
