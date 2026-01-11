@@ -2636,6 +2636,11 @@
         spinner.hidden = true;
         result.hidden = true;
         setPlaybackBlocked(false);
+        if (audioPlayer) {
+          audioPlayer.srcObject = null;
+          audioPlayer.src = "";
+          audioPlayer.hidden = true;
+        }
         scriptOutput.textContent = "";
         debugOutput.textContent = "";
         debugSection.hidden = true;
