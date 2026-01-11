@@ -22,9 +22,21 @@ const uiPath = path.join(__dirname, "ui", "index.html");
 const packageJsonPath = path.join(process.cwd(), "package.json");
 const rateLimitMaxRequests = Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
 const rateLimitWindowSeconds = Number.parseInt(process.env.RATE_LIMIT_WINDOW_SECONDS ?? "60", 10);
+const rateLimitBucketTtlMinutes = Number.parseInt(
+  process.env.RATE_LIMIT_BUCKET_TTL_MINUTES ?? "10",
+  10,
+);
+const rateLimitCleanupIntervalSeconds = Number.parseInt(
+  process.env.RATE_LIMIT_CLEANUP_INTERVAL_SECONDS ?? "60",
+  10,
+);
+const rateLimitMaxBuckets = Number.parseInt(process.env.RATE_LIMIT_MAX_BUCKETS ?? "0", 10);
 const rateLimiter = createRateLimiter({
   capacity: rateLimitMaxRequests,
   refillPerSecond: rateLimitMaxRequests / rateLimitWindowSeconds,
+  bucketTtlMs: rateLimitBucketTtlMinutes * 60 * 1000,
+  cleanupIntervalMs: rateLimitCleanupIntervalSeconds * 1000,
+  maxBuckets: rateLimitMaxBuckets,
 });
 const isDev = process.env.NODE_ENV !== "production";
 const devFaviconEmoji = "🧘";
