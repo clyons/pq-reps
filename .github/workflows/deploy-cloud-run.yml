@@ -36,14 +36,6 @@ jobs:
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_DEPLOYER_SA }}
 
-      - name: Who am I / what am I deploying to
-        run: |
-          gcloud auth list
-          gcloud config list
-          echo "SERVICE=${{ secrets.CLOUD_RUN_SERVICE }}"
-          echo "PROJECT=${{ secrets.GCP_PROJECT_ID }}"
-          echo "REGION=${{ secrets.GCP_REGION }}"
-                
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
 
