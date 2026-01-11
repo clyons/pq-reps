@@ -174,6 +174,16 @@ const isMissingOpenAiKeyError = (error: unknown) =>
   error instanceof Error &&
   error.message.includes("Missing OPENAI_API_KEY environment variable.");
 
+const isClientDisconnectError = (error: unknown, signal: AbortSignal) => {
+  if (signal.aborted) {
+    const reason = signal.reason;
+    if (reason instanceof Error && reason.message === "Client disconnected.") {
+      return true;
+    }
+  }
+  return error instanceof Error && error.message === "Client disconnected.";
+};
+
 export default async function handler(
   req: IncomingMessage,
   res: ServerResponse,
@@ -427,6 +437,12 @@ export default async function handler(
     res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
     res.end(ttsResult.audio);
   } catch (error) {
+    if (isClientDisconnectError(error, abortController.signal)) {
+      if (!res.writableEnded) {
+        res.end();
+      }
+      return;
+    }
     logger.error("generate_request_failed", {
       error: logger.formatError(error).message,
     });
