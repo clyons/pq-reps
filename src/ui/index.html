@@ -1570,10 +1570,23 @@
         });
       };
 
+      let pendingAudioContext = null;
+
       const attemptPlayback = () => {
         if (!audioPlayer) {
           logClient("Playback attempt skipped (missing audio element).");
           return;
+        }
+        if (pendingAudioContext && pendingAudioContext.state === "suspended") {
+          pendingAudioContext
+            .resume()
+            .then(() => {
+              logClient("Audio context resumed after user interaction.");
+              pendingAudioContext = null;
+            })
+            .catch((error) => {
+              logClient("Audio context resume blocked.", { error: String(error) });
+            });
         }
         logClient("Attempting playback.", {
           hasSrcObject: Boolean(audioPlayer.srcObject),
@@ -2060,6 +2073,7 @@
         let headerBytes = new Uint8Array(0);
         let playbackStarted = false;
         let streamingEnabled = true;
+        let resumeBlocked = false;
 
         const readSample = () => {
           while (sampleQueue.length > 0 && sampleOffset >= sampleQueue[0].length) {
@@ -2121,6 +2135,10 @@
                 resolve();
                 return;
               }
+              if (resumeBlocked && audioContext && audioContext.state !== "running") {
+                resolve();
+                return;
+              }
               setTimeout(checkQueue, 100);
             };
             checkQueue();
@@ -2148,7 +2166,14 @@
                   throw new Error("Only 16-bit PCM WAV streaming is supported.");
                 }
                 audioContext = new AudioContext({ sampleRate: wavInfo.sampleRate });
-                await audioContext.resume();
+                try {
+                  await audioContext.resume();
+                } catch (error) {
+                  logClient("Audio context resume blocked.", { error: String(error) });
+                  pendingAudioContext = audioContext;
+                  resumeBlocked = true;
+                  setPlaybackBlocked(true);
+                }
                 streamDestination = audioContext.createMediaStreamDestination();
                 activeProcessor = audioContext.createScriptProcessor(
                   bufferSize,
@@ -2165,6 +2190,9 @@
                 enqueuePcm(pcmStart);
                 headerBytes = new Uint8Array(0);
               } catch (error) {
+                logClient("Disabling Web Audio streaming; falling back to buffered audio.", {
+                  error: String(error),
+                });
                 streamingEnabled = false;
               }
             }
@@ -2188,6 +2216,9 @@
         }
         if (audioContext) {
           audioContext.close().catch(() => {});
+        }
+        if (pendingAudioContext === audioContext) {
+          pendingAudioContext = null;
         }
       };
       const buildScriptDownloadFilename = ({ voice, durationMinutes, focus, now = new Date() }) =>

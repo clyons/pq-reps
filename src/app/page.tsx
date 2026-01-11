@@ -46,6 +46,21 @@ type SectionId = "quick" | "customize";
 
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
 const AUTH_HEADERS = API_KEY ? { Authorization: `Bearer ${API_KEY}` } : {};
+let pendingAudioContext: AudioContext | null = null;
+
+const resumePendingAudioContext = () => {
+  if (pendingAudioContext && pendingAudioContext.state === "suspended") {
+    pendingAudioContext
+      .resume()
+      .then(() => {
+        console.info("Audio context resumed after user interaction.");
+        pendingAudioContext = null;
+      })
+      .catch((error) => {
+        console.info("Audio context resume blocked.", error);
+      });
+  }
+};
 
 const DEFAULT_STATE: FormState = {
   practiceType: "still_eyes_closed",
@@ -87,6 +102,7 @@ const useAudioSync = (
       setPlaybackBlocked?.(false);
     }
     const attemptPlay = () => {
+      resumePendingAudioContext();
       let playPromise: Promise<void> | undefined;
       try {
         playPromise = audioElement.play();
@@ -357,10 +373,12 @@ const streamWavViaWebAudio = async ({
   reader,
   onStreamStart,
   onChunk,
+  onPlaybackBlocked,
 }: {
   reader: ReadableStreamDefaultReader<Uint8Array>;
   onStreamStart?: (mediaStream: MediaStream) => void;
   onChunk?: (chunk: Uint8Array) => void;
+  onPlaybackBlocked?: (blocked: boolean) => void;
 }) => {
   const bufferSize = 4096;
   let audioContext: AudioContext | null = null;
@@ -380,6 +398,7 @@ const streamWavViaWebAudio = async ({
   let headerBytes = new Uint8Array(0);
   let playbackStarted = false;
   let streamingEnabled = true;
+  let resumeBlocked = false;
 
   const readSample = () => {
     while (sampleQueue.length > 0 && sampleOffset >= sampleQueue[0].length) {
@@ -442,6 +461,10 @@ const streamWavViaWebAudio = async ({
           resolve();
           return;
         }
+        if (resumeBlocked && audioContext && audioContext.state !== "running") {
+          resolve();
+          return;
+        }
         setTimeout(checkQueue, 100);
       };
       checkQueue();
@@ -469,7 +492,14 @@ const streamWavViaWebAudio = async ({
             throw new Error("Only 16-bit PCM WAV streaming is supported.");
           }
           audioContext = new AudioContext({ sampleRate: wavInfo.sampleRate });
-          await audioContext.resume();
+          try {
+            await audioContext.resume();
+          } catch (error) {
+            console.info("Audio context resume blocked.", error);
+            pendingAudioContext = audioContext;
+            resumeBlocked = true;
+            onPlaybackBlocked?.(true);
+          }
           streamDestination = audioContext.createMediaStreamDestination();
           activeProcessor = audioContext.createScriptProcessor(
             bufferSize,
@@ -485,7 +515,11 @@ const streamWavViaWebAudio = async ({
           const pcmStart = headerBytes.slice(wavInfo.dataOffset);
           enqueuePcm(pcmStart);
           headerBytes = new Uint8Array(0);
-        } catch {
+        } catch (error) {
+          console.info(
+            "Disabling Web Audio streaming; falling back to buffered audio.",
+            error,
+          );
           streamingEnabled = false;
         }
       }
@@ -509,6 +543,9 @@ const streamWavViaWebAudio = async ({
   }
   if (audioContext) {
     audioContext.close().catch(() => {});
+  }
+  if (pendingAudioContext === audioContext) {
+    pendingAudioContext = null;
   }
 };
 
@@ -769,6 +806,7 @@ export default function HomePage() {
     if (!audioElement) {
       return;
     }
+    resumePendingAudioContext();
     let playPromise: Promise<void> | undefined;
     try {
       playPromise = audioElement.play();
@@ -1146,6 +1184,7 @@ export default function HomePage() {
           reader,
           onStreamStart: (mediaStream) =>
             onStreamStart?.({ mediaStream, contentType }),
+          onPlaybackBlocked: setPlaybackBlocked,
           onChunk: (chunk) => {
             chunks.push(chunk);
             onChunk?.(chunk, { contentType });
