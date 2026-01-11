@@ -188,6 +188,15 @@ export default async function handler(
     return;
   }
 
+  const abortController = new AbortController();
+  const handleAbort = () => {
+    if (!abortController.signal.aborted) {
+      abortController.abort(new Error("Client disconnected."));
+    }
+  };
+  req.on("aborted", handleAbort);
+  req.on("close", handleAbort);
+
   let payload: unknown;
   try {
     payload = await parseJsonBody(req);
@@ -243,7 +252,7 @@ export default async function handler(
       sendEvent(res, "status", translate(locale, "status.generating_script"));
     }
     const scriptStart = Date.now();
-    const { script } = await generateScript({ prompt });
+    const { script } = await generateScript({ prompt }, { signal: abortController.signal });
     logger.info("generate_script_completed", {
       durationMs: Date.now() - scriptStart,
     });
@@ -294,12 +303,16 @@ export default async function handler(
           language: config.languages[0],
           voice: config.voiceStyle,
           newlinePauseSeconds: config.ttsNewlinePauseSeconds,
+        }, {
+          signal: abortController.signal,
         })
       : await synthesizeSpeech({
           script,
           language: config.languages[0],
           voice: config.voiceStyle,
           newlinePauseSeconds: config.ttsNewlinePauseSeconds,
+        }, {
+          signal: abortController.signal,
         });
     logger.info("synthesize_audio_completed", {
       durationMs: Date.now() - ttsStart,

@@ -2,6 +2,10 @@ export type ScriptRequest = {
   prompt: string;
 };
 
+export type ScriptOptions = {
+  signal?: AbortSignal;
+};
+
 export type ScriptResponse = {
   script: string;
   model: string;
@@ -34,6 +38,7 @@ export const SCRIPT_SYSTEM_PROMPT = [
 
 export async function generateScript(
   request: ScriptRequest,
+  options?: ScriptOptions,
 ): Promise<ScriptResponse> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -49,7 +54,22 @@ export async function generateScript(
   });
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let timedOut = false;
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+  if (options?.signal) {
+    if (options.signal.aborted) {
+      controller.abort(options.signal.reason);
+    } else {
+      options.signal.addEventListener(
+        "abort",
+        () => controller.abort(options.signal?.reason),
+        { once: true },
+      );
+    }
+  }
   let response: Response;
   try {
     response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -73,7 +93,12 @@ export async function generateScript(
     });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`OpenAI request timed out after ${timeoutMs} ms`);
+      if (timedOut) {
+        throw new Error(`OpenAI request timed out after ${timeoutMs} ms`);
+      }
+      if (options?.signal?.aborted) {
+        throw new Error("OpenAI request aborted by client.");
+      }
     }
     throw error;
   } finally {
