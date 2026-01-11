@@ -2072,7 +2072,12 @@
         }
         return { ...fmt, dataOffset };
       };
-      const streamWavViaWebAudio = async ({ reader, onStreamStart, onChunk }) => {
+      const streamWavViaWebAudio = async ({
+        reader,
+        onStreamStart,
+        onChunk,
+        contentType,
+      }) => {
         const bufferSize = 4096;
         let audioContext = null;
         let activeProcessor = null;
@@ -2085,6 +2090,9 @@
         let playbackStarted = false;
         let streamingEnabled = true;
         let resumeBlocked = false;
+        let totalBytesRead = 0;
+        let firstChunkSize = null;
+        let chunkCount = 0;
 
         const readSample = () => {
           while (sampleQueue.length > 0 && sampleOffset >= sampleQueue[0].length) {
@@ -2158,10 +2166,32 @@
         while (true) {
           const { value, done } = await reader.read();
           if (done) {
+            logClient("Web Audio stream reader done.", {
+              totalBytesRead,
+              firstChunkSize,
+              chunkCount,
+            });
             break;
           }
           if (!value) {
             continue;
+          }
+          chunkCount += 1;
+          if (firstChunkSize === null) {
+            firstChunkSize = value.length;
+            logClient("Web Audio stream first chunk received.", {
+              firstChunkSize,
+              totalBytesRead: totalBytesRead + value.length,
+              chunkCount,
+            });
+          }
+          totalBytesRead += value.length;
+          if (chunkCount % 10 === 0) {
+            logClient("Web Audio stream chunk received.", {
+              chunkCount,
+              chunkSize: value.length,
+              totalBytesRead,
+            });
           }
           onChunk?.(value);
 
@@ -2173,6 +2203,12 @@
             if (headerBytes.length >= 44) {
               try {
                 wavInfo = parseWavHeader(headerBytes);
+                logClient("WAV header parsed for Web Audio streaming.", {
+                  dataOffset: wavInfo.dataOffset,
+                  channels: wavInfo.channels,
+                  sampleRate: wavInfo.sampleRate,
+                  bitsPerSample: wavInfo.bitsPerSample,
+                });
                 if (wavInfo.bitsPerSample !== 16) {
                   throw new Error("Only 16-bit PCM WAV streaming is supported.");
                 }
@@ -2195,6 +2231,9 @@
                 activeProcessor.connect(streamDestination);
                 if (!playbackStarted) {
                   playbackStarted = true;
+                  logClient("Invoking Web Audio stream start callback.", {
+                    contentType,
+                  });
                   onStreamStart?.(streamDestination.stream);
                 }
                 const pcmStart = headerBytes.slice(wavInfo.dataOffset);
@@ -2212,6 +2251,7 @@
 
           if (streamingEnabled && !playbackStarted && streamDestination) {
             playbackStarted = true;
+            logClient("Invoking Web Audio stream start callback.", { contentType });
             onStreamStart?.(streamDestination.stream);
           }
           if (streamingEnabled) {
@@ -2787,10 +2827,24 @@
           let buffer = "";
           let finalPayload = null;
 
+          let totalBytesRead = 0;
+          let firstChunkSize = null;
           while (true) {
             const { value, done } = await reader.read();
             if (done) {
+              logClient("SSE stream reader done.", { totalBytesRead, firstChunkSize });
               break;
+            }
+            if (value) {
+              if (firstChunkSize === null) {
+                firstChunkSize = value.length;
+                logClient("SSE stream first chunk received.", { firstChunkSize });
+              }
+              totalBytesRead += value.length;
+              logClient("SSE stream chunk received.", {
+                chunkSize: value.length,
+                totalBytesRead,
+              });
             }
 
             buffer += decoder.decode(value, { stream: true });
@@ -2878,6 +2932,7 @@
                 chunks.push(chunk);
                 onChunk?.(chunk, { contentType });
               },
+              contentType,
             });
             return { blob: new Blob(chunks, { type: contentType }), contentType };
           }
@@ -2891,6 +2946,7 @@
                 return;
               }
               streamStartNotified = true;
+              logClient("Invoking stream start callback.", { contentType, mode: "mse" });
               if (typeof onStreamStart === "function") {
                 onStreamStart({ mediaUrl, contentType });
               }
@@ -2922,20 +2978,30 @@
                       if (firstRead.done || !firstRead.value) {
                         throw new Error(translate("errors.audio_stream_no_data"));
                       }
+                      logClient("MSE stream first chunk received.", {
+                        firstChunkSize: firstRead.value.length,
+                      });
                       chunks.push(firstRead.value);
                       onChunk?.(firstRead.value, { contentType });
                       await appendChunk(firstRead.value);
                       notifyStreamStart();
+                      let totalBytesRead = firstRead.value.length;
 
                       while (true) {
                         const { value, done } = await reader.read();
                         if (done) {
+                          logClient("MSE stream reader done.", { totalBytesRead });
                           break;
                         }
                         if (value) {
                           chunks.push(value);
                           onChunk?.(value, { contentType });
                           await appendChunk(value);
+                          totalBytesRead += value.length;
+                          logClient("MSE stream chunk received.", {
+                            chunkSize: value.length,
+                            totalBytesRead,
+                          });
                         }
                       }
 
@@ -2957,14 +3023,31 @@
             }
           }
 
+          let totalBytesRead = 0;
+          let firstChunkSize = null;
           while (true) {
             const { value, done } = await reader.read();
             if (done) {
+              logClient("Buffered audio stream reader done.", {
+                totalBytesRead,
+                firstChunkSize,
+              });
               break;
             }
             if (value) {
+              if (firstChunkSize === null) {
+                firstChunkSize = value.length;
+                logClient("Buffered audio stream first chunk received.", {
+                  firstChunkSize,
+                });
+              }
               chunks.push(value);
               onChunk?.(value, { contentType });
+              totalBytesRead += value.length;
+              logClient("Buffered audio stream chunk received.", {
+                chunkSize: value.length,
+                totalBytesRead,
+              });
             }
           }
           return { blob: new Blob(chunks, { type: contentType }), contentType };
