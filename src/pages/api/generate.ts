@@ -199,7 +199,14 @@ export default async function handler(
   }
 
   const abortController = new AbortController();
+  let responseFinished = false;
+  res.on("finish", () => {
+    responseFinished = true;
+  });
   const handleAbort = () => {
+    if (responseFinished) {
+      return;
+    }
     if (!abortController.signal.aborted) {
       abortController.abort(new Error("Client disconnected."));
     }
