@@ -1,6 +1,6 @@
 # Mental Fitness Practice Generator
 
-**Version:** 0.7.1
+**Version:** 0.7.2
 
 Generate guided mental fitness audio scripts and placeholder audio URLs tailored by sense, eye position, duration, and language.
 
@@ -98,14 +98,14 @@ RATE_LIMIT_WINDOW_SECONDS=60
 
 ### Run the API locally
 ```bash
-npm run dev
+PORT=8080 npm run dev && PORT=8080 node dist/server.js
 ```
 
-The server starts on `http://localhost:3000`.
+The server starts on `http://localhost:8080`.
 
 ### Try the API
 ```bash
-curl -X POST http://localhost:3000/api/generate \
+curl -X POST http://localhost:8080/api/generate \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "Authorization: Bearer $API_KEY" \
@@ -280,7 +280,7 @@ npm start
 
 ## Changelog
 
-### 0.7.1
+### 0.7.2
 - Add a Cloud Run deploy workflow with build/test checks in GitHub Actions.
 - Improve streaming playback reliability and diagnostics (iOS unlock handling, fallback playback, stream resets, logging, smaller chunk sizes).
 - Adjust Mobile Safari playing behavior, including tap-to-play layout tweaks and disabling streaming when unstable.
