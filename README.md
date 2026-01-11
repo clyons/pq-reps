@@ -13,14 +13,10 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 ## Changelog
 
 ### 0.7.1
-- Update GitHub Actions deploy scripts.
-
-### 0.7.0
 - Add a Cloud Run deploy workflow with build/test checks in GitHub Actions.
 - Improve streaming playback reliability and diagnostics (iOS unlock handling, fallback playback, stream resets, logging, smaller chunk sizes).
-- Adjust Mobile Safari streaming behavior and copy, including tap-to-play layout tweaks and disabling streaming when unstable.
+- Adjust Mobile Safari playing behavior, including tap-to-play layout tweaks and disabling streaming when unstable.
 - Refine mobile layout and controls (options drawer persistence, tooltip wrapping, medium viewport tweaks).
-- Housekeeping: update gitignore entries and remove the prompt drift system file.
 
 ### 0.6.0
 - Improve the prompt drift harness with export automation, leaner debug reporting, and refreshed test cases.
@@ -89,6 +85,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Add test harness to test script output and guard against prompt drift
 - [x] Refine test harness to produce more passing tests
 - [x] Improve prompt handling for common scenarios and introduce new state for sleep
+- [x] Add deploy script via Github Actions
 - [ ] Include one-line user-customisible scenario with tight guardrails, e.g. "walking the dog" (Notes: server-side guardrail validation exists, but UI input + validation wiring still pending.)
 - [ ] Improve prompt handling for custom scenario line before re-enabling UI input (Notes: prompt does not include custom scenario lines until the feature is re-enabled.)
 - [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min) (Notes: pacing guidance exists in prompts, but no runtime timing calibration.)
