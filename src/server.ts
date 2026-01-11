@@ -8,7 +8,7 @@ import generateHandler from "./pages/api/generate.js";
 import scenariosHandler from "./pages/api/scenarios.js";
 import ttsHandler from "./pages/api/tts.js";
 import voicePreviewHandler from "./pages/api/voice-preview.js";
-import { DEFAULT_LOCALE, translate } from "./lib/i18n/index.js";
+import { DEFAULT_LOCALE, SUPPORTED_LOCALES, translate, type Locale } from "./lib/i18n/index.js";
 import { logger } from "./lib/logger.js";
 import { createRateLimiter } from "./lib/rateLimiter.js";
 
@@ -19,6 +19,7 @@ const port = Number.parseInt(process.env.PORT ?? "3000", 10);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uiPath = path.join(__dirname, "ui", "index.html");
+const shareImagePath = path.join(__dirname, "ui", "share-image.svg");
 const packageJsonPath = path.join(process.cwd(), "package.json");
 const rateLimitMaxRequests = Number.parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? "60", 10);
 const rateLimitWindowSeconds = Number.parseInt(process.env.RATE_LIMIT_WINDOW_SECONDS ?? "60", 10);
@@ -45,6 +46,30 @@ const buildFaviconEmoji = "🧘‍♂️";
 const buildEmojiFaviconDataUrl = (emoji: string) => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">${emoji}</text></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
+const resolveUiLocale = (pathname: string): Locale => {
+  const localeMatch = pathname.match(/^\/([a-z]{2})(?:\/|$)/i);
+  const localeCandidate = localeMatch?.[1]?.toLowerCase();
+  if (localeCandidate && SUPPORTED_LOCALES.includes(localeCandidate as Locale)) {
+    return localeCandidate as Locale;
+  }
+  return DEFAULT_LOCALE;
+};
+
+const resolveBaseUrl = (req: http.IncomingMessage, url: URL) => {
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  const forwardedHost = req.headers["x-forwarded-host"];
+  const protocol =
+    typeof forwardedProto === "string" && forwardedProto.trim().length > 0
+      ? forwardedProto.split(",")[0]?.trim()
+      : url.protocol.replace(":", "");
+  const hostHeader =
+    typeof forwardedHost === "string" && forwardedHost.trim().length > 0
+      ? forwardedHost
+      : req.headers.host;
+  const host = hostHeader?.split(",")[0]?.trim() || `localhost:${port}`;
+  return `${protocol}://${host}`;
 };
 
 const getRateLimitKey = (req: http.IncomingMessage) => {
@@ -133,15 +158,52 @@ const server = http.createServer(async (req, res) => {
       const html = await readFile(uiPath, "utf-8");
       const faviconEmoji = isDev ? devFaviconEmoji : buildFaviconEmoji;
       const faviconDataUrl = buildEmojiFaviconDataUrl(faviconEmoji);
+      const locale = resolveUiLocale(url.pathname);
+      const seoTitle = translate(locale, "ui.title");
+      const seoDescription = translate(locale, "ui.intro");
+      const baseUrl = resolveBaseUrl(req, url);
+      const canonicalUrl = new URL(url.pathname, baseUrl).toString();
+      const seoImageUrl = new URL("/share-image.svg", baseUrl).toString();
+      const structuredData = JSON.stringify(
+        {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: seoTitle,
+          description: seoDescription,
+          url: canonicalUrl,
+          image: seoImageUrl,
+          applicationCategory: "HealthApplication",
+          operatingSystem: "Web",
+          inLanguage: locale,
+        },
+        null,
+        2,
+      );
       const hydratedHtml = html.replaceAll(
         "__API_KEY__",
         JSON.stringify(apiKey ?? ""),
-      ).replaceAll("__FAVICON__", faviconDataUrl);
+      ).replaceAll("__FAVICON__", faviconDataUrl)
+        .replaceAll("__SEO_TITLE__", seoTitle)
+        .replaceAll("__SEO_DESCRIPTION__", seoDescription)
+        .replaceAll("__SEO_URL__", canonicalUrl)
+        .replaceAll("__SEO_CANONICAL__", canonicalUrl)
+        .replaceAll("__SEO_IMAGE__", seoImageUrl)
+        .replaceAll("__SEO_STRUCTURED_DATA__", structuredData)
+        .replaceAll("__SEO_LOCALE__", locale);
       res.statusCode = 200;
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.end(hydratedHtml);
       return;
     }
+  }
+
+  if (url.pathname === "/share-image.svg") {
+    const image = await readFile(shareImagePath);
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "image/svg+xml");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.end(image);
+    return;
   }
 
   if (requiresAuth && !isAuthorized(req)) {
