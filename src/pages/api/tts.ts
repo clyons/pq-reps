@@ -110,6 +110,15 @@ export default async function handler(
     return;
   }
 
+  const abortController = new AbortController();
+  const handleAbort = () => {
+    if (!abortController.signal.aborted) {
+      abortController.abort(new Error("Client disconnected."));
+    }
+  };
+  req.on("aborted", handleAbort);
+  req.on("close", handleAbort);
+
   let payload: unknown;
   try {
     payload = await parseJsonBody(req);
@@ -150,12 +159,16 @@ export default async function handler(
           language: payload.language,
           voice: payload.voice,
           newlinePauseSeconds,
+        }, {
+          signal: abortController.signal,
         })
       : await synthesizeSpeech({
           script: payload.script,
           language: payload.language,
           voice: payload.voice,
           newlinePauseSeconds,
+        }, {
+          signal: abortController.signal,
         });
 
     if ("stream" in ttsResult) {

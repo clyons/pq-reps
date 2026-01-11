@@ -7,6 +7,10 @@ export type TtsRequest = {
   newlinePauseSeconds?: number;
 };
 
+export type TtsOptions = {
+  signal?: AbortSignal;
+};
+
 export type TtsResponse = {
   audio: Buffer;
   contentType: string;
@@ -305,6 +309,7 @@ const synthesizeTtsSegment = async (
   voice: string,
   script: string,
   responseFormat: TtsResponseFormat,
+  signal?: AbortSignal,
 ): Promise<Buffer> => {
   const timeoutValue = Number.parseInt(process.env.OPENAI_TIMEOUT_MS ?? "", 10);
   const timeoutMs = Number.isFinite(timeoutValue) && timeoutValue > 0 ? timeoutValue : 60000;
@@ -312,8 +317,24 @@ const synthesizeTtsSegment = async (
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    if (signal?.aborted) {
+      throw new Error("OpenAI request aborted by client.");
+    }
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
+    if (signal) {
+      if (signal.aborted) {
+        controller.abort(signal.reason);
+      } else {
+        signal.addEventListener("abort", () => controller.abort(signal.reason), {
+          once: true,
+        });
+      }
+    }
 
     try {
       const response = await fetch("https://api.openai.com/v1/audio/speech", {
@@ -348,7 +369,14 @@ const synthesizeTtsSegment = async (
       return Buffer.from(await response.arrayBuffer());
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
-        lastError = new Error(`OpenAI request timed out after ${timeoutMs} ms`);
+        if (signal?.aborted) {
+          throw new Error("OpenAI request aborted by client.");
+        }
+        if (timedOut) {
+          lastError = new Error(`OpenAI request timed out after ${timeoutMs} ms`);
+        } else {
+          lastError = new Error("OpenAI request aborted.");
+        }
       } else if (error instanceof Error) {
         lastError = error;
       } else {
@@ -429,14 +457,19 @@ const prepareTtsRequest = (request: TtsRequest): PreparedTtsRequest => {
 
 export async function synthesizeSpeech(
   request: TtsRequest,
+  options?: TtsOptions,
 ): Promise<TtsResponse> {
   const { apiKey, voice, inputScript, tokens } = prepareTtsRequest(request);
+  const signal = options?.signal;
 
   const audioChunks: Buffer[] = [];
   let format: Omit<WavFormat, "audioData"> | null = null;
   let pendingPauseSeconds = 0;
 
   for (const token of tokens) {
+    if (signal?.aborted) {
+      throw new Error("OpenAI request aborted by client.");
+    }
     if (token.type === "pause") {
       if (format) {
         audioChunks.push(createSilenceBuffer(token.value, format));
@@ -446,7 +479,13 @@ export async function synthesizeSpeech(
       continue;
     }
 
-    const wavBuffer = await synthesizeTtsSegment(apiKey, voice, token.value, "wav");
+    const wavBuffer = await synthesizeTtsSegment(
+      apiKey,
+      voice,
+      token.value,
+      "wav",
+      signal,
+    );
     const wavData = parseWav(wavBuffer);
 
     if (!format) {
@@ -487,10 +526,11 @@ export async function synthesizeSpeech(
 
 export async function synthesizeSpeechStream(
   request: TtsRequest,
-  options?: { chunkSize?: number },
+  options?: { chunkSize?: number; signal?: AbortSignal },
 ): Promise<TtsStreamResponse> {
   const { apiKey, voice, inputScript, tokens } = prepareTtsRequest(request);
   const chunkSize = options?.chunkSize ?? DEFAULT_STREAM_CHUNK_SIZE;
+  const signal = options?.signal;
   const responseFormat: TtsResponseFormat = "wav";
 
   const stream = (async function* () {
@@ -507,12 +547,21 @@ export async function synthesizeSpeechStream(
     };
 
     for (const token of tokens) {
+      if (signal?.aborted) {
+        throw new Error("OpenAI request aborted by client.");
+      }
       if (token.type === "pause") {
         yield* emitPause(token.value);
         continue;
       }
 
-      const audioBuffer = await synthesizeTtsSegment(apiKey, voice, token.value, responseFormat);
+      const audioBuffer = await synthesizeTtsSegment(
+        apiKey,
+        voice,
+        token.value,
+        responseFormat,
+        signal,
+      );
       hasAudio = true;
 
       const wavData = parseWav(audioBuffer);
