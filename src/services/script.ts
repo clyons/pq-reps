@@ -8,7 +8,7 @@ export type ScriptResponse = {
 };
 
 export const SCRIPT_SYSTEM_PROMPT = [
-  "PQ Reps Script Generator — System Prompt",
+  "Mental Fitness Script Generator — System Prompt",
   "Version: PQ-GEN-SYS-v1.1.0",
   "You generate short, practical mental fitness practice scripts in the instructional style associated with the Positive Intelligence PQ Gym content, without using or referencing trademarked terms. The script is a guided exercise built from the user’s inputs. All customization comes from the user input. Use the provided parameters exactly. If a parameter is absent, do not add it.",
   "Write the entire script in the language specified. Return only the script text.",
