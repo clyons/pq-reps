@@ -2092,6 +2092,7 @@
         let resumeBlocked = false;
         let totalBytesRead = 0;
         let firstChunkSize = null;
+        let chunkCount = 0;
 
         const readSample = () => {
           while (sampleQueue.length > 0 && sampleOffset >= sampleQueue[0].length) {
@@ -2168,23 +2169,30 @@
             logClient("Web Audio stream reader done.", {
               totalBytesRead,
               firstChunkSize,
+              chunkCount,
             });
             break;
           }
           if (!value) {
             continue;
           }
+          chunkCount += 1;
           if (firstChunkSize === null) {
             firstChunkSize = value.length;
             logClient("Web Audio stream first chunk received.", {
               firstChunkSize,
+              totalBytesRead: totalBytesRead + value.length,
+              chunkCount,
             });
           }
           totalBytesRead += value.length;
-          logClient("Web Audio stream chunk received.", {
-            chunkSize: value.length,
-            totalBytesRead,
-          });
+          if (chunkCount % 10 === 0) {
+            logClient("Web Audio stream chunk received.", {
+              chunkCount,
+              chunkSize: value.length,
+              totalBytesRead,
+            });
+          }
           onChunk?.(value);
 
           if (!wavInfo && streamingEnabled) {

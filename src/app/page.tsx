@@ -403,6 +403,7 @@ const streamWavViaWebAudio = async ({
   let resumeBlocked = false;
   let totalBytesRead = 0;
   let firstChunkSize: number | null = null;
+  let chunkCount = 0;
 
   const readSample = () => {
     while (sampleQueue.length > 0 && sampleOffset >= sampleQueue[0].length) {
@@ -480,23 +481,30 @@ const streamWavViaWebAudio = async ({
       console.info("Web Audio stream reader done.", {
         totalBytesRead,
         firstChunkSize,
+        chunkCount,
       });
       break;
     }
     if (!value) {
       continue;
     }
+    chunkCount += 1;
     if (firstChunkSize === null) {
       firstChunkSize = value.length;
       console.info("Web Audio stream first chunk received.", {
         firstChunkSize,
+        totalBytesRead: totalBytesRead + value.length,
+        chunkCount,
       });
     }
     totalBytesRead += value.length;
-    console.info("Web Audio stream chunk received.", {
-      chunkSize: value.length,
-      totalBytesRead,
-    });
+    if (chunkCount % 10 === 0) {
+      console.info("Web Audio stream chunk received.", {
+        chunkCount,
+        chunkSize: value.length,
+        totalBytesRead,
+      });
+    }
     onChunk?.(value);
 
     if (!wavInfo && streamingEnabled) {
