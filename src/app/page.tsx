@@ -576,6 +576,9 @@ const streamWavViaWebAudio = async ({
   if (activeProcessor) {
     activeProcessor.disconnect();
   }
+  if (streamDestination) {
+    streamDestination.stream.getTracks().forEach((track) => track.stop());
+  }
   if (audioContext) {
     audioContext.close().catch(() => {});
   }
