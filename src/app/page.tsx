@@ -808,7 +808,6 @@ export default function HomePage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const [previewPaused, setPreviewPaused] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showAudioInfo, setShowAudioInfo] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionId>("quick");
@@ -1620,14 +1619,8 @@ export default function HomePage() {
     }
     if (previewPlaying) {
       previewAudio.pause();
-      setPreviewPlaying(false);
-      setPreviewPaused(true);
-      return;
-    }
-    if (previewPaused) {
-      previewAudio.pause();
       previewAudio.currentTime = 0;
-      setPreviewPaused(false);
+      setPreviewPlaying(false);
       return;
     }
     const language = formState.language;
@@ -1664,23 +1657,17 @@ export default function HomePage() {
       previewAudio.hidden = false;
       previewAudio.onended = () => {
         setPreviewPlaying(false);
-        setPreviewPaused(false);
       };
       previewAudio.onpause = () => {
-        const shouldPause =
-          previewAudio.currentTime > 0 && !previewAudio.ended && !previewLoading;
         setPreviewPlaying(false);
-        setPreviewPaused(shouldPause);
       };
       await previewAudio.play();
       setPreviewPlaying(true);
-      setPreviewPaused(false);
     } catch (error) {
       setPreviewError(
         error instanceof Error ? error.message : t("errors.preview_failed"),
       );
       setPreviewPlaying(false);
-      setPreviewPaused(false);
     } finally {
       setPreviewLoading(false);
     }
@@ -1690,9 +1677,7 @@ export default function HomePage() {
     ? "loading"
     : previewPlaying
       ? "playing"
-      : previewPaused
-        ? "paused"
-        : "idle";
+      : "idle";
   const previewIconStyle = {
     width: "1rem",
     height: "1rem",
@@ -1731,12 +1716,6 @@ export default function HomePage() {
           <svg aria-hidden="true" viewBox="0 0 24 24" style={previewIconStyle}>
             <rect x="6" y="4" width="4" height="16" fill="currentColor" />
             <rect x="14" y="4" width="4" height="16" fill="currentColor" />
-          </svg>
-        );
-      case "paused":
-        return (
-          <svg aria-hidden="true" viewBox="0 0 24 24" style={previewIconStyle}>
-            <rect x="6" y="6" width="12" height="12" fill="currentColor" />
           </svg>
         );
       default:
