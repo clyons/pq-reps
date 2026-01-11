@@ -398,6 +398,7 @@ const streamWavViaWebAudio = async ({
   let headerBytes = new Uint8Array(0);
   let playbackStarted = false;
   let streamingEnabled = true;
+  let resumeBlocked = false;
 
   const readSample = () => {
     while (sampleQueue.length > 0 && sampleOffset >= sampleQueue[0].length) {
@@ -460,6 +461,10 @@ const streamWavViaWebAudio = async ({
           resolve();
           return;
         }
+        if (resumeBlocked && audioContext && audioContext.state !== "running") {
+          resolve();
+          return;
+        }
         setTimeout(checkQueue, 100);
       };
       checkQueue();
@@ -492,6 +497,7 @@ const streamWavViaWebAudio = async ({
           } catch (error) {
             console.info("Audio context resume blocked.", error);
             pendingAudioContext = audioContext;
+            resumeBlocked = true;
             onPlaybackBlocked?.(true);
           }
           streamDestination = audioContext.createMediaStreamDestination();

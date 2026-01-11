@@ -2084,6 +2084,7 @@
         let headerBytes = new Uint8Array(0);
         let playbackStarted = false;
         let streamingEnabled = true;
+        let resumeBlocked = false;
 
         const readSample = () => {
           while (sampleQueue.length > 0 && sampleOffset >= sampleQueue[0].length) {
@@ -2145,6 +2146,10 @@
                 resolve();
                 return;
               }
+              if (resumeBlocked && audioContext && audioContext.state !== "running") {
+                resolve();
+                return;
+              }
               setTimeout(checkQueue, 100);
             };
             checkQueue();
@@ -2177,6 +2182,7 @@
                 } catch (error) {
                   logClient("Audio context resume blocked.", { error: String(error) });
                   pendingAudioContext = audioContext;
+                  resumeBlocked = true;
                   setPlaybackBlocked(true);
                 }
                 streamDestination = audioContext.createMediaStreamDestination();
