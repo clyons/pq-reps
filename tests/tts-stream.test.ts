@@ -145,10 +145,12 @@ test("streaming TTS preserves pause markers and newline pauses", async (t) => {
   const secondPause = data.subarray(secondPauseStart, secondPauseStart + newlinePauseBytes);
   assert.ok(secondPause.equals(Buffer.alloc(newlinePauseBytes, 0)));
 
-  const secondAudio = data.subarray(secondPauseStart + newlinePauseBytes);
-  assert.ok(secondAudio.equals(audioData));
-
   const trailingPauseStart = secondPauseStart + newlinePauseBytes + audioData.length;
+  const secondAudio = data.subarray(
+    secondPauseStart + newlinePauseBytes,
+    trailingPauseStart,
+  );
+  assert.ok(secondAudio.equals(audioData));
   const trailingPause = data.subarray(trailingPauseStart);
   assert.ok(trailingPause.equals(Buffer.alloc(newlinePauseBytes, 0)));
 });
