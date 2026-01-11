@@ -135,6 +135,16 @@ const isMissingOpenAiKeyError = (error: unknown) =>
   error instanceof Error &&
   error.message.includes("Missing OPENAI_API_KEY environment variable.");
 
+const isClientDisconnectError = (error: unknown, signal: AbortSignal) => {
+  if (signal.aborted) {
+    const reason = signal.reason;
+    if (reason instanceof Error && reason.message === "Client disconnected.") {
+      return true;
+    }
+  }
+  return error instanceof Error && error.message === "Client disconnected.";
+};
+
 export default async function handler(
   req: IncomingMessage,
   res: ServerResponse,
@@ -150,7 +160,14 @@ export default async function handler(
   }
 
   const abortController = new AbortController();
+  let responseFinished = false;
+  res.on("finish", () => {
+    responseFinished = true;
+  });
   const handleAbort = () => {
+    if (responseFinished) {
+      return;
+    }
     if (!abortController.signal.aborted) {
       abortController.abort(new Error("Client disconnected."));
     }
@@ -244,6 +261,12 @@ export default async function handler(
     res.setHeader("Content-Disposition", `attachment; filename="${downloadFilename}"`);
     res.end(ttsResult.audio);
   } catch (error) {
+    if (isClientDisconnectError(error, abortController.signal)) {
+      if (!res.writableEnded) {
+        res.end();
+      }
+      return;
+    }
     logger.error("tts_request_failed", {
       error: logger.formatError(error).message,
     });
