@@ -39,6 +39,13 @@ jobs:
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Set gcloud defaults (project/region/artifacts)
+        run: |
+          gcloud config set project "${{ secrets.GCP_PROJECT_ID }}"
+          gcloud config set run/region "${{ secrets.GCP_REGION }}"
+          gcloud config set artifacts/location "${{ secrets.GCP_REGION }}"
+          gcloud config set builds/region "${{ secrets.GCP_REGION }}"
+
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy "${{ secrets.CLOUD_RUN_SERVICE }}" \
