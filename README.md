@@ -83,6 +83,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [ ] Improve prompt handling for custom scenario line before re-enabling UI input (Notes: prompt does not include custom scenario lines until the feature is re-enabled.)
 - [ ] Align script timings more closely to actual spoken duration (especially 1 min and 12 min) (Notes: pacing guidance exists in prompts, but no runtime timing calibration.)
 - [ ] Fix/enable straming in Mobile Safari
+- [ ] Add deploy script via Github Actions
 
 ## Streaming audio
 - `/api/tts` supports streaming WAV audio when you set the `x-tts-streaming: 1` header.
