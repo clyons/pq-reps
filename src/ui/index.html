@@ -2561,6 +2561,24 @@
         setPreviewIcon("idle");
       };
 
+      const checkPreviewCache = async ({ language, voice }) => {
+        const response = await fetch("/api/voice-preview", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            "x-preview-cache-check": "1",
+            ...authHeaders,
+          },
+          body: JSON.stringify({ language, voice }),
+        });
+        if (!response.ok) {
+          throw new Error("cache_check_failed");
+        }
+        const data = await response.json();
+        return Boolean(data?.cached);
+      };
+
       const playPreview = async () => {
         if (!previewAudio || !previewStatus || !previewButton) {
           return;
@@ -2576,9 +2594,17 @@
             ? maleVoiceByLanguage[language] || "ash"
             : femaleVoiceByLanguage[language] || "alloy";
         setPreviewError("");
-        setPreviewIcon("loading");
         previewButton.disabled = true;
         try {
+          let cacheHit = false;
+          try {
+            cacheHit = await checkPreviewCache({ language, voice });
+          } catch (error) {
+            cacheHit = false;
+          }
+          if (!cacheHit) {
+            setPreviewIcon("loading");
+          }
           const response = await fetch("/api/voice-preview", {
             method: "POST",
             headers: {
