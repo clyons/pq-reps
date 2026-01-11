@@ -1,6 +1,6 @@
-# PQ Reps Guided Audio Generator
+# Mental Fitness Practice Generator
 
-**Version:** 0.7.0
+**Version:** 0.7.1
 
 Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sense, eye position, duration, and language.
 
@@ -12,7 +12,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 
 ## Changelog
 
-### 0.7.0
+### 0.7.1
 - Add a Cloud Run deploy workflow with build/test checks in GitHub Actions.
 - Improve streaming playback reliability and diagnostics (iOS unlock handling, fallback playback, stream resets, logging, smaller chunk sizes).
 - Adjust Mobile Safari playing behavior, including tap-to-play layout tweaks and disabling streaming when unstable.
