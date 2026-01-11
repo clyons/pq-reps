@@ -94,6 +94,12 @@ Generate guided mental fitness audio scripts and placeholder audio URLs tailored
 - [ ] Re-enable streaming on Mobile Safari once playback stability is verified.
 - [ ] Add regression coverage for streaming playback and SSE audio outputs.
 - [ ] Provide a user-visible support bundle for streaming diagnostics.
+- [ ] Optional user auth with Google OAuth.
+- [ ] Ability to save sessions to server.
+- [ ] Ability to favourite sessions.
+- [ ] Ability to thumbs up / thumbs down sessions based on perceived quality.
+- [ ] Admin panel to review saved sessions and thumbs up / downs.
+- [ ] Restrictions on generating sessions for non-logged in users (soft paywall based on cookies / IP address / browser fingerprint).
 
 ## Streaming audio
 - `/api/tts` supports streaming WAV audio when you set the `x-tts-streaming: 1` header.
