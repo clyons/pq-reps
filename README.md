@@ -2,7 +2,7 @@
 
 **Version:** 0.7.1
 
-Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sense, eye position, duration, and language.
+Generate guided mental fitness audio scripts and placeholder audio URLs tailored by sense, eye position, duration, and language.
 
 ## What’s included
 - Prompt builder utilities and templates in `src/lib/`
@@ -58,8 +58,8 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Provide local setup instructions for macOS.
 - [x] Build a configuration UI for sense, eyes, duration, and language.
 - [x] Add OpenAI TTS integration with direct audio bytes (no storage).
-- [x] Update prompts to generate on-brand PQ Reps scripts.
-- [x] Improve the tone and pacing of PQ Reps scripts.
+- [x] Update prompts to generate on-brand mental fitness scripts.
+- [x] Improve the tone and pacing of mental fitness scripts.
 - [x] Ensure text + audio uses a single generation pass to keep script/audio in sync.
 - [x] Add console disclosure when running against the OpenAI TTS API.
 - [x] Stream status updates with SSE for `/api/generate`.
@@ -71,7 +71,7 @@ Generate guided PQ Rep audio scripts and placeholder audio URLs tailored by sens
 - [x] Remove duplicate newline pauses before passing to TTS
 - [x] Remove the Loading preview / playing preview text. Use a Play icon, Loading icon and Stop icon inside the Preview pill in place of the >.
 - [x] Allow the user to stop the voice Preview from playing by clicking the button a second time. Revert the button to show the play button once more.
-- [x] Add common scenarios for PQ Reps which have their own settings / prompts:
+- [x] Add common scenarios for mental fitness exercises which have their own settings / prompts:
   - Calm me now (Still, eyes open, touch)
   - Get present for a meeting (Still, eyes open, touch)
   - Start the thing I’m avoiding (Moving, touch)
