@@ -2413,8 +2413,10 @@
         localStorage.setItem(storageKey, JSON.stringify(getFormValues()));
       };
 
+      let defaultValues = null;
+
       const initializeForm = async () => {
-        const defaultValues = getFormValues();
+        defaultValues = getFormValues();
 
         const storedValuesRaw = localStorage.getItem(storageKey);
         const storedSection = localStorage.getItem(sectionStorageKey);
@@ -2707,7 +2709,7 @@
         });
       }
       resetButton.addEventListener("click", () => {
-        setFormValues(defaultValues);
+        setFormValues(defaultValues || getFormValues());
         clearScenarioSelection();
         setActiveSection("quick", { preserveScenario: true });
         updateDerivedFields();
